@@ -1,10 +1,10 @@
-B-Tree Initial Class Design
+#B-Tree Initial Class Design
 Capstone Project CS 4488 – Andreas Kramer
 
-•	BTree Class
+- BTree Class
 This class represents the B-Tree itself.
 Attributes:
-o	Root 
+- Root 
 	A reference to the root node of the B-Tree. (LeafNode)
 o	M
 	The degree of the B-Tree. Determines the maximum and minimum number of keys/entries stored in each node. Specifically, each node (except possibly the root) must have at least M-1 and at most 2*M-1 keys.
