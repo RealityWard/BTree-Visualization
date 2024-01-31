@@ -1,0 +1,11 @@
+| Task                                           | Duration | Jan | Feb | Mar | Apr |
+|------------------------------------------------|----------|-----|-----|-----|-----|
+| 1. Project Setup and GitHub                    | 2 weeks  |  X  |  X  |     |     |
+| 2. B-Tree Visualization                        | 4 weeks  |  X  |  X  |  X  |     |
+| 3. B+Tree Visualization                        | 5 weeks  |     |  X  |  X  |  X  |
+| 4. UI Enhancement                              | 3 weeks  |     |     |  X  |     |
+| 5. User Interaction and Controls               | 2 weeks  |     |     |  X  |  X  |
+| 6. Client Interaction Module                   | 1 week   |     |  X  |  x  |     |
+| 7. Documentation                               | 3 weeks  |     |     |  X  |  X  |
+| 8. Testing                                     | 4 weeks  |     |  X  |  X  |  X  |
+| 9. Web Version                      		 | 3 weeks  |     |     |  X  |  X  |
