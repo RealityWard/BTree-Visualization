@@ -25,15 +25,15 @@ namespace BTreeVisualization{
     }
 
     public void Delete(int key){
-      _Root.SearchKey(key).Item2.DeleteKey(key);
+      _Root?.SearchKey(key).Item2.DeleteKey(key);
     }
 
-    public (int,Node) Search(int key){
-      return _Root.SearchKey(key);
+    public (int,Node?) Search(int key){
+      return _Root != null ? _Root.SearchKey(key) : (-1,null);
     }
 
     public string Traverse(){
-      return _Root.Traverse();
+      return _Root != null ? _Root.Traverse() : "";
     }
   }
 }
