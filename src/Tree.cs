@@ -7,17 +7,18 @@ namespace BTreeVisualization{
     public BTree(int degree){
       _Root = null;
       _Degree = degree;
+      Console.WriteLine(_Degree);
     }
     
     public void Insert(int key, Data data){
       if(_Root == null){
-        _Root = new LeafNode(_Degree);
-        _Root.InsertKey(key, data);
+        // _Root = new LeafNode(_Degree);
+        // _Root.InsertKey(key, data);
       }else{
         if(_Root.GetNumKeys() == 2*_Degree-1){
-          BTreeNode node = new NonLeafNode(_Degree);
-          node.InsertChild(key, _Root);
-          _Root = node;
+          // BTreeNode node = new NonLeafNode(_Degree);
+          // node.InsertChild(key, _Root);
+          // _Root = node;
         }else{
           _Root.SearchKey(key).Item2.InsertKey(key, data);
         }
