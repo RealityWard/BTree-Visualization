@@ -18,6 +18,7 @@ namespace BTreeVisualization{
     public abstract bool IsUnderflow();
     public abstract void InsertKey(int key, Data data);
     public abstract void DeleteKey(int key);
+    public abstract string Traverse();
     public int GetNumKeys(){
       return _NumKeys;
     }

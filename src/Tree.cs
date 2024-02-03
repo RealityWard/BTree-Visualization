@@ -2,14 +2,14 @@ using NodeData;
 
 namespace BTreeVisualization{
   public class BTree{
-    private BTreeNode _Root;
+    private BTreeNode? _Root;
     private int _Degree;
     public BTree(int degree){
       _Root = null;
       _Degree = degree;
     }
     
-    public void insert(int key, Data data){
+    public void Insert(int key, Data data){
       if(_Root == null){
         _Root = new LeafNode(_Degree);
         _Root.InsertKey(key, data);
@@ -24,23 +24,16 @@ namespace BTreeVisualization{
       }
     }
 
-
-    public void delete(int key){
+    public void Delete(int key){
       _Root.SearchKey(key).Item2.DeleteKey(key);
     }
 
-
-    public (int,BTreeNode) search(int key){
-      if(_Root.SearchKey(key).Item1 == -1){
-
-      }
-      return (-1,null);
+    public (int,Node) Search(int key){
+      return _Root.SearchKey(key);
     }
 
-
-    public string traverse(){
-      string result = "";
-      return "";
+    public string Traverse(){
+      return _Root.Traverse();
     }
   }
 }
