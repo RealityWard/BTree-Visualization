@@ -67,7 +67,12 @@ namespace BTreeVisualization{
       return _NumKeys <= _Degree-1;
     }
     
-
+    /// <summary>
+    /// Finds and places the new info in the current node. If it reaches capacity it calls split and returns the new node created from the split. Otherwise it returns ((-1,null),null).
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="data"></param>
+    /// <returns></returns>
     public override ((int,Data?),Node?) InsertKey(int key, Data data){
       int i = 0;
       while(i < _NumKeys && key < _Keys[i])
@@ -85,6 +90,10 @@ namespace BTreeVisualization{
       return ((-1,null),null);
     }
 
+    /// <summary>
+    /// If the entry exists it deletes it.
+    /// </summary>
+    /// <param name="key"></param>
     public override void DeleteKey(int key){
       int i = Search(key);
       if(i != -1){
@@ -95,7 +104,11 @@ namespace BTreeVisualization{
         _NumKeys--;
       }
     }
-    
+
+    /// <summary>
+    /// Returns all the keys and the coresponding contents as JSON objects in string form.
+    /// </summary>
+    /// <returns></returns>
     public override string Traverse(){
       string result = "{\n";
       for(int i = 0; i < _NumKeys; i++){

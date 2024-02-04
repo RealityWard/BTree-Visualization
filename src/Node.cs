@@ -1,7 +1,7 @@
 /**
 Author: Tristan Anderson
 Date: 2024-02-03
-Desc: 
+Desc: Base class for all the node objects used in the BTree and B+Tree.
 */
 using NodeData;
 

@@ -1,7 +1,7 @@
 /**
 Author: Tristan Anderson
 Date: 2024-02-03
-Desc: 
+Desc: Maintains the entry point of the BTree data structure and initializes root and new node creation in the beginning.
 */
 using NodeData;
 
