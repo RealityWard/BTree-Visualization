@@ -1,11 +1,16 @@
+/**
+Author: Tristan Anderson
+Date: 2024-02-03
+Desc: 
+*/
 using NodeData;
 
 namespace BTreeVisualization{
   public abstract class Node{
-    private int _Degree;
-    private Node? _Parent;
-    private int _NumKeys = 0;
-    private int[] _Keys;
+    protected int _Degree;
+    protected Node? _Parent;
+    protected int _NumKeys = 0;
+    protected int[] _Keys;
 
     protected Node(int degree){
       _Parent = null;
@@ -13,10 +18,10 @@ namespace BTreeVisualization{
       _Keys = new int[2*degree];
     }
     public abstract (int,Node) SearchKey(int key);
-    public abstract void Split();
+    public abstract ((int,Data),Node) Split();
     public abstract bool IsFull();
     public abstract bool IsUnderflow();
-    public abstract void InsertKey(int key, Data data);
+    public abstract ((int,Data?),Node?) InsertKey(int key, Data data);
     public abstract void DeleteKey(int key);
     public abstract string Traverse();
     public int GetNumKeys(){
@@ -25,7 +30,7 @@ namespace BTreeVisualization{
   }
 
   public abstract class BTreeNode : Node{
-    private Data[] _Contents;
+    protected Data[] _Contents;
     protected BTreeNode(int degree) : base(degree){
       _Contents = new Data[2*degree];
     }
