@@ -209,6 +209,9 @@ project.lock.json
 # Visual Studio Code
 .vscode/
 
+#Console App
+ConsoleApp1/
+
 # Output folder used by Webpack or other FE stuff
 **/node_modules/*
 **/wwwroot/*
@@ -224,3 +227,7 @@ AppPackages/
 #####
 # End of core ignore list, below put you custom 'per project' settings (patterns or path)
 #####
+
+bin/
+obj/
+.gitignore
