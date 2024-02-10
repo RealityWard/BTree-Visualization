@@ -69,7 +69,8 @@ namespace BTreeVisualization{
     }
     
     /// <summary>
-    /// Finds and places the new info in the current node. If it reaches capacity it calls split and returns the new node created from the split. Otherwise it returns ((-1,null),null).
+    /// Finds and places the new info in the current node. If it reaches capacity it calls split and
+    /// returns the new node created from the split. Otherwise it returns ((-1,null),null).
     /// </summary>
     /// <param name="key"></param>
     /// <param name="data"></param>
