@@ -15,12 +15,13 @@ namespace BTreeVisualization{
       _Keys = new int[2*degree];
       _Contents = new Data[2*degree];
     }
-    public abstract (int,BTreeNode) searchKey(int key);
-    public abstract void split();
-    public abstract bool isFull();
-    public abstract bool isUnderflow();
-    public abstract void insertKey(int key, Data data);
-    public abstract void deleteKey(int key);
+    public abstract (int,BTreeNode) SearchKey(int key);
+    public abstract ((int,Data),BTreeNode) Split();
+    public abstract bool IsFull();
+    public abstract bool IsUnderflow();
+    public abstract ((int,Data?),BTreeNode?) InsertKey(int key, Data data);
+    public abstract void DeleteKey(int key);
+    public abstract string Traverse(string? output);
     public int getNumKeys(){
       return _NumKeys;
     }

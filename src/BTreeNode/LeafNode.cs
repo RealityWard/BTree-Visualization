@@ -32,14 +32,14 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public override (int,Node) SearchKey(int key){
+    public override (int,BTreeNode) SearchKey(int key){
       return (Search(key),this);
     }
 
     /// <summary>
     /// Evenly splits the _Contents and _Keys to two new nodes
     /// </summary>
-    public override ((int,Data),Node) Split(){
+    public override ((int,Data),BTreeNode) Split(){
       int[] newKeys = new int[_Degree];
       Data[] newContent = new Data[_Degree];
       for(int i = 0; i < _Degree; i++){
@@ -73,7 +73,7 @@ namespace BTreeVisualization{
     /// <param name="key"></param>
     /// <param name="data"></param>
     /// <returns></returns>
-    public override ((int,Data?),Node?) InsertKey(int key, Data data){
+    public override ((int,Data?),BTreeNode?) InsertKey(int key, Data data){
       int i = 0;
       while(i < _NumKeys && key < _Keys[i])
         i++;
@@ -109,7 +109,7 @@ namespace BTreeVisualization{
     /// Returns all the keys and the coresponding contents as JSON objects in string form.
     /// </summary>
     /// <returns></returns>
-    public override string Traverse(){
+    public override string Traverse(string? output){
       string result = "{\n";
       for(int i = 0; i < _NumKeys; i++){
         result += "\"key\":\"" + _Keys[i] + "\",\n" + _Contents[i].ToString() + 

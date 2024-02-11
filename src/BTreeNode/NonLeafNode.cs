@@ -1,17 +1,15 @@
-﻿using System;
-using System.Linq;
-using BTreeVisualization;
+﻿using NodeData;
 
 namespace BTreeVisualization
 {
 	public class NonLeafNode(int degree) : BTreeNode(degree){
-		private BTLeafNode[] _children;
+		private BTreeNode[] _Children;
 
-		public NonLeafNode(int degree, int[] keys, Data[] data, BTreeNode[] children): this.degree {
-			for(int i = 0; i< degree; i ++){
-				_Keys[i] = new keys[i];
-				_Content[i] = new data[i];
-				_children[i] = new children[i];
+		public NonLeafNode(int degree, int[] keys, Data[] data, BTreeNode[] children): this(degree) {
+			for(int i = 0; i < degree; i ++){
+				_Keys[i] = keys[i];
+				_Contents[i] = data[i];
+				_Children[i] = children[i];
 			}
 		}
 		
@@ -20,13 +18,13 @@ namespace BTreeVisualization
 /// </summary>
 /// <param name="key"> </param>
 /// <returns></returns>
-		public (int, BTreeNode) searchKey(int key)
+		private int Search(int key)
 		{
 			//searches for correct key, finds it returns the node, else returns -1 
-			foundKey = false;
+			bool foundKey = false;
 			for (int i = 0; i < _NumKeys; i++){
 				if (_Keys[i] == key) {
-					return this;
+					return i;
 				}
 			}
 			return -1;
@@ -37,7 +35,7 @@ namespace BTreeVisualization
 		/// </summary>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public override (int,Node) SearchKey(int key){
+		public override (int,BTreeNode) SearchKey(int key){
 			return (Search(key),this);
 		}
 
@@ -48,37 +46,34 @@ namespace BTreeVisualization
 		/// <param name="key"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public override ((int,Data?),Node?) InsertKey(BTreeNode currentNode, int key, Data data){
+		public override ((int,Data?),BTreeNode?) InsertKey(int key, Data data){
+      		((int,Data?),BTreeNode?) result = ((0, null), null);
 			for (int i = 0; i < _NumKeys; i++){
-				if (_Keys[i] >= key && _children[i] != null){
-					this.InsertKey(currentNode._children[i], key, data);
+				if (_Keys[i] >= key && _Children[i] != null){
+					result = _Children[i].InsertKey(key, data);
 				}
-				else if (_Keys[i] < key && _children[i] != null){
-					this.InsertKey(currentNode._children.Last(), key, data)
+				else if (_Keys[i] < key && _Children[i] != null){
+					result = _Children.Last().InsertKey(key, data);
 				}
-
 			} 			
-			
+			return result;
 		}
-			
-			
 
 	/// <summary>
     /// Evenly splits the _Contents and _Keys to two new nodes
     /// </summary>
-		public override ((int,Data),Node) Split(){
+		public override ((int,Data),BTreeNode) Split(){
 			int[] newKeys = new int[_Degree];
 			Data[] newContent = new Data[_Degree];
-			BTreeNode[] newChildren = new BTreeNode[_children];
+			BTreeNode[] newChildren = new BTreeNode[_Degree];
 			for(int i = 0; i < _Degree; i++){
 				newKeys[i] = _Keys[i+_Degree];
 				newContent[i] = _Contents[i+_Degree];
-				_children[i] = _children[i+Degree];
+				_Children[i] = _Children[i+_Degree];
 			}
 			_NumKeys = _Degree-1;
-			NonLeafNode newNode = new(_Degree,newKeys,newContent, newChildren);
-			return ((_Keys[_Degree-1],_Contents[_Degree-1],
-			 _children[_Degree -1]),newNode);
+			NonLeafNode newNode = new(_Degree,newKeys,newContent,newChildren);
+			return ((_Keys[_Degree-1],_Contents[_Degree-1]),newNode);
 		}
 
 		/// <summary>
@@ -97,15 +92,15 @@ namespace BTreeVisualization
 			return _NumKeys <= _Degree-1;
 		}
 
-
     /// <summary>
     /// If the entry exists it deletes it.
     /// </summary>
     /// <param name="key"></param>
-		public void deleteKey(int key){
-			foundKey = searchKey(key);
+		public override void DeleteKey(int key){
+			int foundKey = Search(key);
+
 			if(foundKey != -1){
-					for (; i < _NumKeys; i++){
+					for (int i = 0; i < _NumKeys; i++){
 					_Keys[i] = _Keys[i+1];
 					_Contents[i] = _Contents[i+1];
 				}
@@ -114,27 +109,27 @@ namespace BTreeVisualization
 			}
 			
 			for(int i = 0; i<_NumKeys; i++){
-				if (_Keys[i] > key && _children[i] != null){
-					return this.searchKey(_children[i], key);
+				if (_Keys[i] > key && _Children[i] != null){
+					_Children[i].SearchKey(key);
 				}
-				if (_Keys[i] < key && _children[i] != null){
-					return this.searchKey(_children.Last(), key)
+				if (_Keys[i] < key && _Children[i] != null){
+					_Children.Last().SearchKey( key);
 				}
 			}
 		}
 
-		public override string Traverse(BTreeNode currentNode, string result){
-      		string result = "{\n";
+		public override string Traverse(string output){
+      		output += "{\n";
 			for(int i = 0; i < _NumKeys; i++){
-				result += i + "th child: \n" ;
-				result += this.Traverse(currentNode._children[i], result);
-				result += "\"key\":\"" + _Keys[i] + "\",\n" + _Contents[i].ToString() + 
+				output += i + "th child: \n" ;
+				output += _Children[i].Traverse(output);
+				output += "\"key\":\"" + _Keys[i] + "\",\n" + _Contents[i].ToString() + 
 				(i+1 < _NumKeys ? "," : "") + "\n";
 
 			}
 			
-			result += this.Traverse(currentNode._children.Last, result);
-			return result + "}";
+			output += _Children.Last().Traverse(output);
+			return output + "}";
 		}
 
 	}
