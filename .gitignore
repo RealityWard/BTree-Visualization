@@ -230,4 +230,7 @@ AppPackages/
 
 bin/
 obj/
+*.csproj
 .gitignore
+.fake
+*.sln
