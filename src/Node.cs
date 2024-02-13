@@ -6,18 +6,18 @@ Desc: Base class for all the node objects used in the BTree and B+Tree.
 using NodeData;
 
 namespace BTreeVisualization{
-  public abstract class Node(int degree)
+  public abstract class Node<T,D>(int degree)
   {
     protected int _Degree = degree;
-    protected Node? _Parent = null;
+    protected T? _Parent;
     protected int _NumKeys = 0;
     protected int[] _Keys = new int[2 * degree];
 
-    public abstract (int,Node) SearchKey(int key);
-    public abstract ((int,Data),Node) Split();
+    public abstract (int,T) SearchKey(int key);
+    public abstract ((int,D),T) Split();
     public abstract bool IsFull();
     public abstract bool IsUnderflow();
-    public abstract ((int,Data?),Node?) InsertKey(int key, Data data);
+    public abstract ((int,D?),T?) InsertKey(int key, D data);
     public abstract void DeleteKey(int key);
     public abstract string Traverse();
     public int GetNumKeys(){
@@ -25,10 +25,10 @@ namespace BTreeVisualization{
     }
   }
 
-  public abstract class BTreeNode(int degree) : Node(degree){
-    protected Data[] _Contents = new Data[2 * degree];
+  public abstract class BTreeNode<T>(int degree) : Node<BTreeNode<T>,T>(degree){
+    protected T[] _Contents = new T[2 * degree];
 
-    public Data[] Contents{
+    public T[] Contents{
       get{ return _Contents; }
     }
   }

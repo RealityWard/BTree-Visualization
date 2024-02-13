@@ -6,17 +6,17 @@ Desc: Maintains the entry point of the BTree data structure and initializes root
 using NodeData;
 
 namespace BTreeVisualization{
-  public class BTree(int degree)
+  public class BTree<T>(int degree)
   {
-    private BTreeNode _Root = new LeafNode(degree);
+    private BTreeNode<T> _Root = new LeafNode<T>(degree);
     private readonly int _Degree = degree;
 
     /// <summary>
     /// Takes a node and the key and data to place into root.
     /// </summary>
     /// <param name="rNode"></param>
-    private void Split(((int,Data),Node) rNode){
-      _Root = new NonLeafNode(_Degree,[rNode.Item1.Item1],[rNode.Item1.Item2],[_Root, rNode.Item2]);
+    private void Split(((int,T),BTreeNode<T>) rNode){
+      _Root = new NonLeafNode<T>(_Degree,[rNode.Item1.Item1],[rNode.Item1.Item2],[_Root, rNode.Item2]);
     }
     
     /// <summary>
@@ -24,14 +24,16 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="key"></param>
     /// <param name="data"></param>
-    public void Insert(int key, Data data){
+    public void Insert(int key, T data){
       if(_Root == null){
-        _Root = new LeafNode(_Degree);
+        _Root = new LeafNode<T>(_Degree);
         _Root.InsertKey(key, data);
       }else{
-        ((int,Data?),Node?) result = _Root.InsertKey(key, data);
+        ((int,T?),BTreeNode<T>?) result = _Root.InsertKey(key, data);
         if(result.Item2 != null && result.Item1.Item2 != null){
-          Split(((result.Item1.Item1,true? result.Item1.Item2 : new Person("Placeholder")),true? result.Item2 : new LeafNode(_Degree)));
+          #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+          Split(result);
+          #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
         }
       }
     }
@@ -41,7 +43,7 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="key"></param>
     public void Delete(int key){
-      (int,Node) result = _Root.SearchKey(key);
+      (int,BTreeNode<T>) result = _Root.SearchKey(key);
       if(result.Item1 != -1){
         result.Item2.DeleteKey(key);
       }
@@ -52,12 +54,12 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public Data? Search(int key){
-      (int,Node?) result = _Root.SearchKey(key);
+    public T? Search(int key){
+      (int,BTreeNode<T>?) result = _Root.SearchKey(key);
       if (result.Item1 == -1 || result.Item2 == null){
-        return null;
+        return default;
       }else{
-        return ((BTreeNode)result.Item2).Contents[result.Item1];
+        return result.Item2.Contents[result.Item1];
       }
     }
 

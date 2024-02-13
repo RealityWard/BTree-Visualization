@@ -2,11 +2,11 @@
 
 namespace BTreeVisualization
 {
-	public class NonLeafNode(int degree) : BTreeNode(degree){
-		private BTreeNode[] _Children;
+	public class NonLeafNode<T>(int degree) : BTreeNode<T>(degree){
+		private BTreeNode<T>[] _Children = [];
 
-		public NonLeafNode(int degree, int[] keys, Data[] data, BTreeNode[] children): this(degree) {
-			for(int i = 0; i < degree; i ++){
+		public NonLeafNode(int degree, int[] keys, T[] data, BTreeNode<T>[] children) : this(degree) {
+			for(int i = 0; i < _Degree; i++){
 				_Keys[i] = keys[i];
 				_Contents[i] = data[i];
 				_Children[i] = children[i];
@@ -20,8 +20,7 @@ namespace BTreeVisualization
 /// <returns></returns>
 		private int Search(int key)
 		{
-			//searches for correct key, finds it returns the node, else returns -1 
-			bool foundKey = false;
+			//searches for correct key, finds it returns the node, else returns -1
 			for (int i = 0; i < _NumKeys; i++){
 				if (_Keys[i] == key) {
 					return i;
@@ -35,7 +34,7 @@ namespace BTreeVisualization
 		/// </summary>
 		/// <param name="key"></param>
 		/// <returns></returns>
-		public override (int,Node) SearchKey(int key){
+		public override (int,BTreeNode<T>) SearchKey(int key){
 			return (Search(key),this);
 		}
 
@@ -46,34 +45,33 @@ namespace BTreeVisualization
 		/// <param name="key"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public override ((int,Data?),Node?) InsertKey(int key, Data data){
-      ((int,Data?),Node?) result;
+		public override ((int,T?),BTreeNode<T>?) InsertKey(int key, T data){
+      		((int,T?),BTreeNode<T>?) result = ((0, default), null);
 			for (int i = 0; i < _NumKeys; i++){
 				if (_Keys[i] >= key && _Children[i] != null){
-					_Children[i].InsertKey(key, data);
+					result = _Children[i].InsertKey(key, data);
 				}
 				else if (_Keys[i] < key && _Children[i] != null){
-					this.InsertKey(currentNode._children.Last(), key, data);
+					result = _Children.Last().InsertKey(key, data);
 				}
-
 			} 			
-			
+			return result;
 		}
 
 	/// <summary>
     /// Evenly splits the _Contents and _Keys to two new nodes
     /// </summary>
-		public override ((int,Data),Node) Split(){
+		public override ((int,T),BTreeNode<T>) Split(){
 			int[] newKeys = new int[_Degree];
-			Data[] newContent = new Data[_Degree];
-			BTreeNode[] newChildren = new BTreeNode[_Degree];
+			T[] newContent = new T[_Degree];
+			BTreeNode<T>[] newChildren = new BTreeNode<T>[_Degree];
 			for(int i = 0; i < _Degree; i++){
 				newKeys[i] = _Keys[i+_Degree];
 				newContent[i] = _Contents[i+_Degree];
 				_Children[i] = _Children[i+_Degree];
 			}
 			_NumKeys = _Degree-1;
-			NonLeafNode newNode = new(_Degree,newKeys,newContent,newChildren);
+			NonLeafNode<T> newNode = new(_Degree,newKeys,newContent,newChildren);
 			return ((_Keys[_Degree-1],_Contents[_Degree-1]),newNode);
 		}
 
@@ -111,28 +109,26 @@ namespace BTreeVisualization
 			
 			for(int i = 0; i<_NumKeys; i++){
 				if (_Keys[i] > key && _Children[i] != null){
-					return this.searchKey(_Children[i], key);
+					_Children[i].SearchKey(key);
 				}
 				if (_Keys[i] < key && _Children[i] != null){
-					return this.searchKey(_Children.Last(), key)
+					_Children.Last().SearchKey( key);
 				}
 			}
 		}
 
-		public override string Traverse(BTreeNode currentNode, string result){
-      		string result = "{\n";
+		public override string Traverse(){
+      string output = "{\n";
 			for(int i = 0; i < _NumKeys; i++){
-				result += i + "th child: \n" ;
-				result += this.Traverse(currentNode._children[i], result);
-				result += "\"key\":\"" + _Keys[i] + "\",\n" + _Contents[i].ToString() + 
+				output += i + "th child: \n" ;
+				output += _Children[i].Traverse();
+        #pragma warning disable CS8602 // Dereference of a possibly null reference.
+        output += "\"key\":\"" + _Keys[i] + "\",\n" + _Contents[i].ToString() + 
 				(i+1 < _NumKeys ? "," : "") + "\n";
-
-			}
-			
-			result += this.Traverse(currentNode._children.Last, result);
-			return result + "}";
+        #pragma warning restore CS8602 // Dereference of a possibly null reference.
+      }
+			return output + "}";
 		}
 
 	}
 }
-

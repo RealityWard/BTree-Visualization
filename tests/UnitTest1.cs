@@ -9,7 +9,7 @@ using NodeData;
 namespace tests{
   [TestFixture]
   public class TestsForTreeStart{
-    private BTree _Tree;
+    private BTree<Person> _Tree;
     [SetUp]
     public void Setup(){
       _Tree = new(3);
@@ -26,7 +26,7 @@ namespace tests{
       #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
       if (_Tree.Search(1) != null){
         #pragma warning disable CS8602 // Dereference of a possibly null reference.
-        if(((Person)_Tree.Search(1)).Name == "Chad"){
+        if(_Tree.Search(1).Name == "Chad"){
           Assert.Pass();
         }else{
         #pragma warning restore CS8602 // Dereference of a possibly null reference.

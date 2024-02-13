@@ -6,8 +6,8 @@ Desc: Implements the leaf nodes of a B-Tree. Non-recursive function iteration du
 using NodeData;
 
 namespace BTreeVisualization{
-  public class LeafNode(int degree) : BTreeNode(degree){
-    public LeafNode(int degree, int[] keys, Data[] contents) : this(degree){
+  public class LeafNode<T>(int degree) : BTreeNode<T>(degree){
+    public LeafNode(int degree, int[] keys, T[] contents) : this(degree){
       for(int i = 0; i < degree; i++){
         _Keys[i] = keys[i];
         _Contents[i] = contents[i];
@@ -33,22 +33,22 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="key"></param>
     /// <returns></returns>
-    public override (int,Node) SearchKey(int key){
+    public override (int,BTreeNode<T>) SearchKey(int key){
       return (Search(key),this);
     }
 
     /// <summary>
     /// Evenly splits the _Contents and _Keys to two new nodes
     /// </summary>
-    public override ((int,Data),Node) Split(){
+    public override ((int,T),BTreeNode<T>) Split(){
       int[] newKeys = new int[_Degree];
-      Data[] newContent = new Data[_Degree];
+      T[] newContent = new T[_Degree];
       for(int i = 0; i < _Degree; i++){
         newKeys[i] = _Keys[i+_Degree];
         newContent[i] = _Contents[i+_Degree];
       }
       _NumKeys = _Degree-1;
-      LeafNode newNode = new(_Degree,newKeys,newContent);
+      LeafNode<T> newNode = new(_Degree,newKeys,newContent);
       return ((_Keys[_Degree-1],_Contents[_Degree-1]),newNode);
     }
 
@@ -75,7 +75,7 @@ namespace BTreeVisualization{
     /// <param name="key"></param>
     /// <param name="data"></param>
     /// <returns></returns>
-    public override ((int,Data?),Node?) InsertKey(int key, Data data){
+    public override ((int,T?),BTreeNode<T>?) InsertKey(int key, T data){
       int i = 0;
       while(i < _NumKeys && key < _Keys[i])
         i++;
@@ -89,7 +89,7 @@ namespace BTreeVisualization{
       if(IsFull()){
         return Split();
       }
-      return ((-1,null),null);
+      return ((-1,default(T)),null);
     }
 
     /// <summary>
@@ -114,8 +114,10 @@ namespace BTreeVisualization{
     public override string Traverse(){
       string result = "{\n";
       for(int i = 0; i < _NumKeys; i++){
+        #pragma warning disable CS8602 // Dereference of a possibly null reference.
         result += "\"key\":\"" + _Keys[i] + "\",\n" + _Contents[i].ToString() + 
           (i+1 < _NumKeys ? "," : "") + "\n";
+        #pragma warning restore CS8602 // Dereference of a possibly null reference.
       }
       return result + "}";
     }
