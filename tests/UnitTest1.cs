@@ -5,27 +5,27 @@ namespace tests{
   [TestFixture]
   public class TestsForTreeStart{
     private BTree _Tree;
-      [SetUp]
-      public void Setup(){
-        _Tree = new(3);
-      }
+    [SetUp]
+    public void Setup(){
+      _Tree = new(3);
+    }
 
-      [Test]
-      public void Test1(){
-        _Tree.Insert(1,new Person("Chad"));
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+    [Test]
+    public void Test1(){
+      _Tree.Insert(1,new Person("Chad"));
+      #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
       if (_Tree.Search(1) != null){
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
+        #pragma warning disable CS8602 // Dereference of a possibly null reference.
         if(((Person)_Tree.Search(1)).Name == "Chad"){
           Assert.Pass();
         }else{
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        #pragma warning restore CS8602 // Dereference of a possibly null reference.
           Assert.Fail("Missing Name from person data");
         }
       }else{
         Assert.Fail("Insert to leaf not working; Missing Data");
       }
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+      #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
     }
   }
 }
