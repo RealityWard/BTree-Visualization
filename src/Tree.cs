@@ -3,18 +3,14 @@ Author: Tristan Anderson
 Date: 2024-02-03
 Desc: Maintains the entry point of the BTree data structure and initializes root and new node creation in the beginning.
 */
-using System.ComponentModel;
 using NodeData;
 
 namespace BTreeVisualization{
-  public class BTree{
-    private BTreeNode _Root;
-    private int _Degree;
-    public BTree(int degree){
-      _Root = new LeafNode(degree);
-      _Degree = degree;
-    }
-    
+  public class BTree(int degree)
+  {
+    private BTreeNode _Root = new LeafNode(degree);
+    private readonly int _Degree = degree;
+
     /// <summary>
     /// Takes a node and the key and data to place into root.
     /// </summary>
