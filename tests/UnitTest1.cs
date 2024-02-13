@@ -1,5 +1,10 @@
+/**
+Desc: For making new unit tests using NUnit module.
+Reference: https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-with-nunit
+*/
 using BTreeVisualization;
 using NodeData;
+
 
 namespace tests{
   [TestFixture]
@@ -10,6 +15,11 @@ namespace tests{
       _Tree = new(3);
     }
 
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-03
+    /// Just testing how NUnit works and testing initial insert and retrieval.
+    /// </summary>
     [Test]
     public void Test1(){
       _Tree.Insert(1,new Person("Chad"));
