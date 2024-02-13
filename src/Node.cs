@@ -34,5 +34,8 @@ namespace BTreeVisualization{
     protected BTreeNode(int degree) : base(degree){
       _Contents = new Data[2*degree];
     }
+    public Data[] Contents{
+      get{ return _Contents; }
+    }
   }
 }
