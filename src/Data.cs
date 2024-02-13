@@ -15,7 +15,7 @@ namespace NodeData{
       _Name = name;
     }
 
-    public string name{
+    public string Name{
       get { return _Name; }
       set { _Name = value; }
     }
