@@ -23,6 +23,7 @@ namespace tests{
     [Test]
     public void Test1(){
       _Tree.Insert(1,new Person("Chad"));
+      Console.WriteLine(_Tree.Traverse());
       #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
       if (_Tree.Search(1) != null){
         #pragma warning disable CS8602 // Dereference of a possibly null reference.
