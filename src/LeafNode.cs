@@ -8,6 +8,7 @@ using NodeData;
 namespace BTreeVisualization{
   public class LeafNode<T>(int degree) : BTreeNode<T>(degree){
     public LeafNode(int degree, int[] keys, T[] contents) : this(degree){
+      _NumKeys = keys.Length;
       for(int i = 0; i < keys.Length; i++){
         _Keys[i] = keys[i];
         _Contents[i] = contents[i];
@@ -41,13 +42,13 @@ namespace BTreeVisualization{
     /// Evenly splits the _Contents and _Keys to two new nodes
     /// </summary>
     public override ((int,T),BTreeNode<T>) Split(){
-      int[] newKeys = new int[_Degree];
-      T[] newContent = new T[_Degree];
+      int[] newKeys = new int[_Degree-1];
+      T[] newContent = new T[_Degree-1];
       for(int i = 0; i < _Degree-1; i++){
         newKeys[i] = _Keys[i+_Degree];
         newContent[i] = _Contents[i+_Degree];
       }
-      _NumKeys = _Degree;
+      _NumKeys = _Degree-1;
       LeafNode<T> newNode = new(_Degree,newKeys,newContent);
       return ((_Keys[_NumKeys],_Contents[_NumKeys]),newNode);
     }
@@ -97,7 +98,7 @@ namespace BTreeVisualization{
     /// <returns></returns>
     public override string Traverse(string x){
       string output = Spacer(x) + "{\n";
-      output += Spacer(x) + "  \"leafnode\":\"" + x + "\"\n" + Spacer(x) + "  \"keys\":[";
+      output += Spacer(x) + "  \"leafnode\":\"" + x + "\",\n" + Spacer(x) + "  \"keys\":[";
 			for(int i = 0; i < _NumKeys; i++){
         output += _Keys[i] + (i+1 < _NumKeys ? "," : "");
       }

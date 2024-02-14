@@ -1,15 +1,18 @@
-﻿using NodeData;
+﻿using System.Transactions;
+using NodeData;
 
 namespace BTreeVisualization
 {
 	public class NonLeafNode<T>(int degree) : BTreeNode<T>(degree){
 		private BTreeNode<T>[] _Children = new BTreeNode<T>[2 * degree];
 		public NonLeafNode(int degree, int[] keys, T[] data, BTreeNode<T>[] children) : this(degree) {
-			for(int i = 0; i < keys.Length; i++){
+      _NumKeys = keys.Length;
+      for(int i = 0; i < keys.Length; i++){
 				_Keys[i] = keys[i];
 				_Contents[i] = data[i];
 				_Children[i] = children[i];
 			}
+			_Children[keys.Length] = children[keys.Length];
 		}
 		
     /// <summary>
@@ -21,7 +24,7 @@ namespace BTreeVisualization
 		{
 			//searches for correct key, finds it returns the node, else returns -1
 			for (int i = 0; i < _NumKeys; i++){
-				if (_Keys[i] <= key) {
+				if (_Keys[i] >= key) {
 					return i;
 				}
 			}
@@ -36,11 +39,11 @@ namespace BTreeVisualization
 		public override (int,BTreeNode<T>) SearchKey(int key){
       int result = Search(key);
 			if(result == -1){
-        return _Children[0].SearchKey(key);
+        return _Children[_NumKeys].SearchKey(key);
       }else if(_Keys[result] == key){
         return (result,this);
       }else{
-        return _Children[key+1].SearchKey(key);
+        return _Children[result].SearchKey(key);
       }
 		}
 
@@ -54,7 +57,7 @@ namespace BTreeVisualization
 		public override ((int,T?),BTreeNode<T>?) InsertKey(int key, T data){
       ((int,T?),BTreeNode<T>?) result;
       int i = 0;
-      while(i < _NumKeys && key < _Keys[i])
+      while(i < _NumKeys && key >= _Keys[i])
         i++;
       result = _Children[i].InsertKey(key, data);
       if(result.Item2 != null && result.Item1.Item2 != null){
@@ -78,15 +81,15 @@ namespace BTreeVisualization
     /// Evenly splits the _Contents and _Keys to two new nodes
     /// </summary>
 		public override ((int,T),BTreeNode<T>) Split(){
-			int[] newKeys = new int[_Degree];
-			T[] newContent = new T[_Degree];
+			int[] newKeys = new int[_Degree-1];
+			T[] newContent = new T[_Degree-1];
 			BTreeNode<T>[] newChildren = new BTreeNode<T>[_Degree];
-			for(int i = 1; i < _Degree; i++){
-				newKeys[i-1] = _Keys[i+_Degree];
-				newContent[i-1] = _Contents[i+_Degree];
-				_Children[i-1] = _Children[i+_Degree];
+			for(int i = 0; i < _Degree-1; i++){
+				newKeys[i] = _Keys[i+_Degree];
+				newContent[i] = _Contents[i+_Degree];
+				_Children[i] = _Children[i+_Degree];
 			}
-			_NumKeys = _Degree;
+			_NumKeys = _Degree-1;
 			NonLeafNode<T> newNode = new(_Degree,newKeys,newContent,newChildren);
 			return ((_Keys[_NumKeys],_Contents[_NumKeys]),newNode);
 		}
