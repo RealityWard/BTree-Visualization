@@ -8,7 +8,7 @@ using NodeData;
 namespace BTreeVisualization{
   public class LeafNode<T>(int degree) : BTreeNode<T>(degree){
     public LeafNode(int degree, int[] keys, T[] contents) : this(degree){
-      for(int i = 0; i < degree; i++){
+      for(int i = 0; i < keys.Length; i++){
         _Keys[i] = keys[i];
         _Contents[i] = contents[i];
       }
@@ -43,29 +43,13 @@ namespace BTreeVisualization{
     public override ((int,T),BTreeNode<T>) Split(){
       int[] newKeys = new int[_Degree];
       T[] newContent = new T[_Degree];
-      for(int i = 0; i < _Degree; i++){
+      for(int i = 0; i < _Degree-1; i++){
         newKeys[i] = _Keys[i+_Degree];
         newContent[i] = _Contents[i+_Degree];
       }
-      _NumKeys = _Degree-1;
+      _NumKeys = _Degree;
       LeafNode<T> newNode = new(_Degree,newKeys,newContent);
-      return ((_Keys[_Degree-1],_Contents[_Degree-1]),newNode);
-    }
-
-    /// <summary>
-    /// Used to determine if split is needed.
-    /// </summary>
-    /// <returns></returns>
-    public override bool IsFull(){
-      return _NumKeys == 2*_Degree;
-    }
-
-    /// <summary>
-    /// Used to determine if merge is needed.
-    /// </summary>
-    /// <returns></returns>
-    public override bool IsUnderflow(){
-      return _NumKeys <= _Degree-1;
+      return ((_Keys[_NumKeys],_Contents[_NumKeys]),newNode);
     }
     
     /// <summary>
@@ -77,7 +61,7 @@ namespace BTreeVisualization{
     /// <returns></returns>
     public override ((int,T?),BTreeNode<T>?) InsertKey(int key, T data){
       int i = 0;
-      while(i < _NumKeys && key < _Keys[i])
+      while(i < _NumKeys && key >= _Keys[i])
         i++;
       for (int j = _NumKeys - 1; j >= i; j--){
         _Keys[j+1] = _Keys[j];
@@ -111,15 +95,19 @@ namespace BTreeVisualization{
     /// Returns all the keys and the coresponding contents as JSON objects in string form.
     /// </summary>
     /// <returns></returns>
-    public override string Traverse(){
-      string result = "{\n";
-      for(int i = 0; i < _NumKeys; i++){
+    public override string Traverse(string x){
+      string output = Spacer(x) + "{\n";
+      output += Spacer(x) + "  \"leafnode\":\"" + x + "\"\n" + Spacer(x) + "  \"keys\":[";
+			for(int i = 0; i < _NumKeys; i++){
+        output += _Keys[i] + (i+1 < _NumKeys ? "," : "");
+      }
+      output += "],\n" + Spacer(x) + "  \"contents\":[";
+			for(int i = 0; i < _NumKeys; i++){
         #pragma warning disable CS8602 // Dereference of a possibly null reference.
-        result += "\"key\":\"" + _Keys[i] + "\",\n" + _Contents[i].ToString() + 
-          (i+1 < _NumKeys ? "," : "") + "\n";
+        output += _Contents[i].ToString() + (i+1 < _NumKeys ? "," : "");
         #pragma warning restore CS8602 // Dereference of a possibly null reference.
       }
-      return result + "}";
+			return output + "]\n" + Spacer(x) + "}";
     }
   }
 }

@@ -64,7 +64,7 @@ namespace BTreeVisualization{
     }
 
     public string Traverse(){
-      return _Root.Traverse();
+      return _Root.Traverse("Root");
     }
   }
 }
