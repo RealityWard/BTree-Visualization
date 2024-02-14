@@ -17,7 +17,7 @@ namespace tests{
 
     /// <summary>
     /// Author: Tristan Anderson
-    /// Date: 2024-02-03
+    /// Date: 2024-02-13
     /// Just testing how NUnit works and testing initial insert and retrieval.
     /// </summary>
     [Test]
@@ -33,6 +33,12 @@ namespace tests{
       Assert.That(_Tree.Search(0), Is.Null);
     }
 
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-13
+    /// Working with insertion operations and using search and traverse to test correctness.
+    /// </summary>
+    /// <param name="x"></param>
     [TestCase(1)]
     [TestCase(3)]
     [TestCase(4)]
