@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tests", "tests\tests.csproj", "{A20DC5BD-520E-45D7-874F-61715530B5B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BTree-Visualization", "src\BTree-Visualization.csproj", "{B9004A88-7C38-4D2F-9001-660832026E8B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A20DC5BD-520E-45D7-874F-61715530B5B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A20DC5BD-520E-45D7-874F-61715530B5B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A20DC5BD-520E-45D7-874F-61715530B5B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A20DC5BD-520E-45D7-874F-61715530B5B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9004A88-7C38-4D2F-9001-660832026E8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9004A88-7C38-4D2F-9001-660832026E8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9004A88-7C38-4D2F-9001-660832026E8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9004A88-7C38-4D2F-9001-660832026E8B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
