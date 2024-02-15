@@ -93,7 +93,7 @@ namespace BTreeVisualization{
     }
 
     /// <summary>
-    /// Returns all the keys and the coresponding contents as JSON objects in string form.
+    /// Returns all the keys and the corresponding contents as JSON objects in string form.
     /// </summary>
     /// <returns></returns>
     public override string Traverse(string x){

@@ -54,7 +54,7 @@ namespace BTreeVisualization
 		/// <param name="key"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public override ((int,T?),BTreeNode<T>?) InsertKey(int key, T data){
+	public override ((int,T?),BTreeNode<T>?) InsertKey(int key, T data){
       ((int,T?),BTreeNode<T>?) result;
       int i = 0;
       while(i < _NumKeys && key >= _Keys[i])
