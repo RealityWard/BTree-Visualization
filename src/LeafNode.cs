@@ -84,12 +84,48 @@ namespace BTreeVisualization{
     public override void DeleteKey(int key){
       int i = Search(key);
       if(i != -1){
+        _NumKeys--;
         for (; i < _NumKeys; i++){
           _Keys[i] = _Keys[i+1];
           _Contents[i] = _Contents[i+1];
         }
+      }
+    }
+
+    public override (int, T) ForfeitKey(bool leftMost){
+      (int,T) result;
+      if(leftMost){
+        result = (_Keys[0],_Contents[0]);
+        Loses();
+      }else{
+        result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
         _NumKeys--;
       }
+      return result;
+    }
+
+    public override void Merge(int dividerKey, T dividerData, BTreeNode<T> sibiling){
+      _Keys[_NumKeys] = dividerKey;
+      _Contents[_NumKeys] = dividerData;
+      _NumKeys++;
+      for(int i = 0; i < sibiling.Keys.Length; i++){
+        _Keys[_NumKeys + i] = sibiling.Keys[i];
+        _Contents[_NumKeys + i] = sibiling.Contents[i];
+      }
+      _NumKeys += sibiling.Keys.Length;
+    }
+
+    public override void Gains(int dividerKey, T dividerData, BTreeNode<T> sibiling){
+      _Keys[_NumKeys] = dividerKey;
+      _Contents[_NumKeys] = dividerData;
+    }
+
+    public override void Loses(){
+      for(int i = 0; i < _NumKeys-1; i++){
+        _Keys[i] = _Keys[i+1];
+        _Contents[i] = _Contents[i+1];
+      }
+      _NumKeys--;
     }
 
     /// <summary>

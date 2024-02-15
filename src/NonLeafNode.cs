@@ -4,7 +4,11 @@ using NodeData;
 namespace BTreeVisualization
 {
 	public class NonLeafNode<T>(int degree) : BTreeNode<T>(degree){
-		protected BTreeNode<T>[] _Children = new BTreeNode<T>[2 * degree];
+		private BTreeNode<T>[] _Children = new BTreeNode<T>[2 * degree];
+    public BTreeNode<T>[] Children{
+      get{ return _Children; }
+    }
+
 		public NonLeafNode(int degree, int[] keys, T[] data, BTreeNode<T>[] children) : this(degree) {
       _NumKeys = keys.Length;
       for(int i = 0; i < keys.Length; i++){
@@ -20,7 +24,7 @@ namespace BTreeVisualization
     /// </summary>
     /// <param name="key"> </param>
     /// <returns></returns>
-		protected int Search(int key)
+		private int Search(int key)
 		{
 			//searches for correct key, finds it returns the node, else returns -1
 			for (int i = 0; i < _NumKeys; i++){
@@ -97,30 +101,133 @@ namespace BTreeVisualization
 		}
 
     /// <summary>
-    /// If the entry exists it deletes it.
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-15
+    /// After deleting a key from itself a NonLeafNode needs to replace the key 
+    /// thus it looks to the left child of said key and calls ForfeitKey on it. 
+    /// Otherwise it passes the search down to the child with keys greater than itself. 
+    /// Afterwards checks the child for underflow. 
     /// </summary>
     /// <param name="key"></param>
 		public override void DeleteKey(int key){
-			int foundKey = Search(key);
-
-			if(foundKey != -1){
-					for (int i = 0; i < _NumKeys; i++){
-					_Keys[i] = _Keys[i+1];
-					_Contents[i] = _Contents[i+1];
-				}
-				_NumKeys--;
-				return;
-			}
-			
-			for(int i = 0; i<_NumKeys; i++){
-				if (_Keys[i] > key && _Children[i] != null){
-					_Children[i].SearchKey(key);
-				}
-				if (_Keys[i] < key && _Children[i] != null){
-					_Children.Last().SearchKey( key);
-				}
-			}
+      int result = Search(key);
+			if(result == -1){
+        // Search only goes through keys and thus if it did not 
+        // find it at the last index it returns -1.
+        _Children[_NumKeys].DeleteKey(key);
+        MergeAt(_NumKeys);
+      }else if(_Keys[result] == key){
+        (_Keys[result],_Contents[result]) = _Children[result].ForfeitKey(false);
+        MergeAt(result);
+      }else{
+        _Children[result].DeleteKey(key);
+        MergeAt(result);
+      }
 		}
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-15
+    /// Returns either its first/LeftMost key or last key to the parent and looks 
+    /// to its children for a replacement. Afterwards checks the child for underflow. 
+    /// </summary>
+    /// <param name="leftMost"></param>
+    /// <returns></returns>
+    public override (int,T) ForfeitKey(bool leftMost){
+      (int,T) result;
+      if(leftMost){
+        result = (_Keys[0],_Contents[0]);
+        // Prefers to go to left child
+        (_Keys[0],_Contents[0]) = _Children[0].ForfeitKey(!leftMost);
+        MergeAt(0);
+      }else{
+        result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
+        (_Keys[_NumKeys-1],_Contents[_NumKeys-1]) = _Children[_NumKeys-1].ForfeitKey(leftMost);
+        MergeAt(_NumKeys-1);
+      }
+      return result;
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-15
+    /// Tacks on the given divider to its own arrays and grabs 
+    /// all the entries from the sibiling adding those to its arrays as well.
+    /// </summary>
+    /// <param name="dividerKey"></param>
+    /// <param name="dividerData"></param>
+    /// <param name="sibiling"></param>
+    public override void Merge(int dividerKey, T dividerData, BTreeNode<T> sibiling){
+      _Keys[_NumKeys] = dividerKey;
+      _Contents[_NumKeys] = dividerData;
+      _NumKeys++;
+      for(int i = 0; i < sibiling.Keys.Length; i++){
+        _Keys[_NumKeys + i] = sibiling.Keys[i];
+        _Contents[_NumKeys + i] = sibiling.Contents[i];
+        _Children[_NumKeys + i] = ((NonLeafNode<T>)sibiling).Children[i];
+      }
+      _NumKeys += sibiling.Keys.Length;
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-15
+    /// Checks the child at index for underflow. If so it then checks for _Degree 
+    /// number of children in the right child of the key. _Degree or greater means 
+    /// either overflow or split. 
+    /// </summary>
+    /// <param name="index"></param>
+    private void MergeAt(int index){
+      if(_Children[index].IsUnderflow()){
+        if(_Children[index+1].NumKeys >= _Degree){
+          _Children[index].Gains(_Keys[index],_Contents[index],_Children[index+1]);
+          _Keys[index] = _Children[index+1].Keys[0];
+          _Contents[index] = _Children[index+1].Contents[0];
+          _Children[index+1].Loses();
+        }else{
+          _Children[index].Merge(_Keys[index],_Contents[index],_Children[index+1]);
+          for(index++; index < _NumKeys-1; index++){
+            _Keys[index] = _Keys[index+1];
+            _Contents[index] = _Contents[index+1];
+            _Children[index] = _Children[index+1];
+          }
+          _NumKeys--;
+          _Children[_NumKeys] = _Children[_NumKeys+1];
+        }
+      }
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-15
+    /// Tacks on the given key and data and grabs the first child of the sibiling.
+    /// </summary>
+    /// <param name="dividerKey"></param>
+    /// <param name="dividerData"></param>
+    /// <param name="sibiling"></param>
+    public override void Gains(int dividerKey, T dividerData, BTreeNode<T> sibiling)
+    {
+      _Keys[_NumKeys] = dividerKey;
+      _Contents[_NumKeys] = dividerData;
+      _Children[++_NumKeys] = ((NonLeafNode<T>)sibiling).Children[0];
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-15
+    /// Shifts the values in the arrays by one to the left overwriting 
+    /// the first entries and decrements the _NumKeys var.
+    /// </summary>
+    public override void Loses()
+    {
+      for(int i = 0; i < _NumKeys-1; i++){
+        _Keys[i] = _Keys[i+1];
+        _Contents[i] = _Contents[i+1];
+        _Children[i] = _Children[i+1];
+      }
+      _NumKeys--;
+      _Children[_NumKeys] = _Children[_NumKeys+1];
+    }
 
     /// <summary>
     /// Author: Tristan Anderson
@@ -147,9 +254,5 @@ namespace BTreeVisualization
       }
 			return output + Spacer(x) + "  ]\n" + Spacer(x) + "}";
 		}
-
-    // public BTreeNode<T> MakeNewRoot(((int,T),BTreeNode<T>) rNode){
-    //   return _Degree,[rNode.Item1.Item1],[rNode.Item1.Item2],[_Root, rNode.Item2];
-    // }
 	}
 }
