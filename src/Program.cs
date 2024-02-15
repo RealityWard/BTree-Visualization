@@ -10,7 +10,7 @@ class Program
     {
       Console.WriteLine("Hello, world!");
       BTree<Person> _Tree = new(3);
-      for(int i = 0; i < 7; i++){
+      for(int i = 0; i < 10; i++){
         _Tree.Insert(i,new Person(i.ToString()));
       }
       Console.WriteLine(_Tree.Traverse());
