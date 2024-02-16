@@ -98,6 +98,8 @@ namespace BTreeVisualization{
         result = (_Keys[0],_Contents[0]);
         Loses();
       }else{
+        if(_NumKeys ==4)
+          Console.WriteLine(_NumKeys);
         result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
         _NumKeys--;
       }
@@ -108,11 +110,11 @@ namespace BTreeVisualization{
       _Keys[_NumKeys] = dividerKey;
       _Contents[_NumKeys] = dividerData;
       _NumKeys++;
-      for(int i = 0; i < sibiling.Keys.Length; i++){
+      for(int i = 0; i < sibiling.NumKeys; i++){
         _Keys[_NumKeys + i] = sibiling.Keys[i];
         _Contents[_NumKeys + i] = sibiling.Contents[i];
       }
-      _NumKeys += sibiling.Keys.Length;
+      _NumKeys += sibiling.NumKeys;
     }
 
     public override void Gains(int dividerKey, T dividerData, BTreeNode<T> sibiling){

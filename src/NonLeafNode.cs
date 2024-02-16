@@ -161,12 +161,12 @@ namespace BTreeVisualization
       _Keys[_NumKeys] = dividerKey;
       _Contents[_NumKeys] = dividerData;
       _NumKeys++;
-      for(int i = 0; i < sibiling.Keys.Length; i++){
+      for(int i = 0; i < sibiling.NumKeys; i++){
         _Keys[_NumKeys + i] = sibiling.Keys[i];
         _Contents[_NumKeys + i] = sibiling.Contents[i];
         _Children[_NumKeys + i] = ((NonLeafNode<T>)sibiling).Children[i];
       }
-      _NumKeys += sibiling.Keys.Length;
+      _NumKeys += sibiling.NumKeys;
     }
 
     /// <summary>
@@ -186,9 +186,10 @@ namespace BTreeVisualization
           _Children[index+1].Loses();
         }else{
           _Children[index].Merge(_Keys[index],_Contents[index],_Children[index+1]);
-          for(index++; index < _NumKeys-1; index++){
+          for(; index < _NumKeys-1;){
             _Keys[index] = _Keys[index+1];
             _Contents[index] = _Contents[index+1];
+            index++;
             _Children[index] = _Children[index+1];
           }
           _NumKeys--;
