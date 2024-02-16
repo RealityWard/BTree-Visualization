@@ -1,0 +1,5 @@
+BTree-Visualizazion.sln
+**/bin/
+**/obj/
+.vs
+.vscode
