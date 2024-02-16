@@ -4,7 +4,7 @@ using NodeData;
 namespace BTreeVisualization
 {
 	public class NonLeafNode<T>(int degree) : BTreeNode<T>(degree){
-		private BTreeNode<T>[] _Children = new BTreeNode<T>[2 * degree];
+		protected BTreeNode<T>[] _Children = new BTreeNode<T>[2 * degree];
 		public NonLeafNode(int degree, int[] keys, T[] data, BTreeNode<T>[] children) : this(degree) {
       _NumKeys = keys.Length;
       for(int i = 0; i < keys.Length; i++){
@@ -20,7 +20,7 @@ namespace BTreeVisualization
     /// </summary>
     /// <param name="key"> </param>
     /// <returns></returns>
-		private int Search(int key)
+		protected int Search(int key)
 		{
 			//searches for correct key, finds it returns the node, else returns -1
 			for (int i = 0; i < _NumKeys; i++){
@@ -84,11 +84,13 @@ namespace BTreeVisualization
 			int[] newKeys = new int[_Degree-1];
 			T[] newContent = new T[_Degree-1];
 			BTreeNode<T>[] newChildren = new BTreeNode<T>[_Degree];
-			for(int i = 0; i < _Degree-1; i++){
+      int i = 0;
+			for(; i < _Degree-1; i++){
 				newKeys[i] = _Keys[i+_Degree];
 				newContent[i] = _Contents[i+_Degree];
-				_Children[i] = _Children[i+_Degree];
+				newChildren[i] = _Children[i+_Degree];
 			}
+			newChildren[i] = _Children[i+_Degree];
 			_NumKeys = _Degree-1;
 			NonLeafNode<T> newNode = new(_Degree,newKeys,newContent,newChildren);
 			return ((_Keys[_NumKeys],_Contents[_NumKeys]),newNode);
@@ -120,6 +122,13 @@ namespace BTreeVisualization
 			}
 		}
 
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-13
+    /// Desc: Prints out the contents of the node in JSON format.
+    /// </summary>
+    /// <param name="x"></param>
+    /// <returns></returns>
 		public override string Traverse(string x){
       string output = Spacer(x) + "{\n";
       output += Spacer(x) + "  \"node\":\"" + x + "\"\n" + Spacer(x) + "  \"keys\":[";
@@ -138,5 +147,9 @@ namespace BTreeVisualization
       }
 			return output + Spacer(x) + "  ]\n" + Spacer(x) + "}";
 		}
+
+    // public BTreeNode<T> MakeNewRoot(((int,T),BTreeNode<T>) rNode){
+    //   return _Degree,[rNode.Item1.Item1],[rNode.Item1.Item2],[_Root, rNode.Item2];
+    // }
 	}
 }
