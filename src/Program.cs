@@ -10,12 +10,12 @@ class Program
     {
       Console.WriteLine("Hello, world!");
       BTree<Person> _Tree = new(3);
-      for(int i = 0; i < 10; i++){
+      for(int i = 0; i < 100; i++){
         _Tree.Insert(i,new Person(i.ToString()));
       }
       
       
-      int[] deletions = [1,2,3,4,5,6,7,8,9,0];
+      int[] deletions = [0,1,2,3,4,5,6,7,8,9,10,11];
       string before;
       for(int i = 0; i < deletions.Length; i++){
         before = _Tree.Traverse();

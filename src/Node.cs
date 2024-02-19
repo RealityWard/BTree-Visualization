@@ -36,6 +36,7 @@ namespace BTreeVisualization{
     }
 
     /// <summary>
+    /// Author: Tristan Anderson
     /// Creates a string made up of a number of spaces equal to the length of input minus four.
     /// </summary>
     /// <param name="input"></param>

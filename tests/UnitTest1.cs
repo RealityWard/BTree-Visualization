@@ -60,7 +60,18 @@ namespace tests{
       Assert.That(Regex.Count(_Tree.Traverse(),"name"), Is.EqualTo(x), "Missing insertions");
     }
 
-#pragma warning disable CA1861 // Avoid constant arrays as arguments
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-18
+    /// Tests the delete and merge method basics with several variations 
+    /// including reverse, delete something not there, middle arbitrarily,
+    /// up to 100 entries.
+    /// </summary>
+    /// <param name="insertions"></param>
+    /// <param name="deletions"></param>
+    /// <param name="x"></param>
+    /// <param name="reversed"></param>
+    #pragma warning disable CA1861 // Avoid constant arrays as arguments
     [TestCase(1,new int[] {1,0},0,false)]
     [TestCase(2,new int[] {1,3},0,false)]
     [TestCase(3,new int[] {1,-1},0,false)]
@@ -71,7 +82,8 @@ namespace tests{
     [TestCase(50,new int[] {9,8,7,6,5,34,78,4,3,23,9,2,1,0},0,false)]
     [TestCase(100,new int[] {},100,false)]
     [TestCase(100,new int[] {},100,true)]
-#pragma warning restore CA1861 // Avoid constant arrays as arguments
+    [TestCase(100,new int[] {9,8,7,6,5,34,78,4,3,23,9,2,1,0},0,false)]
+    #pragma warning restore CA1861 // Avoid constant arrays as arguments
     public void DeletionBaseTest(int insertions, int[] deletions, int x, bool reversed){
       for(int i = 0; i < insertions; i++){
         _Tree.Insert(i,new Person(i.ToString()));
@@ -94,6 +106,14 @@ namespace tests{
       }
     }
 
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-18
+    /// Fills an array with a sequence from 0 to x or x to 0 if reversed.
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="reversed"></param>
+    /// <returns></returns>
     private static int[] CreateInOrderArrayFilled(int x, bool reversed){
       int[] result = new int[x];
       if(reversed){
