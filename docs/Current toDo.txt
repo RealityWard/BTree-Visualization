@@ -1,0 +1,7 @@
+As of January 31st:
+
+-> working on Diagrams for Design -> Gandt, Sequence, Use Case, Component, etc..
+-> working on C# to web (HTML?)
+-> handling visuals -> boxes and arrows, linked, centered, for flexible number of child-nodes
+-> implementing the code (B-Tree)
+-> integrated testing environment, implementing CI

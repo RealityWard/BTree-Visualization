@@ -41,7 +41,7 @@ This project is licensed under the MIT License.
 
 - Andreas Kramer
 - Tristan Anderson
-- Dakoda DeAnda
+- Dakota DeAnda
 - Emily Elzinga
 - Alice Giola
 - Zackary Beck
