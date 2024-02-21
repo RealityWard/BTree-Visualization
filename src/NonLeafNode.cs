@@ -106,7 +106,11 @@ namespace BTreeVisualization
 
     /// <summary>
     /// Author: Tristan Anderson
+<<<<<<< HEAD
     /// Date: 2024-02-18
+=======
+    /// Date: 2024-02-15
+>>>>>>> origin/tree_structure
     /// After deleting a key from itself a NonLeafNode needs to replace the key 
     /// thus it looks to the left child of said key and calls ForfeitKey on it. 
     /// Otherwise it passes the search down to the child with keys greater than itself. 
@@ -131,7 +135,11 @@ namespace BTreeVisualization
 
     /// <summary>
     /// Author: Tristan Anderson
+<<<<<<< HEAD
     /// Date: 2024-02-18
+=======
+    /// Date: 2024-02-15
+>>>>>>> origin/tree_structure
     /// Returns either its first/LeftMost key or last key to the parent and looks 
     /// to its children for a replacement. Afterwards checks the child for underflow. 
     /// </summary>
@@ -154,7 +162,11 @@ namespace BTreeVisualization
 
     /// <summary>
     /// Author: Tristan Anderson
+<<<<<<< HEAD
     /// Date: 2024-02-18
+=======
+    /// Date: 2024-02-15
+>>>>>>> origin/tree_structure
     /// Tacks on the given divider to its own arrays and grabs 
     /// all the entries from the sibiling adding those to its arrays as well.
     /// </summary>
@@ -166,17 +178,28 @@ namespace BTreeVisualization
       _Contents[_NumKeys] = dividerData;
       _NumKeys++;
       for(int i = 0; i < sibiling.NumKeys; i++){
+<<<<<<< HEAD
         _Keys[_NumKeys+i] = sibiling.Keys[i];
         _Contents[_NumKeys+i] = sibiling.Contents[i];
         _Children[_NumKeys+i] = ((NonLeafNode<T>)sibiling).Children[i];
       }
       _Children[_NumKeys+sibiling.NumKeys] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
+=======
+        _Keys[_NumKeys + i] = sibiling.Keys[i];
+        _Contents[_NumKeys + i] = sibiling.Contents[i];
+        _Children[_NumKeys + i] = ((NonLeafNode<T>)sibiling).Children[i];
+      }
+>>>>>>> origin/tree_structure
       _NumKeys += sibiling.NumKeys;
     }
 
     /// <summary>
     /// Author: Tristan Anderson
+<<<<<<< HEAD
     /// Date: 2024-02-18
+=======
+    /// Date: 2024-02-15
+>>>>>>> origin/tree_structure
     /// Checks the child at index for underflow. If so it then checks for _Degree 
     /// number of children in the right child of the key. _Degree or greater means 
     /// either overflow or split. 
@@ -184,7 +207,10 @@ namespace BTreeVisualization
     /// <param name="index"></param>
     private void MergeAt(int index){
       if(_Children[index].IsUnderflow()){
+<<<<<<< HEAD
         if(index == _NumKeys){ index--; }
+=======
+>>>>>>> origin/tree_structure
         if(_Children[index+1].NumKeys >= _Degree){
           _Children[index].Gains(_Keys[index],_Contents[index],_Children[index+1]);
           _Keys[index] = _Children[index+1].Keys[0];
@@ -192,20 +218,32 @@ namespace BTreeVisualization
           _Children[index+1].Loses();
         }else{
           _Children[index].Merge(_Keys[index],_Contents[index],_Children[index+1]);
+<<<<<<< HEAD
           for(; index < _NumKeys-1; ){
+=======
+          for(; index < _NumKeys-1;){
+>>>>>>> origin/tree_structure
             _Keys[index] = _Keys[index+1];
             _Contents[index] = _Contents[index+1];
             index++;
             _Children[index] = _Children[index+1];
           }
           _NumKeys--;
+<<<<<<< HEAD
+=======
+          _Children[_NumKeys] = _Children[_NumKeys+1];
+>>>>>>> origin/tree_structure
         }
       }
     }
 
     /// <summary>
     /// Author: Tristan Anderson
+<<<<<<< HEAD
     /// Date: 2024-02-18
+=======
+    /// Date: 2024-02-15
+>>>>>>> origin/tree_structure
     /// Tacks on the given key and data and grabs the first child of the sibiling.
     /// </summary>
     /// <param name="dividerKey"></param>
@@ -220,7 +258,11 @@ namespace BTreeVisualization
 
     /// <summary>
     /// Author: Tristan Anderson
+<<<<<<< HEAD
     /// Date: 2024-02-18
+=======
+    /// Date: 2024-02-15
+>>>>>>> origin/tree_structure
     /// Shifts the values in the arrays by one to the left overwriting 
     /// the first entries and decrements the _NumKeys var.
     /// </summary>

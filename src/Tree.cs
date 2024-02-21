@@ -38,10 +38,7 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="key"></param>
     public void Delete(int key){
-      (int,BTreeNode<T>) result = _Root.SearchKey(key);
-      if(result.Item1 != -1){
-        result.Item2.DeleteKey(key);
-      }
+      _Root.DeleteKey(key);
     }
 
     /// <summary>
