@@ -98,50 +98,28 @@ namespace BTreeVisualization{
           _Keys[i] = _Keys[i+1];
           _Contents[i] = _Contents[i+1];
         }
-<<<<<<< HEAD
-=======
       }
     }
 
-    public override (int, T) ForfeitKey(bool leftMost){
-      (int,T) result;
-      if(leftMost){
-        result = (_Keys[0],_Contents[0]);
-        Loses();
-      }else{
-        if(_NumKeys ==4)
-          Console.WriteLine(_NumKeys);
-        result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
-        _NumKeys--;
->>>>>>> origin/tree_structure
-      }
-      return result;
-    }
+ 
 
-    public override void Merge(int dividerKey, T dividerData, BTreeNode<T> sibiling){
-      _Keys[_NumKeys] = dividerKey;
-      _Contents[_NumKeys] = dividerData;
-      _NumKeys++;
-      for(int i = 0; i < sibiling.NumKeys; i++){
-        _Keys[_NumKeys + i] = sibiling.Keys[i];
-        _Contents[_NumKeys + i] = sibiling.Contents[i];
-      }
-      _NumKeys += sibiling.NumKeys;
-    }
+    // public override void Merge(int dividerKey, T dividerData, BTreeNode<T> sibiling){
+    //   _Keys[_NumKeys] = dividerKey;
+    //   _Contents[_NumKeys] = dividerData;
+    //   _NumKeys++;
+    //   for(int i = 0; i < sibiling.NumKeys; i++){
+    //     _Keys[_NumKeys + i] = sibiling.Keys[i];
+    //     _Contents[_NumKeys + i] = sibiling.Contents[i];
+    //   }
+    //   _NumKeys += sibiling.NumKeys;
+    // }
 
-    public override void Gains(int dividerKey, T dividerData, BTreeNode<T> sibiling){
-      _Keys[_NumKeys] = dividerKey;
-      _Contents[_NumKeys] = dividerData;
-    }
+    // public override void Gains(int dividerKey, T dividerData, BTreeNode<T> sibiling){
+    //   _Keys[_NumKeys] = dividerKey;
+    //   _Contents[_NumKeys] = dividerData;
+    // }
 
-    public override void Loses(){
-      for(int i = 0; i < _NumKeys-1; i++){
-        _Keys[i] = _Keys[i+1];
-        _Contents[i] = _Contents[i+1];
-      }
-      _NumKeys--;
-    }
-
+   
     /// <summary>
     /// Author: Tristan Anderson
     /// Date: 2024-02-18
@@ -161,6 +139,21 @@ namespace BTreeVisualization{
       }
       return result;
     }
+
+
+    //    public override (int, T) ForfeitKey(bool leftMost){
+    //   (int,T) result;
+    //   if(leftMost){
+    //     result = (_Keys[0],_Contents[0]);
+    //     Loses();
+    //   }else{
+    //     if(_NumKeys ==4)
+    //       Console.WriteLine(_NumKeys);
+    //     result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
+    //     _NumKeys--;
+    //   }
+    //   return result;
+    // }
 
     /// <summary>
     /// Author: Tristan Anderson
