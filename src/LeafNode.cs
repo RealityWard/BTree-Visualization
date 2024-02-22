@@ -3,6 +3,7 @@ Author: Tristan Anderson
 Date: 2024-02-03
 Desc: Implements the leaf nodes of a B-Tree. Non-recursive function iteration due to no children.
 */
+using System.Text.RegularExpressions;
 using NodeData;
 
 namespace BTreeVisualization{
@@ -16,6 +17,7 @@ namespace BTreeVisualization{
     }
     
     /// <summary>
+    /// Author: Tristan Anderson
     /// Iterates over the _Keys array to find key. If found returns the index else returns -1.
     /// </summary>
     /// <param name="key"></param>
@@ -30,6 +32,7 @@ namespace BTreeVisualization{
     }
 
     /// <summary>
+    /// Author: Tristan Anderson
     /// Iterates over the _Keys array to find key. If found returns the index and this else returns -1 and this.
     /// </summary>
     /// <param name="key"></param>
@@ -39,6 +42,7 @@ namespace BTreeVisualization{
     }
 
     /// <summary>
+    /// Author: Tristan Anderson
     /// Evenly splits the _Contents and _Keys to two new nodes
     /// </summary>
     public override ((int,T),BTreeNode<T>) Split(){
@@ -54,8 +58,12 @@ namespace BTreeVisualization{
     }
     
     /// <summary>
-    /// Finds and places the new info in the current node. If it reaches capacity it calls split and
-    /// returns the new node created from the split. Otherwise it returns ((-1,null),null).
+    /// Author: Tristan Anderson
+    /// Finds and places the new info in the 
+    /// current node. If it reaches capacity it 
+    /// calls split and returns the new node 
+    /// created from the split. Otherwise it 
+    /// returns ((-1,null),null).
     /// </summary>
     /// <param name="key"></param>
     /// <param name="data"></param>
@@ -78,22 +86,92 @@ namespace BTreeVisualization{
     }
 
     /// <summary>
+    /// Author: Tristan Anderson
     /// If the entry exists it deletes it.
     /// </summary>
     /// <param name="key"></param>
     public override void DeleteKey(int key){
       int i = Search(key);
       if(i != -1){
+        _NumKeys--;
         for (; i < _NumKeys; i++){
           _Keys[i] = _Keys[i+1];
           _Contents[i] = _Contents[i+1];
         }
-        _NumKeys--;
       }
     }
 
     /// <summary>
-    /// Returns all the keys and the corresponding contents as JSON objects in string form.
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-18
+    /// Returns either its first/LeftMost key or last 
+    /// key to the parent. Then it decrements the number of keys.
+    /// </summary>
+    /// <param name="leftMost"></param>
+    /// <returns></returns>
+    public override (int, T) ForfeitKey(bool leftMost){
+      (int,T) result;
+      if(leftMost){
+        result = (_Keys[0],_Contents[0]);
+        Loses();
+      }else{
+        result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
+        _NumKeys--;
+      }
+      return result;
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-18
+    /// Tacks on the given divider to its own arrays and grabs 
+    /// all the entries from the sibiling adding those to its arrays as well.
+    /// </summary>
+    /// <param name="dividerKey"></param>
+    /// <param name="dividerData"></param>
+    /// <param name="sibiling"></param>
+    public override void Merge(int dividerKey, T dividerData, BTreeNode<T> sibiling){
+      _Keys[_NumKeys] = dividerKey;
+      _Contents[_NumKeys] = dividerData;
+      _NumKeys++;
+      for(int i = 0; i < sibiling.NumKeys; i++){
+        _Keys[_NumKeys + i] = sibiling.Keys[i];
+        _Contents[_NumKeys + i] = sibiling.Contents[i];
+      }
+      _NumKeys += sibiling.NumKeys;
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-18
+    /// Tacks on the given key and data of the sibiling.
+    /// </summary>
+    /// <param name="dividerKey"></param>
+    /// <param name="dividerData"></param>
+    /// <param name="sibiling"></param>
+    public override void Gains(int dividerKey, T dividerData, BTreeNode<T> sibiling){
+      _Keys[_NumKeys] = dividerKey;
+      _Contents[_NumKeys] = dividerData;
+      _NumKeys++;
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-18
+    /// Shifts the values in the arrays by one to the left overwriting 
+    /// the first entries and decrements the _NumKeys var.
+    /// </summary>
+    public override void Loses(){
+      for(int i = 0; i < _NumKeys-1; i++){
+        _Keys[i] = _Keys[i+1];
+        _Contents[i] = _Contents[i+1];
+      }
+      _NumKeys--;
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Returns all the keys and the coresponding contents as JSON objects in string form.
     /// </summary>
     /// <returns></returns>
     public override string Traverse(string x){
