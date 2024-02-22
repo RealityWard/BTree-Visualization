@@ -14,7 +14,6 @@ namespace tests{
     public void Setup(){
       _Tree = new(3);
     }
-
     /// <summary>
     /// Author: Tristan Anderson
     /// Date: 2024-02-13
@@ -63,7 +62,6 @@ namespace tests{
     [TestCase(100)]
     [TestCase(50)]
     public void SearchForNonExistingKeysShouldReturnNull(int key){
-        // Prepopulate the tree with known keys
         _Tree.Insert(1, new Person("Test 1"));
         _Tree.Insert(10, new Person("Test 10"));
         _Tree.Insert(20, new Person("Test 20"));
@@ -80,8 +78,7 @@ namespace tests{
         for(int i = 0; i < numberOfKeys; i++){
           int key = random.Next(1, 10000); 
           string name = $"Person {i}";
-        
-        // Ensure uniqueness of keys
+         //making sure keys are unique
         if (!insertedKeys.ContainsKey(key)){
             _Tree.Insert(key, new Person(name));
             insertedKeys.Add(key, name);
@@ -90,7 +87,7 @@ namespace tests{
             i--;
         }
       }
-        // Verify that each inserted key can be correctly searched for
+        //each inserted key should be correctly searched for
         foreach(var entry in insertedKeys){
           int key = entry.Key;
           string expectedName = entry.Value;
@@ -101,20 +98,91 @@ namespace tests{
         }
     }
 
-    [TestCase(100)]
-    public void StressTestForSearchConsistency(int x){
-        int numberOfKeys = x; // Or more, depending on performance
-        for(int i = 0; i < numberOfKeys; i++){
-            _Tree.Insert(i, new Person($"Person {i}"));
-        }
+    [Test]
+    public void SearchBoundaryValues(){
 
-        for(int i = 0; i < numberOfKeys; i++){
-          var result = _Tree.Search(i);
-          Assert.That(result, Is.Not.Null, $"Inserted key {i} should be found.");
-          Assert.That(result.Name, Is.EqualTo($"Person {i}"), $"Key {i} should return the correct person.");
-        }
+      _Tree.Insert(1, new Person("Min Person"));
+      for(int i = 2; i < 100; i++){
+      _Tree.Insert(i, new Person("Min Person"));
+      }
+      _Tree.Insert(100, new Person("Max Person"));
+
+      var minResult = _Tree.Search(1);
+      var maxResult = _Tree.Search(100);
+
+      Assert.That(minResult, Is.Not.Null, "Minimum key should be found.");
+      Assert.That(maxResult, Is.Not.Null, "Maximum key should be found.");
+  }
+  [Test]
+    public void ConcurrencySearchTest(){
+      for(int i = 0; i < 100; i++){
+        _Tree.Insert(i, new Person($"Person {i}"));
+      }
+
+      Parallel.For(0, 100, (i) => {
+        var result = _Tree.Search(i);
+        Assert.That(result, Is.Not.Null, $"Concurrent search for key {i} failed.");
+      });
     }
 
+    [TestCase(1000)]
+    public void StressTestForSearchConsistency(int x){
+      int numberOfKeys = x; // Or more, depending on performance
+      for(int i = 0; i < numberOfKeys; i++){
+          _Tree.Insert(i, new Person($"Person {i}"));
+      }
+
+      for(int i = 0; i < numberOfKeys; i++){
+        var result = _Tree.Search(i);
+        Assert.That(result, Is.Not.Null, $"Inserted key {i} should be found.");
+        Assert.That(result.Name, Is.EqualTo($"Person {i}"), $"Key {i} should return the correct person.");
+      }
+    }
+
+    //Delete Tests
+    [Test]
+    public void DeleteLeafNodeKey() {
+      _Tree.Insert(10, new Person("Person 10"));
+      _Tree.Insert(20, new Person("Person 20"));
+      _Tree.Delete(20);
+
+      Assert.That(_Tree.Search(20), Is.Null, "Key 20 should have been deleted from the leaf node.");
+    }
+
+    [TestCase(100,10)]
+    public void DeleteRandomKeysFromTree(int numberOfEntries, int numberOfKeysToDelete){
+      Random random = new Random();
+      int[] uniqueKeys = new int[numberOfEntries];
+      for(int i = 0; i < uniqueKeys.Length; i++){
+        uniqueKeys[i] = random.Next(1,1000);
+      }
+      
+      foreach (int key in uniqueKeys) {
+          _Tree.Insert(key, new Person("Name"));
+      }
+      List<int> deletedKeys = DeleteRandomKeysFromTreeHelper(numberOfEntries, numberOfKeysToDelete, uniqueKeys);
+
+      foreach(int key in deletedKeys){
+        var result = _Tree.Search(key);
+        Assert.That(result, Is.Null, $"Inserted key {key} should NOT be found.");
+      }
+    }
+
+    private List<int> DeleteRandomKeysFromTreeHelper(int numberOfEntries , int numberOfKeysToDelete, int[] uniqueKeys){
+      List<int> keysToDelete = new List<int>();
+      List<int> allKeys = uniqueKeys.ToList();
+      
+      for (int i = 0; i < numberOfKeysToDelete; i++) {
+        Random random = new Random();
+          int keyIndex = random.Next(allKeys.Count);
+          int key = allKeys[keyIndex];
+          _Tree.Delete(key);
+          keysToDelete.Add(key);
+          allKeys.RemoveAt(keyIndex);
+      }
+      return keysToDelete;
+}
+    
     /// <summary>
     /// Author: Tristan Anderson
     /// Date: 2024-02-13
