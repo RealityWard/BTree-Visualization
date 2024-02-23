@@ -28,11 +28,14 @@ namespace BTreeVisualization{
     /// <param name="key"></param>
     /// <param name="data"></param>
     public void Insert(int key, T data){
-      ((int,T?),BTreeNode<T>?) result = _Root.InsertKey(key, data);
-      if(result.Item2 != null && result.Item1.Item2 != null){
-        #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-        Split(result);
-        #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+      Console.WriteLine(Search(key));
+      if(Search(key) == null){
+        ((int,T?),BTreeNode<T>?) result = _Root.InsertKey(key, data);
+        if(result.Item2 != null && result.Item1.Item2 != null){
+          #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+          Split(result);
+          #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+        }
       }
     }
 

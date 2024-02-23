@@ -71,11 +71,11 @@ namespace tests{
 
     [Test]
     public void InsertAndSearchRandomKeys(){
-        Random random = new Random();
-        int numberOfKeys = 10;
-        Dictionary<int, string> insertedKeys = new Dictionary<int, string>();
+      Random random = new Random();
+      int numberOfKeys = 10;
+      Dictionary<int, string> insertedKeys = new Dictionary<int, string>();
 
-        for(int i = 0; i < numberOfKeys; i++){
+      for(int i = 0; i < numberOfKeys; i++){
           int key = random.Next(1, 10000); 
           string name = $"Person {i}";
          //making sure keys are unique
@@ -87,15 +87,15 @@ namespace tests{
             i--;
         }
       }
-        //each inserted key should be correctly searched for
-        foreach(var entry in insertedKeys){
-          int key = entry.Key;
-          string expectedName = entry.Value;
-          var result = _Tree.Search(key);
-        
-          Assert.That(result, Is.Not.Null, $"Key {key} should be found.");
-          Assert.That(result.Name, Is.EqualTo(expectedName), $"Key {key} should return the correct person.");
-        }
+      //each inserted key should be correctly searched for
+      foreach(var entry in insertedKeys){
+        int key = entry.Key;
+        string expectedName = entry.Value;
+        var result = _Tree.Search(key);
+      
+        Assert.That(result, Is.Not.Null, $"Key {key} should be found.");
+        Assert.That(result.Name, Is.EqualTo(expectedName), $"Key {key} should return the correct person.");
+      }
     }
 
     [Test]
@@ -112,8 +112,8 @@ namespace tests{
 
       Assert.That(minResult, Is.Not.Null, "Minimum key should be found.");
       Assert.That(maxResult, Is.Not.Null, "Maximum key should be found.");
-  }
-  [Test]
+    }
+    [Test]
     public void ConcurrencySearchTest(){
       for(int i = 0; i < 100; i++){
         _Tree.Insert(i, new Person($"Person {i}"));
@@ -149,7 +149,7 @@ namespace tests{
       Assert.That(_Tree.Search(20), Is.Null, "Key 20 should have been deleted from the leaf node.");
     }
 
-    [TestCase(100,10)]
+    [TestCase(100,100)]
     public void DeleteRandomKeysFromTree(int numberOfEntries, int numberOfKeysToDelete){
       Random random = new Random();
       int[] uniqueKeys = new int[numberOfEntries];
@@ -158,6 +158,7 @@ namespace tests{
       }
       
       foreach (int key in uniqueKeys) {
+        Console.WriteLine(key);
           _Tree.Insert(key, new Person("Name"));
       }
       List<int> deletedKeys = DeleteRandomKeysFromTreeHelper(numberOfEntries, numberOfKeysToDelete, uniqueKeys);
