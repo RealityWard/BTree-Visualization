@@ -14,59 +14,62 @@ class Program
       _Tree.Insert(i, new Person(i.ToString()));
     }
 
-    // string before1 = _Tree.Traverse();
-    // _Tree.Delete(71);
-    // string after1 = _Tree.Traverse();
-    // for(int i = 0; i < 100; i++){
-    //   string checkDup = _Tree.Traverse();
-    //   if(Regex.Count(checkDup,"\"" + i + "\"") > 1){
-    //     Console.WriteLine(checkDup);
-    //   }
-    // // }
-    // Random random = new Random();
-    // int[] uniqueKeys = new int[100];
-    // for (int i = 0; i < uniqueKeys.Length; i++)
-    // {
-    //   uniqueKeys[i] = random.Next(1, 1000);
-    //   Console.Write(uniqueKeys[i] + ",");
+    /**
+    string before1 = _Tree.Traverse();
+    _Tree.Delete(71);
+    string after1 = _Tree.Traverse();
+    for(int i = 0; i < 100; i++){
+      string checkDup = _Tree.Traverse();
+      if(Regex.Count(checkDup,"\"" + i + "\"") > 1){
+        Console.WriteLine(checkDup);
+      }
     // }
-    // Console.WriteLine("----------------");
-    // foreach (int key in uniqueKeys)
-    // {
-    //   _Tree.Insert(key, new Person(key.ToString()));
-    // }
-    // List<int> keysToDelete = new List<int>();
-    // List<int> allKeys = uniqueKeys.ToList();
+    Random random = new Random();
+    int[] uniqueKeys = new int[100];
+    for (int i = 0; i < uniqueKeys.Length; i++)
+    {
+      uniqueKeys[i] = random.Next(1, 1000);
+      Console.Write(uniqueKeys[i] + ",");
+    }
+    Console.WriteLine("----------------");
+    foreach (int key in uniqueKeys)
+    {
+      _Tree.Insert(key, new Person(key.ToString()));
+    }
+    List<int> keysToDelete = new List<int>();
+    List<int> allKeys = uniqueKeys.ToList();
 
-    // for (int i = 0; i < 100; i++)
-    // {
-    //   random = new Random();
-    //   int keyIndex = random.Next(allKeys.Count);
-    //   int key = allKeys[keyIndex];
-    //   Console.Write(key + ",");
-    //   // string before = key + "here---------------------------------------------------------------------------------------------------------------"
-    //   //    + "\n" +_Tree.Traverse();
-    //   _Tree.Delete(key);
-    //   // string after = "\n" +_Tree.Traverse();
-    //   // if(_Tree.Search(key) != null){
-    //   //   Console.WriteLine(before + after);
-    //   // }
-    //   keysToDelete.Add(key);
-    //   allKeys.RemoveAt(keyIndex);
-    //   string checkDup = _Tree.Traverse();
-    //   if (Regex.Count(checkDup, "\"" + key + "\"") > 1)
-    //   {
-    //     // Console.WriteLine(checkDup);
-    //   }
-    //   foreach (int keyCheck in uniqueKeys)
-    //   {
-    //     checkDup = _Tree.Traverse();
-    //     if (Regex.Count(checkDup, "\"" + keyCheck + "\"") > 1)
-    //     {
-    //       Console.WriteLine(checkDup);
-    //     }
-    //   }
-    // }
+    for (int i = 0; i < 100; i++)
+    {
+      random = new Random();
+      int keyIndex = random.Next(allKeys.Count);
+      int key = allKeys[keyIndex];
+      Console.Write(key + ",");
+      // string before = key + "here---------------------------------------------------------------------------------------------------------------"
+      //    + "\n" +_Tree.Traverse();
+      _Tree.Delete(key);
+      // string after = "\n" +_Tree.Traverse();
+      // if(_Tree.Search(key) != null){
+      //   Console.WriteLine(before + after);
+      // }
+      keysToDelete.Add(key);
+      allKeys.RemoveAt(keyIndex);
+      string checkDup = _Tree.Traverse();
+      if (Regex.Count(checkDup, "\"" + key + "\"") > 1)
+      {
+        // Console.WriteLine(checkDup);
+      }
+      foreach (int keyCheck in uniqueKeys)
+      {
+        checkDup = _Tree.Traverse();
+        if (Regex.Count(checkDup, "\"" + keyCheck + "\"") > 1)
+        {
+          Console.WriteLine(checkDup);
+        }
+      }
+    }
+    */
+    
     int[] uniqueKeys = [237,321,778,709,683,250,525,352,300,980,191,40,721,281,532,747,58,767,196,831,884,393,83,84,652,807,306,287,936,634,305,540,185,152,489,108,120,394,791,19,562,537,201,186,131,527,837,769,252,344,204,709,582,166,765,463,665,112,363,986,705,950,371,924,483,580,188,643,423,387,293,93,918,85,660,135,990,768,753,894,332,902,800,195,374,18,282,369,296,76,40,940,852,983,362,941,7,725,732,647];
     foreach (int key in uniqueKeys)
     {
