@@ -93,11 +93,11 @@ namespace BTreeVisualization{
     public override void DeleteKey(int key){
       int i = Search(key);
       if(i != -1){
-        _NumKeys--;
         for (; i < _NumKeys; i++){
           _Keys[i] = _Keys[i+1];
           _Contents[i] = _Contents[i+1];
         }
+        _NumKeys--;
       }
     }
 
@@ -109,16 +109,9 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="leftMost"></param>
     /// <returns></returns>
-    public override (int, T) ForfeitKey(bool leftMost){
-      (int,T) result;
-      if(leftMost){
-        result = (_Keys[0],_Contents[0]);
-        LosesToLeft();
-      }else{
-        result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
-        _NumKeys--;
-      }
-      return result;
+    public override (int, T) ForfeitKey(){
+      _NumKeys--;
+      return (_Keys[_NumKeys],_Contents[_NumKeys]);
     }
 
     /// <summary>
@@ -180,7 +173,7 @@ namespace BTreeVisualization{
     /// <param name="sibiling"></param>
     public override void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling)
     {
-      for(int i = _NumKeys-2; i >= 0; i++){
+      for(int i = _NumKeys-1; i >= 0; i--){
         _Keys[i+1] = _Keys[i];
         _Contents[i+1] = _Contents[i];
       }

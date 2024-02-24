@@ -28,7 +28,6 @@ namespace BTreeVisualization{
     /// <param name="key"></param>
     /// <param name="data"></param>
     public void Insert(int key, T data){
-      Console.WriteLine(Search(key));
       if(Search(key) == null){
         ((int,T?),BTreeNode<T>?) result = _Root.InsertKey(key, data);
         if(result.Item2 != null && result.Item1.Item2 != null){

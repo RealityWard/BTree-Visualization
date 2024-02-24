@@ -28,7 +28,7 @@ namespace BTreeVisualization{
     }
     public abstract ((int,T?),N?) InsertKey(int key, T data);
     public abstract void DeleteKey(int key);
-    public abstract (int,T) ForfeitKey(bool leftMost);
+    public abstract (int,T) ForfeitKey();
     public abstract string Traverse(string x);
     public int[] Keys{
       get{ return _Keys; }

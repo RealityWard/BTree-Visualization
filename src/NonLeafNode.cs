@@ -1,4 +1,6 @@
-﻿namespace BTreeVisualization
+﻿using System.Text.RegularExpressions;
+
+namespace BTreeVisualization
 {
 	public class NonLeafNode<T>(int degree) : BTreeNode<T>(degree){
 		private BTreeNode<T>[] _Children = new BTreeNode<T>[2 * degree];
@@ -49,8 +51,8 @@
 		}
 
     /// <summary>
-    //Finds the correct branch of the the tree to place the new key. 
-    //It shouldn't add to anything but a leaf node.
+    /// Finds the correct branch of the the tree to place the new key. 
+    /// It shouldn't add to anything but a leaf node.
 		/// </summary>
 		/// <param name="key"></param>
 		/// <param name="data"></param>
@@ -107,6 +109,7 @@
     /// </summary>
     /// <param name="key"></param>
 		public override void DeleteKey(int key){
+      string printed = Traverse(key.ToString() + "P");
       int result = Search(key);
 			if(result == -1){
         // Search only goes through keys and thus if it did not 
@@ -114,34 +117,26 @@
         _Children[_NumKeys].DeleteKey(key);
         MergeAt(_NumKeys);
       }else if(_Keys[result] == key){
-        (_Keys[result],_Contents[result]) = _Children[result].ForfeitKey(false);
+        (_Keys[result],_Contents[result]) = _Children[result].ForfeitKey();
         MergeAt(result);
       }else{
         _Children[result].DeleteKey(key);
         MergeAt(result);
       }
+      printed = Traverse(key.ToString());
 		}
 
     /// <summary>
     /// Author: Tristan Anderson
-    /// Date: 2024-02-18
-    /// Returns either its first/LeftMost key or last key to the parent and looks 
-    /// to its children for a replacement. Afterwards checks the child for underflow. 
+    /// Date: 2024-02-23
+    /// Calls ForfeitKey() on last child for a replacement key for the parent node. Afterwards checks the child for underflow.
     /// </summary>
     /// <param name="leftMost"></param>
     /// <returns></returns>
-    public override (int,T) ForfeitKey(bool leftMost){
+    public override (int,T) ForfeitKey(){
       (int,T) result;
-      if(leftMost){
-        result = (_Keys[0],_Contents[0]);
-        // Prefers to go to left child
-        (_Keys[0],_Contents[0]) = _Children[0].ForfeitKey(!leftMost);
-        MergeAt(0);
-      }else{
-        result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
-        (_Keys[_NumKeys-1],_Contents[_NumKeys-1]) = _Children[_NumKeys-1].ForfeitKey(leftMost);
-        MergeAt(_NumKeys-1);
-      }
+      result = _Children[_NumKeys].ForfeitKey();
+      MergeAt(_NumKeys);
       return result;
     }
 
@@ -184,7 +179,10 @@
           _Contents[index] = _Children[index+1].Contents[0];
           _Children[index+1].LosesToLeft();
         }else if(_Children[index].NumKeys >= _Degree){
-          
+          _Children[index+1].GainsFromLeft(_Keys[index],_Contents[index],_Children[index]);
+          _Keys[index] = _Children[index].Keys[_Children[index].NumKeys-1];
+          _Contents[index] = _Children[index].Contents[_Children[index].NumKeys-1];
+          _Children[index].LosesToRight();
         }else{
           _Children[index].Merge(_Keys[index],_Contents[index],_Children[index+1]);
           for(; index < _NumKeys-1; ){
@@ -241,11 +239,11 @@
     /// <param name="sibiling"></param>
     public override void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling)
     {
-      _Children[_NumKeys] = _Children[_NumKeys+1];
-      for(int i = _NumKeys-2; i >= 0; i++){
-        _Keys[i+1] = _Keys[i];
-        _Contents[i+1] = _Contents[i];
-        _Children[i+1] = _Children[i];
+      _Children[_NumKeys+1] = _Children[_NumKeys];
+      for(int i = _NumKeys; i > 0; i--){
+        _Keys[i] = _Keys[i-1];
+        _Contents[i] = _Contents[i-1];
+        _Children[i] = _Children[i-1];
       }
       _NumKeys++;
       _Keys[0] = dividerKey;

@@ -150,22 +150,35 @@ namespace tests{
     }
 
     [TestCase(100,100)]
+    [TestCase(100,100)]
+    [TestCase(100,100)]
+    [TestCase(100,100)]
+    [TestCase(100,100)]
+    [TestCase(100,100)]
+    [TestCase(100,100)]
+    [TestCase(100,100)]
+    [TestCase(100,100)]
+    [TestCase(100,100)]
+    [TestCase(100,100)]
+    [TestCase(100,100)]
     public void DeleteRandomKeysFromTree(int numberOfEntries, int numberOfKeysToDelete){
       Random random = new Random();
+      string keysPrintOutInCaseOfError = "";
       int[] uniqueKeys = new int[numberOfEntries];
       for(int i = 0; i < uniqueKeys.Length; i++){
         uniqueKeys[i] = random.Next(1,1000);
+        keysPrintOutInCaseOfError += uniqueKeys[i] + ",";
       }
-      
+      keysPrintOutInCaseOfError += "----------------";
       foreach (int key in uniqueKeys) {
-        Console.WriteLine(key);
           _Tree.Insert(key, new Person("Name"));
       }
       List<int> deletedKeys = DeleteRandomKeysFromTreeHelper(numberOfEntries, numberOfKeysToDelete, uniqueKeys);
 
       foreach(int key in deletedKeys){
+        keysPrintOutInCaseOfError += key + ",";
         var result = _Tree.Search(key);
-        Assert.That(result, Is.Null, $"Inserted key {key} should NOT be found.");
+        Assert.That(result, Is.Null, $"Inserted key {key} should NOT be found. Below is the keys in order of entry and deletion.\n{keysPrintOutInCaseOfError}");
       }
     }
 
