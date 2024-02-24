@@ -149,6 +149,12 @@ namespace tests{
       Assert.That(_Tree.Search(20), Is.Null, "Key 20 should have been deleted from the leaf node.");
     }
 
+    /// <summary>
+    /// Primary Author: Andreas
+    /// Secondary Author: Tristan for some edits to log history 2024-02-23
+    /// </summary>
+    /// <param name="numberOfEntries"></param>
+    /// <param name="numberOfKeysToDelete"></param>
     [TestCase(100,100)]
     [TestCase(100,100)]
     [TestCase(100,100)]
@@ -160,13 +166,13 @@ namespace tests{
     [TestCase(100,100)]
     [TestCase(100,100)]
     [TestCase(100,100)]
-    [TestCase(100,100)]
+    [TestCase(1000,1000)]
     public void DeleteRandomKeysFromTree(int numberOfEntries, int numberOfKeysToDelete){
       Random random = new Random();
       string keysPrintOutInCaseOfError = "";
       int[] uniqueKeys = new int[numberOfEntries];
       for(int i = 0; i < uniqueKeys.Length; i++){
-        uniqueKeys[i] = random.Next(1,1000);
+        uniqueKeys[i] = random.Next(1,10000);
         keysPrintOutInCaseOfError += uniqueKeys[i] + ",";
       }
       keysPrintOutInCaseOfError += "----------------";

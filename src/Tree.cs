@@ -80,6 +80,7 @@ namespace BTreeVisualization{
     public string Traverse(){
       return _Root.Traverse("Root");
     }
+    
     public void Clear(){
       _Root = new LeafNode<T>(_Degree);
     }
