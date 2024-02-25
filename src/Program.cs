@@ -17,13 +17,15 @@ public enum Status
   Merge,
   Search,
   SSearching,
-  Found
+  Found,
+  Close
 }
 
 public enum Action
 {
   Tree,
-  Insert
+  Insert,
+  Close
 }
 
 // namespace BTreeVisualization
@@ -71,11 +73,11 @@ class Program
       int key,
       Person content
       )>();
+    BTree<Person> _Tree = new(3,outputBuffer);
     // Producer
     Task producer = Task.Run(async () =>
     {
       Console.WriteLine("Producer");
-      BTree<Person> _Tree = new(3,outputBuffer);
       while (await inputBuffer.OutputAvailableAsync())
       {
         (Action action, int key, Person content) = await inputBuffer.ReceiveAsync();
@@ -87,6 +89,9 @@ class Program
         {
           // await outputBuffer.SendAsync((Status.Insert, 0, [key], [content.ToString()], 0, [], ["Working"]));
           _Tree.Insert(key, content);
+          // outputBuffer.Complete();
+        }else if(Action.Close == action){
+          outputBuffer.Post((Status.Close,-1,[],[],-1,[],[]));
           outputBuffer.Complete();
         }
       }
@@ -95,7 +100,12 @@ class Program
     Task consumer = Task.Run(async () =>
     {
       Console.WriteLine("Consumer");
-      await inputBuffer.SendAsync((Action.Insert, 3, new Person("Bobby")));
+      int[] uniqueKeys = [237, 321, 778, 709, 683, 250, 525, 352, 300, 980, 191, 40, 721, 281, 532, 747, 58, 767, 196, 831, 884, 393, 83, 84, 652, 807, 306, 287, 936, 634, 305, 540, 185, 152, 489, 108, 120, 394, 791, 19, 562, 537, 201, 186, 131, 527, 837, 769, 252, 344, 204, 709, 582, 166, 765, 463, 665, 112, 363, 986, 705, 950, 371, 924, 483, 580, 188, 643, 423, 387, 293, 93, 918, 85, 660, 135, 990, 768, 753, 894, 332, 902, 800, 195, 374, 18, 282, 369, 296, 76, 40, 940, 852, 983, 362, 941, 7, 725, 732, 647];
+      foreach (int key in uniqueKeys)
+      {
+        inputBuffer.Post((Action.Insert, key, new Person(key.ToString())));
+      }
+      inputBuffer.Post((Action.Close, -1, new Person((-1).ToString())));
       while (await outputBuffer.OutputAvailableAsync())
       {
         (Status status,
@@ -105,14 +115,18 @@ class Program
         long altID,
         int[] altKeys,
         Person[] altContents) = await outputBuffer.ReceiveAsync();
-        Console.WriteLine("Status Code: {0}\nID: {1}",status,id);
-        inputBuffer.Complete();
+        if(Status.Close != status){
+          Console.WriteLine("Status Code: {0}\nID: {1}",status,id);
+        }else{
+          inputBuffer.Complete();
+        }
       }
     });
     Console.WriteLine("Which is first?");
     producer.Wait();
     consumer.Wait();
     Console.WriteLine("Done");
+    Console.WriteLine(_Tree.Traverse());
     /* Deletion Testing
     int[] uniqueKeys = [237, 321, 778, 709, 683, 250, 525, 352, 300, 980, 191, 40, 721, 281, 532, 747, 58, 767, 196, 831, 884, 393, 83, 84, 652, 807, 306, 287, 936, 634, 305, 540, 185, 152, 489, 108, 120, 394, 791, 19, 562, 537, 201, 186, 131, 527, 837, 769, 252, 344, 204, 709, 582, 166, 765, 463, 665, 112, 363, 986, 705, 950, 371, 924, 483, 580, 188, 643, 423, 387, 293, 93, 918, 85, 660, 135, 990, 768, 753, 894, 332, 902, 800, 195, 374, 18, 282, 369, 296, 76, 40, 940, 852, 983, 362, 941, 7, 725, 732, 647];
     foreach (int key in uniqueKeys)

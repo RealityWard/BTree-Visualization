@@ -55,6 +55,7 @@ namespace BTreeVisualization{
       }
       _NumKeys = _Degree-1;
       LeafNode<T> newNode = new(_Degree,newKeys,newContent,_BufferBlock);
+      _BufferBlock.Post((Status.Split, ID, Keys, Contents, newNode.ID, newNode.Keys, newNode.Contents));
       return ((_Keys[_NumKeys],_Contents[_NumKeys]),newNode);
     }
     
@@ -205,7 +206,7 @@ namespace BTreeVisualization{
     /// <returns></returns>
     public override string Traverse(string x){
       string output = Spacer(x) + "{\n";
-      output += Spacer(x) + "  \"leafnode\":\"" + x + "\",\n" + Spacer(x) + "  \"keys\":[";
+      output += Spacer(x) + "  \"leafnode\":\"" + x + "\" | " + _ID + ",\n" + Spacer(x) + "  \"keys\":[";
 			for(int i = 0; i < _NumKeys; i++){
         output += _Keys[i] + (i+1 < _NumKeys ? "," : "");
       }

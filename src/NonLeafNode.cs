@@ -74,6 +74,7 @@ namespace BTreeVisualization
         _Contents[i] = result.Item1.Item2;
         _Children[i+1] = result.Item2;
         _NumKeys++;
+        _BufferBlock.Post((Status.Inserted, ID, Keys, Contents, 0, [], []));
         if(IsFull()){
           return Split();
         }
@@ -97,6 +98,7 @@ namespace BTreeVisualization
 			newChildren[i] = _Children[i+_Degree];
 			_NumKeys = _Degree-1;
 			NonLeafNode<T> newNode = new(_Degree,newKeys,newContent,newChildren,_BufferBlock);
+      _BufferBlock.Post((Status.Split, ID, Keys, Contents, newNode.ID, newNode.Keys, newNode.Contents));
 			return ((_Keys[_NumKeys],_Contents[_NumKeys]),newNode);
 		}
 
@@ -271,7 +273,7 @@ namespace BTreeVisualization
     /// <returns></returns>
 		public override string Traverse(string x){
       string output = Spacer(x) + "{\n";
-      output += Spacer(x) + "  \"node\":\"" + x + "\"\n" + Spacer(x) + "  \"keys\":[";
+      output += Spacer(x) + "  \"node\":\"" + x + "\" | " + _ID + ",\n" + Spacer(x) + "  \"keys\":[";
 			for(int i = 0; i < _NumKeys; i++){
         output += _Keys[i] + (i+1 < _NumKeys ? "," : "");
       }
