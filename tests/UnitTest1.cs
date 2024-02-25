@@ -119,7 +119,7 @@ namespace tests{
       for(int i = 0; i < 100; i++){
         _Tree.Insert(i, new Person($"Person {i}"));
       }
-
+      
       Parallel.For(0, 100, (i) => {
         var result = _Tree.Search(i);
         Assert.That(result, Is.Not.Null, $"Concurrent search for key {i} failed.");

@@ -74,7 +74,7 @@ namespace BTreeVisualization{
       int i = 0;
       while(i < _NumKeys && key >= _Keys[i])
         i++;
-      if(key != _Keys[i]){
+      if(key != _Keys[i] || key == 0){
         _BufferBlock.Post((Status.Inserted, ID, Keys, Contents, 0, [], []));
         for (int j = _NumKeys - 1; j >= i; j--){
           _Keys[j+1] = _Keys[j];

@@ -10,6 +10,7 @@ namespace BTreeVisualization{
   {
     private BTreeNode<T> _Root = new LeafNode<T>(degree,bufferBlock);
     private readonly int _Degree = degree;
+    private bool zeroKeyUsed = false;
 
     /// <summary>
     /// Author: Tristan Anderson
@@ -29,8 +30,10 @@ namespace BTreeVisualization{
     /// <param name="key"></param>
     /// <param name="data"></param>
     public void Insert(int key, T data){
-      bufferBlock.Post((Status.Insert, 0, [], [], 0, [], []));
-      if(Search(key) == null){
+      if((key == 0 && !zeroKeyUsed) || key != 0){
+        if(key == 0) // Due to initializing all int[] entries as zero instead of null
+          zeroKeyUsed = true; // We must use a boolean to detect whether or not to allow a zero key insertion
+        bufferBlock.Post((Status.Insert, 0, [], [], 0, [], []));
         ((int,T?),BTreeNode<T>?) result = _Root.InsertKey(key, data);
         if(result.Item2 != null && result.Item1.Item2 != null){
           #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
@@ -51,6 +54,8 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="key"></param>
     public void Delete(int key){
+      if(key == 0 && zeroKeyUsed)
+        zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
       _Root.DeleteKey(key);
       if(_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null){
         _Root = ((NonLeafNode<T>)_Root).Children[0];

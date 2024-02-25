@@ -63,21 +63,25 @@ namespace BTreeVisualization
       int i = 0;
       while(i < _NumKeys && key >= _Keys[i])
         i++;
-      result = _Children[i].InsertKey(key, data);
-      if(result.Item2 != null && result.Item1.Item2 != null){
-        for (int j = _NumKeys - 1; j >= i; j--){
-          _Keys[j+1] = _Keys[j];
-          _Contents[j+1] = _Contents[j];
-          _Children[j+2] = _Children[j+1];
+      if(key != _Keys[i] || key == 0){
+        result = _Children[i].InsertKey(key, data);
+        if(result.Item2 != null && result.Item1.Item2 != null){
+          for (int j = _NumKeys - 1; j >= i; j--){
+            _Keys[j+1] = _Keys[j];
+            _Contents[j+1] = _Contents[j];
+            _Children[j+2] = _Children[j+1];
+          }
+          _Keys[i] = result.Item1.Item1;
+          _Contents[i] = result.Item1.Item2;
+          _Children[i+1] = result.Item2;
+          _NumKeys++;
+          _BufferBlock.Post((Status.Inserted, ID, Keys, Contents, 0, [], []));
+          if(IsFull()){
+            return Split();
+          }
         }
-        _Keys[i] = result.Item1.Item1;
-        _Contents[i] = result.Item1.Item2;
-        _Children[i+1] = result.Item2;
-        _NumKeys++;
-        _BufferBlock.Post((Status.Inserted, ID, Keys, Contents, 0, [], []));
-        if(IsFull()){
-          return Split();
-        }
+      }else{
+        _BufferBlock.Post((Status.Inserted, 0, [], [], 0, [], []));
       }
       return ((-1,default(T)),null);
 		}
