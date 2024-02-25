@@ -16,8 +16,10 @@ namespace BTreeVisualization{
     public abstract (int,N) SearchKey(int key);
     public abstract ((int,T),N) Split();
     public abstract void Merge(int dividerKey, T dividerData, N sibiling);
-    public abstract void Gains(int dividerKey, T dividerData, N sibiling);
-    public abstract void Loses();
+    public abstract void GainsFromRight(int dividerKey, T dividerData, N sibiling);
+    public abstract void GainsFromLeft(int dividerKey, T dividerData, N sibiling);
+    public abstract void LosesToLeft();
+    public abstract void LosesToRight();
     public bool IsFull(){
       return _NumKeys == 2*_Degree-1;
     }
@@ -26,7 +28,7 @@ namespace BTreeVisualization{
     }
     public abstract ((int,T?),N?) InsertKey(int key, T data);
     public abstract void DeleteKey(int key);
-    public abstract (int,T) ForfeitKey(bool leftMost);
+    public abstract (int,T) ForfeitKey();
     public abstract string Traverse(string x);
     public int[] Keys{
       get{ return _Keys; }

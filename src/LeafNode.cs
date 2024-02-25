@@ -93,33 +93,14 @@ namespace BTreeVisualization{
     public override void DeleteKey(int key){
       int i = Search(key);
       if(i != -1){
-        _NumKeys--;
         for (; i < _NumKeys; i++){
           _Keys[i] = _Keys[i+1];
           _Contents[i] = _Contents[i+1];
         }
+        _NumKeys--;
       }
     }
 
- 
-
-    // public override void Merge(int dividerKey, T dividerData, BTreeNode<T> sibiling){
-    //   _Keys[_NumKeys] = dividerKey;
-    //   _Contents[_NumKeys] = dividerData;
-    //   _NumKeys++;
-    //   for(int i = 0; i < sibiling.NumKeys; i++){
-    //     _Keys[_NumKeys + i] = sibiling.Keys[i];
-    //     _Contents[_NumKeys + i] = sibiling.Contents[i];
-    //   }
-    //   _NumKeys += sibiling.NumKeys;
-    // }
-
-    // public override void Gains(int dividerKey, T dividerData, BTreeNode<T> sibiling){
-    //   _Keys[_NumKeys] = dividerKey;
-    //   _Contents[_NumKeys] = dividerData;
-    // }
-
-   
     /// <summary>
     /// Author: Tristan Anderson
     /// Date: 2024-02-18
@@ -128,32 +109,10 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="leftMost"></param>
     /// <returns></returns>
-    public override (int, T) ForfeitKey(bool leftMost){
-      (int,T) result;
-      if(leftMost){
-        result = (_Keys[0],_Contents[0]);
-        Loses();
-      }else{
-        result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
-        _NumKeys--;
-      }
-      return result;
+    public override (int, T) ForfeitKey(){
+      _NumKeys--;
+      return (_Keys[_NumKeys],_Contents[_NumKeys]);
     }
-
-
-    //    public override (int, T) ForfeitKey(bool leftMost){
-    //   (int,T) result;
-    //   if(leftMost){
-    //     result = (_Keys[0],_Contents[0]);
-    //     Loses();
-    //   }else{
-    //     if(_NumKeys ==4)
-    //       Console.WriteLine(_NumKeys);
-    //     result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
-    //     _NumKeys--;
-    //   }
-    //   return result;
-    // }
 
     /// <summary>
     /// Author: Tristan Anderson
@@ -183,7 +142,7 @@ namespace BTreeVisualization{
     /// <param name="dividerKey"></param>
     /// <param name="dividerData"></param>
     /// <param name="sibiling"></param>
-    public override void Gains(int dividerKey, T dividerData, BTreeNode<T> sibiling){
+    public override void GainsFromRight(int dividerKey, T dividerData, BTreeNode<T> sibiling){
       _Keys[_NumKeys] = dividerKey;
       _Contents[_NumKeys] = dividerData;
       _NumKeys++;
@@ -195,11 +154,41 @@ namespace BTreeVisualization{
     /// Shifts the values in the arrays by one to the left overwriting 
     /// the first entries and decrements the _NumKeys var.
     /// </summary>
-    public override void Loses(){
+    public override void LosesToLeft(){
       for(int i = 0; i < _NumKeys-1; i++){
         _Keys[i] = _Keys[i+1];
         _Contents[i] = _Contents[i+1];
       }
+      _NumKeys--;
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-22
+    /// Inserts at the beginning of this node arrays the 
+    /// given key and data.
+    /// </summary>
+    /// <param name="dividerKey"></param>
+    /// <param name="dividerData"></param>
+    /// <param name="sibiling"></param>
+    public override void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling)
+    {
+      for(int i = _NumKeys-1; i >= 0; i--){
+        _Keys[i+1] = _Keys[i];
+        _Contents[i+1] = _Contents[i];
+      }
+      _NumKeys++;
+      _Keys[0] = dividerKey;
+      _Contents[0] = dividerData;
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-22
+    /// Decrements the _NumKeys var.
+    /// </summary>
+    public override void LosesToRight()
+    {
       _NumKeys--;
     }
 

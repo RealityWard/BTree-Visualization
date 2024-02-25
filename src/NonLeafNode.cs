@@ -1,9 +1,4 @@
-﻿/*
-Author: Emily Elzinga and Tristan Anderson
-Date: 2/07/2024
-Desc: Describes functionality for non-leaf nodes on the BTree. 
-*/
-
+﻿using System.Text.RegularExpressions;
 
 namespace BTreeVisualization
 {
@@ -56,13 +51,13 @@ namespace BTreeVisualization
 		}
 
     /// <summary>
-    //Finds the correct branch of the the tree to place the new key. 
-    //It shouldn't add to anything but a leaf node.
+    /// Finds the correct branch of the the tree to place the new key. 
+    /// It shouldn't add to anything but a leaf node.
 		/// </summary>
 		/// <param name="key"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
-		public override ((int,T?),BTreeNode<T>?) InsertKey(int key, T data){
+	public override ((int,T?),BTreeNode<T>?) InsertKey(int key, T data){
       ((int,T?),BTreeNode<T>?) result;
       int i = 0;
       while(i < _NumKeys && key >= _Keys[i])
@@ -106,7 +101,7 @@ namespace BTreeVisualization
 
     /// <summary>
     /// Author: Tristan Anderson
-    /// Date: 2024-02-15
+    /// Date: 2024-02-18
     /// After deleting a key from itself a NonLeafNode needs to replace the key 
     /// thus it looks to the left child of said key and calls ForfeitKey on it. 
     /// Otherwise it passes the search down to the child with keys greater than itself. 
@@ -114,6 +109,7 @@ namespace BTreeVisualization
     /// </summary>
     /// <param name="key"></param>
 		public override void DeleteKey(int key){
+      string printed = Traverse(key.ToString() + "P");
       int result = Search(key);
 			if(result == -1){
         // Search only goes through keys and thus if it did not 
@@ -121,40 +117,32 @@ namespace BTreeVisualization
         _Children[_NumKeys].DeleteKey(key);
         MergeAt(_NumKeys);
       }else if(_Keys[result] == key){
-        (_Keys[result],_Contents[result]) = _Children[result].ForfeitKey(false);
+        (_Keys[result],_Contents[result]) = _Children[result].ForfeitKey();
         MergeAt(result);
       }else{
         _Children[result].DeleteKey(key);
         MergeAt(result);
       }
+      printed = Traverse(key.ToString());
 		}
 
     /// <summary>
     /// Author: Tristan Anderson
-    /// Date: 2024-02-15
-    /// Returns either its first/LeftMost key or last key to the parent and looks 
-    /// to its children for a replacement. Afterwards checks the child for underflow. 
+    /// Date: 2024-02-23
+    /// Calls ForfeitKey() on last child for a replacement key for the parent node. Afterwards checks the child for underflow.
     /// </summary>
     /// <param name="leftMost"></param>
     /// <returns></returns>
-    public override (int,T) ForfeitKey(bool leftMost){
+    public override (int,T) ForfeitKey(){
       (int,T) result;
-      if(leftMost){
-        result = (_Keys[0],_Contents[0]);
-        // Prefers to go to left child
-        (_Keys[0],_Contents[0]) = _Children[0].ForfeitKey(!leftMost);
-        MergeAt(0);
-      }else{
-        result = (_Keys[_NumKeys-1],_Contents[_NumKeys-1]);
-        (_Keys[_NumKeys-1],_Contents[_NumKeys-1]) = _Children[_NumKeys-1].ForfeitKey(leftMost);
-        MergeAt(_NumKeys-1);
-      }
+      result = _Children[_NumKeys].ForfeitKey();
+      MergeAt(_NumKeys);
       return result;
     }
 
     /// <summary>
     /// Author: Tristan Anderson
-    /// Date: 2024-02-15
+    /// Date: 2024-02-18
     /// Tacks on the given divider to its own arrays and grabs 
     /// all the entries from the sibiling adding those to its arrays as well.
     /// </summary>
@@ -166,16 +154,17 @@ namespace BTreeVisualization
       _Contents[_NumKeys] = dividerData;
       _NumKeys++;
       for(int i = 0; i < sibiling.NumKeys; i++){
-        _Keys[_NumKeys + i] = sibiling.Keys[i];
-        _Contents[_NumKeys + i] = sibiling.Contents[i];
-        _Children[_NumKeys + i] = ((NonLeafNode<T>)sibiling).Children[i];
+        _Keys[_NumKeys+i] = sibiling.Keys[i];
+        _Contents[_NumKeys+i] = sibiling.Contents[i];
+        _Children[_NumKeys+i] = ((NonLeafNode<T>)sibiling).Children[i];
       }
+      _Children[_NumKeys+sibiling.NumKeys] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
       _NumKeys += sibiling.NumKeys;
     }
 
     /// <summary>
     /// Author: Tristan Anderson
-    /// Date: 2024-02-15
+    /// Date: 2024-02-18
     /// Checks the child at index for underflow. If so it then checks for _Degree 
     /// number of children in the right child of the key. _Degree or greater means 
     /// either overflow or split. 
@@ -183,34 +172,39 @@ namespace BTreeVisualization
     /// <param name="index"></param>
     private void MergeAt(int index){
       if(_Children[index].IsUnderflow()){
+        if(index == _NumKeys){ index--; }
         if(_Children[index+1].NumKeys >= _Degree){
-          _Children[index].Gains(_Keys[index],_Contents[index],_Children[index+1]);
+          _Children[index].GainsFromRight(_Keys[index],_Contents[index],_Children[index+1]);
           _Keys[index] = _Children[index+1].Keys[0];
           _Contents[index] = _Children[index+1].Contents[0];
-          _Children[index+1].Loses();
+          _Children[index+1].LosesToLeft();
+        }else if(_Children[index].NumKeys >= _Degree){
+          _Children[index+1].GainsFromLeft(_Keys[index],_Contents[index],_Children[index]);
+          _Keys[index] = _Children[index].Keys[_Children[index].NumKeys-1];
+          _Contents[index] = _Children[index].Contents[_Children[index].NumKeys-1];
+          _Children[index].LosesToRight();
         }else{
           _Children[index].Merge(_Keys[index],_Contents[index],_Children[index+1]);
-          for(; index < _NumKeys-1;){
+          for(; index < _NumKeys-1; ){
             _Keys[index] = _Keys[index+1];
             _Contents[index] = _Contents[index+1];
             index++;
             _Children[index] = _Children[index+1];
           }
           _NumKeys--;
-          _Children[_NumKeys] = _Children[_NumKeys+1];
         }
       }
     }
 
     /// <summary>
     /// Author: Tristan Anderson
-    /// Date: 2024-02-15
+    /// Date: 2024-02-18
     /// Tacks on the given key and data and grabs the first child of the sibiling.
     /// </summary>
     /// <param name="dividerKey"></param>
     /// <param name="dividerData"></param>
     /// <param name="sibiling"></param>
-    public override void Gains(int dividerKey, T dividerData, BTreeNode<T> sibiling)
+    public override void GainsFromRight(int dividerKey, T dividerData, BTreeNode<T> sibiling)
     {
       _Keys[_NumKeys] = dividerKey;
       _Contents[_NumKeys] = dividerData;
@@ -219,11 +213,11 @@ namespace BTreeVisualization
 
     /// <summary>
     /// Author: Tristan Anderson
-    /// Date: 2024-02-15
+    /// Date: 2024-02-18
     /// Shifts the values in the arrays by one to the left overwriting 
     /// the first entries and decrements the _NumKeys var.
     /// </summary>
-    public override void Loses()
+    public override void LosesToLeft()
     {
       for(int i = 0; i < _NumKeys-1; i++){
         _Keys[i] = _Keys[i+1];
@@ -232,6 +226,39 @@ namespace BTreeVisualization
       }
       _NumKeys--;
       _Children[_NumKeys] = _Children[_NumKeys+1];
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-22
+    /// Inserts at the beginning of this node arrays the 
+    /// given key and data and grabs the last child of the sibiling.
+    /// </summary>
+    /// <param name="dividerKey"></param>
+    /// <param name="dividerData"></param>
+    /// <param name="sibiling"></param>
+    public override void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling)
+    {
+      _Children[_NumKeys+1] = _Children[_NumKeys];
+      for(int i = _NumKeys; i > 0; i--){
+        _Keys[i] = _Keys[i-1];
+        _Contents[i] = _Contents[i-1];
+        _Children[i] = _Children[i-1];
+      }
+      _NumKeys++;
+      _Keys[0] = dividerKey;
+      _Contents[0] = dividerData;
+      _Children[0] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
+    }
+
+    /// <summary>
+    /// Author: Tristan Anderson
+    /// Date: 2024-02-22
+    /// Decrements the _NumKeys var.
+    /// </summary>
+    public override void LosesToRight()
+    {
+      _NumKeys--;
     }
 
     /// <summary>
