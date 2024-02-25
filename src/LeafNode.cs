@@ -5,10 +5,11 @@ Desc: Implements the leaf nodes of a B-Tree. Non-recursive function iteration du
 */
 using System.Text.RegularExpressions;
 using NodeData;
+using System.Threading.Tasks.Dataflow;
 
 namespace BTreeVisualization{
-  public class LeafNode<T>(int degree) : BTreeNode<T>(degree){
-    public LeafNode(int degree, int[] keys, T[] contents) : this(degree){
+  public class LeafNode<T>(int degree, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock) : BTreeNode<T>(degree, bufferBlock){
+    public LeafNode(int degree, int[] keys, T[] contents, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock) : this(degree, bufferBlock){
       _NumKeys = keys.Length;
       for(int i = 0; i < keys.Length; i++){
         _Keys[i] = keys[i];
@@ -53,7 +54,7 @@ namespace BTreeVisualization{
         newContent[i] = _Contents[i+_Degree];
       }
       _NumKeys = _Degree-1;
-      LeafNode<T> newNode = new(_Degree,newKeys,newContent);
+      LeafNode<T> newNode = new(_Degree,newKeys,newContent,_BufferBlock);
       return ((_Keys[_NumKeys],_Contents[_NumKeys]),newNode);
     }
     
@@ -72,15 +73,20 @@ namespace BTreeVisualization{
       int i = 0;
       while(i < _NumKeys && key >= _Keys[i])
         i++;
-      for (int j = _NumKeys - 1; j >= i; j--){
-        _Keys[j+1] = _Keys[j];
-        _Contents[j+1] = _Contents[j];
-      }
-      _Keys[i] = key;
-      _Contents[i] = data;
-      _NumKeys++;
-      if(IsFull()){
-        return Split();
+      if(key != _Keys[i]){
+        _BufferBlock.Post((Status.Inserted, ID, Keys, Contents, 0, [], []));
+        for (int j = _NumKeys - 1; j >= i; j--){
+          _Keys[j+1] = _Keys[j];
+          _Contents[j+1] = _Contents[j];
+        }
+        _Keys[i] = key;
+        _Contents[i] = data;
+        _NumKeys++;
+        if(IsFull()){
+          return Split();
+        }
+      }else{
+        _BufferBlock.Post((Status.Inserted, 0, [], [], 0, [], []));
       }
       return ((-1,default(T)),null);
     }

@@ -1,14 +1,15 @@
 ﻿using System.Text.RegularExpressions;
+using System.Threading.Tasks.Dataflow;
 
 namespace BTreeVisualization
 {
-	public class NonLeafNode<T>(int degree) : BTreeNode<T>(degree){
+	public class NonLeafNode<T>(int degree, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock) : BTreeNode<T>(degree, bufferBlock){
 		private BTreeNode<T>[] _Children = new BTreeNode<T>[2 * degree];
     public BTreeNode<T>[] Children{
       get{ return _Children; }
     }
 
-		public NonLeafNode(int degree, int[] keys, T[] data, BTreeNode<T>[] children) : this(degree) {
+		public NonLeafNode(int degree, int[] keys, T[] data, BTreeNode<T>[] children, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock) : this(degree, bufferBlock) {
       _NumKeys = keys.Length;
       for(int i = 0; i < keys.Length; i++){
 				_Keys[i] = keys[i];
@@ -95,7 +96,7 @@ namespace BTreeVisualization
 			}
 			newChildren[i] = _Children[i+_Degree];
 			_NumKeys = _Degree-1;
-			NonLeafNode<T> newNode = new(_Degree,newKeys,newContent,newChildren);
+			NonLeafNode<T> newNode = new(_Degree,newKeys,newContent,newChildren,_BufferBlock);
 			return ((_Keys[_NumKeys],_Contents[_NumKeys]),newNode);
 		}
 

@@ -4,11 +4,14 @@ Date: 2024-02-03
 Desc: Base class for all the node objects used in the BTree and B+Tree.
 */
 using NodeData;
+using System.Threading.Tasks.Dataflow;
 
 namespace BTreeVisualization{
-  public abstract class Node<N,T>(int degree)
+  public abstract class Node<N,T>(int degree, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock)
   {
+    protected BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> _BufferBlock = bufferBlock;
     protected readonly int _Degree = degree;
+    protected long _ID = DateTime.Now.Ticks;
     protected N? _Parent;
     protected int _NumKeys = 0;
     protected int[] _Keys = new int[2 * degree - 1];
@@ -33,6 +36,9 @@ namespace BTreeVisualization{
     public int[] Keys{
       get{ return _Keys; }
     }
+    public long ID{
+      get{ return _ID; }
+    }
     public int NumKeys{
       get{ return _NumKeys; }
     }
@@ -52,7 +58,7 @@ namespace BTreeVisualization{
     }
   }
 
-  public abstract class BTreeNode<T>(int degree) : Node<BTreeNode<T>,T>(degree){
+  public abstract class BTreeNode<T>(int degree, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock) : Node<BTreeNode<T>,T>(degree, bufferBlock){
     protected T[] _Contents = new T[2 * degree - 1];
 
     public T[] Contents{

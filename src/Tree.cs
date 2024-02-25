@@ -4,10 +4,11 @@ Date: 2024-02-03
 Desc: Maintains the entry point of the BTree data 
 structure and initializes root and new node creation in the beginning.
 */
+using System.Threading.Tasks.Dataflow;
 namespace BTreeVisualization{
-  public class BTree<T>(int degree)
+  public class BTree<T>(int degree, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock)
   {
-    private BTreeNode<T> _Root = new LeafNode<T>(degree);
+    private BTreeNode<T> _Root = new LeafNode<T>(degree,bufferBlock);
     private readonly int _Degree = degree;
 
     /// <summary>
@@ -16,7 +17,7 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="rNode"></param>
     private void Split(((int,T),BTreeNode<T>) rNode){
-      _Root = new NonLeafNode<T>(_Degree,[rNode.Item1.Item1],[rNode.Item1.Item2],[_Root, rNode.Item2]);
+      _Root = new NonLeafNode<T>(_Degree,[rNode.Item1.Item1],[rNode.Item1.Item2],[_Root, rNode.Item2],bufferBlock);
     }
     
     /// <summary>
@@ -28,6 +29,7 @@ namespace BTreeVisualization{
     /// <param name="key"></param>
     /// <param name="data"></param>
     public void Insert(int key, T data){
+      bufferBlock.Post((Status.Insert, 0, [], [], 0, [], []));
       if(Search(key) == null){
         ((int,T?),BTreeNode<T>?) result = _Root.InsertKey(key, data);
         if(result.Item2 != null && result.Item1.Item2 != null){
@@ -82,7 +84,7 @@ namespace BTreeVisualization{
     }
     
     public void Clear(){
-      _Root = new LeafNode<T>(_Degree);
+      _Root = new LeafNode<T>(_Degree,bufferBlock);
     }
   }
 }
