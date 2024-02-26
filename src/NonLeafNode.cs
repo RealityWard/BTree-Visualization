@@ -1,16 +1,41 @@
-﻿using System.Text.RegularExpressions;
+﻿/**
+Desc: Implements the non-leaf nodes of a B-Tree. Recursive function iteration due to children nodes.
+*/
 using System.Threading.Tasks.Dataflow;
 
 namespace BTreeVisualization
 {
+  /// <summary>
+  /// Creates a non-leaf node for a B-Tree data structure with
+  /// empty arrays of keys, contents, and children.
+  /// </summary>
+  /// <typeparam name="T">Data type of the content to be stored under key.</typeparam>
+  /// <param name="degree">Same as parent non-leaf node/tree</param>
+  /// <param name="bufferBlock">Output Buffer for Status updates to be externally viewed.</param>
   public class NonLeafNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) : BTreeNode<T>(degree, bufferBlock)
   {
+    /// <summary>
+    /// Array to track child nodes of this node. These can be either Leaf or Non-Leaf.
+    /// </summary>
     private BTreeNode<T>[] _Children = new BTreeNode<T>[2 * degree];
+    /// <summary>
+    /// Getter for _Children[]
+    /// </summary>
     public BTreeNode<T>[] Children
     {
       get { return _Children; }
     }
 
+    /// <summary>
+    /// Creates a non-leaf node for a B-Tree data structure
+    /// with starting values of the passed arrays of keys,
+    /// contents, and children. Sets the NumKeys to the length of keys[].
+    /// </summary>
+    /// <param name="degree">Same as parent non-leaf node/tree</param>
+    /// <param name="keys">Values to initialize in _Keys[]</param>
+    /// <param name="data">Values to initialize in _Contents[]</param>
+    /// <param name="children">Child nodes to initialize in _Children[]</param>
+    /// <param name="bufferBlock">Output Buffer for Status updates to be externally viewed.</param>
     public NonLeafNode(int degree, int[] keys, T[] data, BTreeNode<T>[] children, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) : this(degree, bufferBlock)
     {
       _NumKeys = keys.Length;
@@ -24,10 +49,12 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Searches the tree for a key. 
+    /// Iterates over the _Keys[] to find an entry == key.
     /// </summary>
-    /// <param name="key"> </param>
-    /// <returns></returns>
+    /// <remarks>Copied and modified from
+    /// LeafNode.Search()</remarks>
+    /// <param name="key">Integer to find in _Keys[] of this node.</param>
+    /// <returns>If found returns the index else returns -1.</returns>
     private int Search(int key)
     {
       //searches for correct key, finds it returns the node, else returns -1
@@ -44,8 +71,10 @@ namespace BTreeVisualization
     /// <summary>
     /// Iterates over the _Keys array to find key. If found returns the index and this else returns -1 and this.
     /// </summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
+    /// <remarks>Copied and modified from
+    /// LeafNode.SearchKey()</remarks>
+    /// <param name="key">Integer to find in _Keys[] of this node.</param>
+    /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
     public override (int, BTreeNode<T>) SearchKey(int key)
     {
       int result = Search(key);
@@ -64,12 +93,20 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Finds the correct branch of the the tree to place the new key. 
-    /// It shouldn't add to anything but a leaf node.
+    /// Calls InsertKey on _Children[i] where i == _Keys[i] < key < _Keys[i+1].
+    /// Then checks if a split occured. If so it inserts the new 
+    /// ((dividing Key, Content), new Node) to itself.
+    /// Afterwards calls split if full.
     /// </summary>
-    /// <param name="key"></param>
-    /// <param name="data"></param>
-    /// <returns></returns>
+    /// <remarks>Copied and modified from
+    /// LeafNode.InsertKey()</remarks>
+    /// <param name="key">Integer to be placed into _Keys[] of this node.</param>
+    /// <param name="data">Coresponding data to be stored in _Contents[]
+    /// of this node at the same index as key in _Keys[].</param>
+    /// <returns>If this node reaches capacity it calls split and returns
+    /// the new node created from the split and the dividing key with
+    /// corresponding content as ((dividing Key, Content), new Node).
+    /// Otherwise it returns ((-1, null), null).</returns>
     public override ((int, T?), BTreeNode<T>?) InsertKey(int key, T data)
     {
       _BufferBlock.Post((Status.ISearching, ID, -1, [], [], 0, -1, [], []));
@@ -107,8 +144,13 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Evenly splits the _Contents and _Keys to two new nodes
+    /// Evenly splits the _Contents[] and _Keys[] of this node giving
+    /// up the greater half to a new node.
     /// </summary>
+    /// <remarks>Copied and modified from
+    /// LeafNode.Split()</remarks>
+    /// <returns>The new node created from the split and the dividing key with
+    /// corresponding content as ((dividing Key, Content), new Node).</returns>
     public override ((int, T), BTreeNode<T>) Split()
     {
       int[] newKeys = new int[_Degree - 1];
@@ -129,14 +171,14 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-18
-    /// After deleting a key from itself a NonLeafNode needs to replace the key 
-    /// thus it looks to the left child of said key and calls ForfeitKey on it. 
-    /// Otherwise it passes the search down to the child with keys greater than itself. 
-    /// Afterwards checks the child for underflow. 
+    /// Searches itself for key. If found it deletes it by overwriting it
+    /// with the returned result from calling ForfeitKey() on the
+    /// left child from the key being deleted. If not found it calls
+    /// Search on _Children[i] where i == _Keys[i] < key < _Keys[i+1].
+    /// Afterwards checks the child for underflow.
     /// </summary>
-    /// <param name="key"></param>
+    /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
+    /// <param name="key">Integer to search for and delete if found.</param>
 		public override void DeleteKey(int key)
     {
       string printed = Traverse(key.ToString() + "P");
@@ -162,12 +204,13 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-23
-    /// Calls ForfeitKey() on last child for a replacement key for the parent node. Afterwards checks the child for underflow.
+    /// Calls ForfeitKey() on last child for a replacement key
+    /// for the parent node. Afterwards checks the child for underflow.
     /// </summary>
-    /// <param name="leftMost"></param>
-    /// <returns></returns>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-23</remarks>
+    /// <returns>The key and corresponding content from the right
+    /// most leaf node below this node.</returns>
     public override (int, T) ForfeitKey()
     {
       (int, T) result;
@@ -177,14 +220,16 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-18
     /// Tacks on the given divider to its own arrays and grabs 
-    /// all the entries from the sibiling adding those to its arrays as well.
+    /// all the entries from the sibiling, adding those to its arrays as well.
     /// </summary>
-    /// <param name="dividerKey"></param>
-    /// <param name="dividerData"></param>
-    /// <param name="sibiling"></param>
+    /// <remarks>
+    /// Author: Tristan Anderson,
+    /// Date: 2024-02-18</remarks>
+    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
+    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
+    /// <param name="sibiling">Sibiling to right. (Sibiling's Keys should be
+    /// greater than all the keys in the called node.)</param>
     public override void Merge(int dividerKey, T dividerData, BTreeNode<T> sibiling)
     {
       _Keys[_NumKeys] = dividerKey;
@@ -201,13 +246,13 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-18
     /// Checks the child at index for underflow. If so it then checks for _Degree 
     /// number of children in the right child of the key. _Degree or greater means 
     /// either overflow or split. 
     /// </summary>
-    /// <param name="index"></param>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-18</remarks>
+    /// <param name="index">Index of affected child node.</param>
     private void MergeAt(int index)
     {
       if (_Children[index].IsUnderflow())
@@ -243,13 +288,14 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-18
     /// Tacks on the given key and data and grabs the first child of the sibiling.
     /// </summary>
-    /// <param name="dividerKey"></param>
-    /// <param name="dividerData"></param>
-    /// <param name="sibiling"></param>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-18</remarks>
+    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
+    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
+    /// <param name="sibiling">Sibiling to right. (Sibiling's Keys
+    /// should be greater than all the keys in the called node.)</param>
     public override void GainsFromRight(int dividerKey, T dividerData, BTreeNode<T> sibiling)
     {
       _Keys[_NumKeys] = dividerKey;
@@ -263,6 +309,8 @@ namespace BTreeVisualization
     /// Shifts the values in the arrays by one to the left overwriting 
     /// the first entries and decrements the _NumKeys var.
     /// </summary>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-18</remarks>
     public override void LosesToLeft()
     {
       for (int i = 0; i < _NumKeys - 1; i++)
@@ -276,14 +324,15 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-22
     /// Inserts at the beginning of this node arrays the 
     /// given key and data and grabs the last child of the sibiling.
     /// </summary>
-    /// <param name="dividerKey"></param>
-    /// <param name="dividerData"></param>
-    /// <param name="sibiling"></param>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-22</remarks>
+    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
+    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
+    /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
+    /// smaller than all the keys in the called node.)</param>
     public override void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling)
     {
       _Children[_NumKeys + 1] = _Children[_NumKeys];
@@ -300,22 +349,22 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-22
     /// Decrements the _NumKeys var.
     /// </summary>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-22</remarks>
     public override void LosesToRight()
     {
       _NumKeys--;
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-13
-    /// Desc: Prints out the contents of the node in JSON format.
+    /// Prints out the contents of the node in JSON format.
     /// </summary>
-    /// <param name="x"></param>
-    /// <returns></returns>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-13</remarks>
+    /// <param name="x">Hierachical Node ID</param>
+    /// <returns>String with the entirety of this node's keys and contents arrays formmatted in JSON syntax.</returns>
 		public override string Traverse(string x)
     {
       string output = Spacer(x) + "{\n";
@@ -327,9 +376,9 @@ namespace BTreeVisualization
       output += "],\n" + Spacer(x) + "  \"contents\":[";
       for (int i = 0; i < _NumKeys; i++)
       {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
+        #pragma warning disable CS8602 // Dereference of a possibly null reference.
         output += _Contents[i].ToString() + (i + 1 < _NumKeys ? "," : "");
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        #pragma warning restore CS8602 // Dereference of a possibly null reference.
       }
       output += "],\n" + Spacer(x) + "  \"children\":[\n";
       for (int i = 0; i <= _NumKeys; i++)
