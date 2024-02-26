@@ -6,7 +6,7 @@ structure and initializes root and new node creation in the beginning.
 */
 using System.Threading.Tasks.Dataflow;
 namespace BTreeVisualization{
-  public class BTree<T>(int degree, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock)
+  public class BTree<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
   {
     private BTreeNode<T> _Root = new LeafNode<T>(degree,bufferBlock);
     private readonly int _Degree = degree;
@@ -33,7 +33,7 @@ namespace BTreeVisualization{
       if((key == 0 && !zeroKeyUsed) || key != 0){
         if(key == 0) // Due to initializing all int[] entries as zero instead of null
           zeroKeyUsed = true; // We must use a boolean to detect whether or not to allow a zero key insertion
-        bufferBlock.Post((Status.Insert, 0, [], [], 0, [], []));
+        bufferBlock.Post((Status.Insert, 0, -1, [], [], 0, -1, [], []));
         ((int,T?),BTreeNode<T>?) result = _Root.InsertKey(key, data);
         if(result.Item2 != null && result.Item1.Item2 != null){
           #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.

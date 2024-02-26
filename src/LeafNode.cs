@@ -8,8 +8,8 @@ using NodeData;
 using System.Threading.Tasks.Dataflow;
 
 namespace BTreeVisualization{
-  public class LeafNode<T>(int degree, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock) : BTreeNode<T>(degree, bufferBlock){
-    public LeafNode(int degree, int[] keys, T[] contents, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock) : this(degree, bufferBlock){
+  public class LeafNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) : BTreeNode<T>(degree, bufferBlock){
+    public LeafNode(int degree, int[] keys, T[] contents, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) : this(degree, bufferBlock){
       _NumKeys = keys.Length;
       for(int i = 0; i < keys.Length; i++){
         _Keys[i] = keys[i];
@@ -55,7 +55,7 @@ namespace BTreeVisualization{
       }
       _NumKeys = _Degree-1;
       LeafNode<T> newNode = new(_Degree,newKeys,newContent,_BufferBlock);
-      _BufferBlock.Post((Status.Split, ID, Keys, Contents, newNode.ID, newNode.Keys, newNode.Contents));
+      _BufferBlock.Post((Status.Split, ID, NumKeys, Keys, Contents, newNode.ID, newNode.NumKeys, newNode.Keys, newNode.Contents));
       return ((_Keys[_NumKeys],_Contents[_NumKeys]),newNode);
     }
     
@@ -71,11 +71,11 @@ namespace BTreeVisualization{
     /// <param name="data"></param>
     /// <returns></returns>
     public override ((int,T?),BTreeNode<T>?) InsertKey(int key, T data){
+      _BufferBlock.Post((Status.ISearching, ID, -1, [], [], 0, -1, [], []));
       int i = 0;
       while(i < _NumKeys && key >= _Keys[i])
         i++;
       if(key != _Keys[i] || key == 0){
-        _BufferBlock.Post((Status.Inserted, ID, Keys, Contents, 0, [], []));
         for (int j = _NumKeys - 1; j >= i; j--){
           _Keys[j+1] = _Keys[j];
           _Contents[j+1] = _Contents[j];
@@ -83,11 +83,12 @@ namespace BTreeVisualization{
         _Keys[i] = key;
         _Contents[i] = data;
         _NumKeys++;
+        _BufferBlock.Post((Status.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
         if(IsFull()){
           return Split();
         }
       }else{
-        _BufferBlock.Post((Status.Inserted, 0, [], [], 0, [], []));
+        _BufferBlock.Post((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
       return ((-1,default(T)),null);
     }

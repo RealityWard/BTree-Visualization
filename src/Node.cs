@@ -7,9 +7,9 @@ using NodeData;
 using System.Threading.Tasks.Dataflow;
 
 namespace BTreeVisualization{
-  public abstract class Node<N,T>(int degree, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock)
+  public abstract class Node<N,T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
   {
-    protected BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> _BufferBlock = bufferBlock;
+    protected BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> _BufferBlock = bufferBlock;
     protected readonly int _Degree = degree;
     protected long _ID = DateTime.Now.Ticks;
     protected N? _Parent;
@@ -58,7 +58,7 @@ namespace BTreeVisualization{
     }
   }
 
-  public abstract class BTreeNode<T>(int degree, BufferBlock<(Status status, long id, int[] keys, T[] contents, long altID, int[] altKeys, T[] altContents)> bufferBlock) : Node<BTreeNode<T>,T>(degree, bufferBlock){
+  public abstract class BTreeNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) : Node<BTreeNode<T>,T>(degree, bufferBlock){
     protected T[] _Contents = new T[2 * degree - 1];
 
     public T[] Contents{
