@@ -185,7 +185,7 @@ namespace tests{
       foreach(int key in deletedKeys){
         keysPrintOutInCaseOfError += key + ",";
         var result = _Tree.Search(key);
-        Assert.That(result, Is.Null, $"Inserted key {key} should NOT be found. Below is the keys in order of entry and deletion.\n{keysPrintOutInCaseOfError}");
+        Assert.That(result, Is.Null, $"Inserted key {key} should NOT be found. Below are the keys in order of entry and deletion.\n{keysPrintOutInCaseOfError}");
       }
     }
 
@@ -203,6 +203,22 @@ namespace tests{
       }
       return keysToDelete;
 }
+
+    /// <summary>
+    /// Author: Andreas Kramer
+    /// Date: 2024-02-22
+    /// Testing for Tree structure and properties
+    /// </summary>
+    /// 
+
+    [Test]
+    public void VerifyTreeHeightConsistency(){
+        
+    }
+
+
+
+
     
     /// <summary>
     /// Author: Tristan Anderson
