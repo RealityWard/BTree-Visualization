@@ -56,9 +56,11 @@ namespace BTreeVisualization
       {
         if (_Keys[i] == key)
         {
+          _BufferBlock.Post((Status.Found, ID, i, [key], [Contents[i]], 0, -1, [], []));
           return i;
         }
       }
+      _BufferBlock.Post((Status.Found, ID, -1, [], [], 0, -1, [], []));
       return -1;
     }
 
@@ -72,6 +74,7 @@ namespace BTreeVisualization
     /// this node.</returns>
     public override (int, BTreeNode<T>) SearchKey(int key)
     {
+      _BufferBlock.Post((Status.SSearching, ID, -1, [], [], 0, -1, [], []));
       return (Search(key), this);
     }
 
@@ -146,6 +149,7 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public override void DeleteKey(int key)
     {
+      _BufferBlock.Post((Status.DSearching, ID, -1, [], [], 0, -1, [], []));
       int i = Search(key);
       if (i != -1)
       {
@@ -155,7 +159,9 @@ namespace BTreeVisualization
           _Contents[i] = _Contents[i + 1];
         }
         _NumKeys--;
+        _BufferBlock.Post((Status.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
       }
+      _BufferBlock.Post((Status.Deleted, ID, -1, [], [], 0, -1, [], []));
     }
 
     /// <summary>
@@ -168,6 +174,7 @@ namespace BTreeVisualization
     public override (int, T) ForfeitKey()
     {
       _NumKeys--;
+      _BufferBlock.Post((Status.Forfeit, ID, NumKeys, Keys, Contents, 0, -1, [], []));
       return (_Keys[_NumKeys], _Contents[_NumKeys]);
     }
 
@@ -192,6 +199,7 @@ namespace BTreeVisualization
         _Contents[_NumKeys + i] = sibiling.Contents[i];
       }
       _NumKeys += sibiling.NumKeys;
+      _BufferBlock.Post((Status.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
     }
 
     /// <summary>

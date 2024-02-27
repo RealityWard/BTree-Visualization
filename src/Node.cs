@@ -5,7 +5,8 @@ Desc: Base class for all the node objects used in the BTree and B+Tree.
 */
 using System.Threading.Tasks.Dataflow;
 
-namespace BTreeVisualization{
+namespace BTreeVisualization
+{
   /// <summary>
   /// Base class for all the node objects used in the BTree and B+Tree.
   /// </summary>
@@ -15,7 +16,7 @@ namespace BTreeVisualization{
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class Node<N,T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
+  public abstract class Node<N, T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Output Buffer for Status updates to be externally viewed.
@@ -43,13 +44,13 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="key">Integer to find in _Keys[].</param>
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
-    public abstract (int,N) SearchKey(int key);
+    public abstract (int, N) SearchKey(int key);
     /// <summary>
     /// Split this node into two.
     /// </summary>
     /// <returns>The new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).</returns>
-    public abstract ((int,T),N) Split();
+    public abstract ((int, T), N) Split();
     /// <summary>
     /// Append the entry between this node and its sibiling.
     /// Then append all the entries from the sibiling to this node.
@@ -97,15 +98,17 @@ namespace BTreeVisualization{
     /// Checks if this node is at max capacity.
     /// </summary>
     /// <returns>True if it is full.</returns>
-    public bool IsFull(){
-      return _NumKeys == 2*_Degree-1;
+    public bool IsFull()
+    {
+      return _NumKeys == 2 * _Degree - 1;
     }
     /// <summary>
     /// Checks if this node is below minimum capacity.
     /// </summary>
     /// <returns>True if it is below.</returns>
-    public bool IsUnderflow(){
-      return _NumKeys < _Degree-1;
+    public bool IsUnderflow()
+    {
+      return _NumKeys < _Degree - 1;
     }
     /// <summary>
     /// Insert new entry to this node or one of its children.
@@ -118,15 +121,15 @@ namespace BTreeVisualization{
     /// the new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).
     /// Otherwise it returns ((-1, null), null).</returns>
-    public abstract ((int,T?),N?) InsertKey(int key, T data);
-    
+    public abstract ((int, T?), N?) InsertKey(int key, T data);
+
     /// <summary>
     /// Delete an entry matching key from this node or child node.
     /// </summary>
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
     public abstract void DeleteKey(int key);
-    
+
     /// <summary>
     /// Retreive the right most entry of the right most leaf node of this node.
     /// </summary>
@@ -134,7 +137,7 @@ namespace BTreeVisualization{
     /// Date: 2024-02-23</remarks>
     /// <returns>The key and corresponding content from the right
     /// most leaf node below this node.</returns>
-    public abstract (int,T) ForfeitKey();
+    public abstract (int, T) ForfeitKey();
     /// <summary>
     /// Prints out this node and its children.
     /// </summary>
@@ -145,20 +148,23 @@ namespace BTreeVisualization{
     /// <summary>
     /// Getter of _Keys
     /// </summary>
-    public int[] Keys{
-      get{ return _Keys; }
+    public int[] Keys
+    {
+      get { return _Keys; }
     }
     /// <summary>
     /// Getter of _ID
     /// </summary>
-    public long ID{
-      get{ return _ID; }
+    public long ID
+    {
+      get { return _ID; }
     }
     /// <summary>
     /// Getter of _NumKeys
     /// </summary>
-    public int NumKeys{
-      get{ return _NumKeys; }
+    public int NumKeys
+    {
+      get { return _NumKeys; }
     }
 
     /// <summary>
@@ -167,7 +173,8 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="input">String with length required.</param>
     /// <returns>A string of spaces.</returns>
-    public static string Spacer(string input){
+    public static string Spacer(string input)
+    {
       return Spacer(input.Length);
     }
 
@@ -177,9 +184,11 @@ namespace BTreeVisualization{
     /// </summary>
     /// <param name="input">Length of string.</param>
     /// <returns>A string of spaces.</returns>
-    public static string Spacer(int input){
+    public static string Spacer(int input)
+    {
       string result = "";
-      for(int i = 0; i < input - 4; i++){
+      for (int i = 0; i < input - 4; i++)
+      {
         result += " ";
       }
       return result;
@@ -193,7 +202,8 @@ namespace BTreeVisualization{
   /// <param name="degree">Same as parent node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class BTreeNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) : Node<BTreeNode<T>,T>(degree, bufferBlock){
+  public abstract class BTreeNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) : Node<BTreeNode<T>, T>(degree, bufferBlock)
+  {
     /// <summary>
     /// Holds children for this node.
     /// </summary>
@@ -202,8 +212,9 @@ namespace BTreeVisualization{
     /// <summary>
     /// Getter for _Contents[]
     /// </summary>
-    public T[] Contents{
-      get{ return _Contents; }
+    public T[] Contents
+    {
+      get { return _Contents; }
     }
   }
 }

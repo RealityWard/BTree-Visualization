@@ -77,8 +77,7 @@ public enum Status
   /// <summary>
   /// During both split and merge children will need to update who they point to.
   /// Alt refers to child node.
-  /// ID,NumKeys,Keys,Contents,AltID
-  /// values will be sent to update parent node.
+  /// ID,-1,[],[],AltID
   /// </summary>
   Shift,
   /// <summary>
@@ -169,7 +168,7 @@ class Program
       int key,
       Person? content
       )>();
-    BTree<Person> _Tree = new(3,outputBuffer);//This is only defined out here for traversing after the threads are killed to prove it is working.
+    BTree<Person> _Tree = new(3, outputBuffer);//This is only defined out here for traversing after the threads are killed to prove it is working.
     // Producer
     Task producer = Task.Run(async () =>
     {
@@ -177,9 +176,10 @@ class Program
       while (await inputBuffer.OutputAvailableAsync())
       {
         (Action action, int key, Person content) = await inputBuffer.ReceiveAsync();
-        switch(action){
+        switch (action)
+        {
           case Action.Tree:
-            _Tree = new(key,outputBuffer);
+            _Tree = new(key, outputBuffer);
             break;
           case Action.Insert:
             _Tree.Insert(key, content);
@@ -198,7 +198,7 @@ class Program
             break;
           default:// Will close buffer upon receiving a bad Action.
             inputBuffer.Complete();
-            Console.WriteLine("Action:{0} not recognized",action);
+            Console.WriteLine("Action:{0} not recognized", action);
             break;
         }
       }
@@ -225,21 +225,25 @@ class Program
         int altNumKeys,
         int[] altKeys,
         Person[] altContents) = await outputBuffer.ReceiveAsync();
-        switch(status){
+        switch (status)
+        {
           case Status.Close:
-            inputBuffer.Post((Action.Close,-1,null));
+            inputBuffer.Post((Action.Close, -1, null));
             outputBuffer.Complete();
             break;
           default:// Will close threads upon receiving a bad Action.
-            inputBuffer.Post((Action.Close,-1,null));
+            inputBuffer.Post((Action.Close, -1, null));
             outputBuffer.Complete();
-            Console.WriteLine("Action:{0} not recognized",status);
+            Console.WriteLine("Action:{0} not recognized", status);
             break;
         }
-        if(Status.Close != status){
+        if (Status.Close != status)
+        {
           Console.WriteLine("-------------------------------------\n" +
-                            "Status Code: {0}\nID: {1}",status,id);
-        }else{
+                            "Status Code: {0}\nID: {1}", status, id);
+        }
+        else
+        {
           inputBuffer.Complete();
         }
       }

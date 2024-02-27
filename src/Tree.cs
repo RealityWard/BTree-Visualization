@@ -56,7 +56,9 @@ namespace BTreeVisualization
           Split(result);
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
         }
-      }else{
+      }
+      else
+      {
         bufferBlock.Post((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
     }

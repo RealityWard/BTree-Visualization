@@ -269,9 +269,12 @@ namespace BTreeVisualization
           _Keys[index] = _Children[index + 1].Keys[0];
           _Contents[index] = _Children[index + 1].Contents[0];
           _Children[index + 1].LosesToLeft();
-          _BufferBlock.Post((Status.UnderFlow, _Children[index].ID, _Children[index].NumKeys,
-            _Children[index].Keys, _Children[index].Contents, _Children[index + 1].ID,
-            _Children[index + 1].NumKeys, _Children[index + 1].Keys, _Children[index + 1].Contents));
+          _BufferBlock.Post((Status.UnderFlow, Children[index].ID, Children[index].NumKeys,
+            Children[index].Keys, Children[index].Contents, Children[index + 1].ID,
+            Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents));
+          if (_Children[index] as NonLeafNode<T> != null)
+            _BufferBlock.Post((Status.Shift, ((NonLeafNode<T>)Children[index])
+              .Children[Children[index].NumKeys].ID, -1, [], [], _Children[index].ID, -1, [], []));
         }
         else if (_Children[index].NumKeys >= _Degree)
         {
@@ -279,10 +282,13 @@ namespace BTreeVisualization
           _Keys[index] = _Children[index].Keys[_Children[index].NumKeys - 1];
           _Contents[index] = _Children[index].Contents[_Children[index].NumKeys - 1];
           _Children[index].LosesToRight();
-          _BufferBlock.Post((Status.UnderFlow, _Children[index + 1].ID,
-            _Children[index + 1].NumKeys, _Children[index + 1].Keys, _Children[index + 1].Contents,
-            _Children[index].ID, _Children[index].NumKeys,
-            _Children[index].Keys, _Children[index].Contents));
+          _BufferBlock.Post((Status.UnderFlow, Children[index + 1].ID,
+            Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents,
+            Children[index].ID, Children[index].NumKeys,
+            Children[index].Keys, Children[index].Contents));
+          if (_Children[index] as NonLeafNode<T> != null)
+            _BufferBlock.Post((Status.Shift, ((NonLeafNode<T>)Children[index + 1])
+              .Children[0].ID, -1, [], [], _Children[index + 1].ID, -1, [], []));
         }
         else
         {
@@ -295,7 +301,7 @@ namespace BTreeVisualization
             _Children[index] = _Children[index + 1];
           }
           _NumKeys--;
-          _BufferBlock.Post((Status.Merge, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          _BufferBlock.Post((Status.MergeParent, ID, NumKeys, Keys, Contents, 0, -1, [], []));
         }
       }
     }
@@ -314,7 +320,6 @@ namespace BTreeVisualization
       _Keys[_NumKeys] = dividerKey;
       _Contents[_NumKeys] = dividerData;
       _Children[++_NumKeys] = ((NonLeafNode<T>)sibiling).Children[0];
-      _BufferBlock.Post((Status.Shift, ID, NumKeys, Keys, Contents, Children[_NumKeys].ID, -1, [], []));
     }
 
     /// <summary>
@@ -360,7 +365,6 @@ namespace BTreeVisualization
       _Keys[0] = dividerKey;
       _Contents[0] = dividerData;
       _Children[0] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
-      _BufferBlock.Post((Status.Shift, ID, NumKeys, Keys, Contents, Children[0].ID, -1, [], []));
     }
 
     /// <summary>
@@ -391,9 +395,9 @@ namespace BTreeVisualization
       output += "],\n" + Spacer(x) + "  \"contents\":[";
       for (int i = 0; i < _NumKeys; i++)
       {
-        #pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
         output += _Contents[i].ToString() + (i + 1 < _NumKeys ? "," : "");
-        #pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
       }
       output += "],\n" + Spacer(x) + "  \"children\":[\n";
       for (int i = 0; i <= _NumKeys; i++)
