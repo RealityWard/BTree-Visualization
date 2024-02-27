@@ -43,9 +43,11 @@ namespace BTreeVisualization
     {
       if ((key == 0 && !zeroKeyUsed) || key != 0)
       {
-        if (key == 0) // Due to initializing all int[] entries as zero instead of null
-          zeroKeyUsed = true; // We must use a boolean to detect whether or not to 
-                              // allow a zero key insertion
+        /** Due to initializing all int[] entries as zero instead of null
+          We must use a boolean to detect whether or not to 
+          allow a zero key insertion*/
+        if (key == 0)
+          zeroKeyUsed = true;
         bufferBlock.Post((Status.Insert, 0, -1, [], [], 0, -1, [], []));
         ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data);
         if (result.Item2 != null && result.Item1.Item2 != null)
@@ -54,6 +56,8 @@ namespace BTreeVisualization
           Split(result);
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
         }
+      }else{
+        bufferBlock.Post((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
     }
 
@@ -69,6 +73,7 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public void Delete(int key)
     {
+      bufferBlock.Post((Status.Delete, 0, -1, [], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
       _Root.DeleteKey(key);
@@ -87,6 +92,7 @@ namespace BTreeVisualization
     /// <returns>Data object stored under key.</returns>
     public T? Search(int key)
     {
+      bufferBlock.Post((Status.Search, 0, -1, [], [], 0, -1, [], []));
       (int, BTreeNode<T>?) result = _Root.SearchKey(key);
       if (result.Item1 == -1 || result.Item2 == null)
       {

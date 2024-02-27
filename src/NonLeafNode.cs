@@ -77,6 +77,7 @@ namespace BTreeVisualization
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
     public override (int, BTreeNode<T>) SearchKey(int key)
     {
+      _BufferBlock.Post((Status.SSearching, ID, -1, [], [], 0, -1, [], []));
       int result = Search(key);
       if (result == -1)
       {
@@ -84,6 +85,7 @@ namespace BTreeVisualization
       }
       else if (_Keys[result] == key)
       {
+        _BufferBlock.Post((Status.Found, ID, result, [key], [Contents[result]], 0, -1, [], []));
         return (result, this);
       }
       else
@@ -162,6 +164,7 @@ namespace BTreeVisualization
         newKeys[i] = _Keys[i + _Degree];
         newContent[i] = _Contents[i + _Degree];
         newChildren[i] = _Children[i + _Degree];
+        _BufferBlock.Post((Status.Shift, newChildren[i].ID, -1, [], [], ID, -1, [], []));
       }
       newChildren[i] = _Children[i + _Degree];
       _NumKeys = _Degree - 1;
@@ -181,7 +184,7 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
 		public override void DeleteKey(int key)
     {
-      string printed = Traverse(key.ToString() + "P");
+      _BufferBlock.Post((Status.DSearching, ID, -1, [], [], 0, -1, [], []));
       int result = Search(key);
       if (result == -1)
       {
@@ -193,6 +196,7 @@ namespace BTreeVisualization
       else if (_Keys[result] == key)
       {
         (_Keys[result], _Contents[result]) = _Children[result].ForfeitKey();
+        _BufferBlock.Post((Status.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
         MergeAt(result);
       }
       else
@@ -200,7 +204,6 @@ namespace BTreeVisualization
         _Children[result].DeleteKey(key);
         MergeAt(result);
       }
-      printed = Traverse(key.ToString());
     }
 
     /// <summary>
@@ -213,6 +216,7 @@ namespace BTreeVisualization
     /// most leaf node below this node.</returns>
     public override (int, T) ForfeitKey()
     {
+      _BufferBlock.Post((Status.FSearching, ID, -1, [], [], 0, -1, [], []));
       (int, T) result;
       result = _Children[_NumKeys].ForfeitKey();
       MergeAt(_NumKeys);
@@ -220,8 +224,8 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Tacks on the given divider to its own arrays and grabs 
-    /// all the entries from the sibiling, adding those to its arrays as well.
+    /// Appends the given divider to itself and appends 
+    /// all the entries from the sibiling to itself.
     /// </summary>
     /// <remarks>
     /// Author: Tristan Anderson,
@@ -243,6 +247,7 @@ namespace BTreeVisualization
       }
       _Children[_NumKeys + sibiling.NumKeys] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
       _NumKeys += sibiling.NumKeys;
+      _BufferBlock.Post((Status.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
     }
 
     /// <summary>
@@ -264,6 +269,9 @@ namespace BTreeVisualization
           _Keys[index] = _Children[index + 1].Keys[0];
           _Contents[index] = _Children[index + 1].Contents[0];
           _Children[index + 1].LosesToLeft();
+          _BufferBlock.Post((Status.UnderFlow, _Children[index].ID, _Children[index].NumKeys,
+            _Children[index].Keys, _Children[index].Contents, _Children[index + 1].ID,
+            _Children[index + 1].NumKeys, _Children[index + 1].Keys, _Children[index + 1].Contents));
         }
         else if (_Children[index].NumKeys >= _Degree)
         {
@@ -271,6 +279,10 @@ namespace BTreeVisualization
           _Keys[index] = _Children[index].Keys[_Children[index].NumKeys - 1];
           _Contents[index] = _Children[index].Contents[_Children[index].NumKeys - 1];
           _Children[index].LosesToRight();
+          _BufferBlock.Post((Status.UnderFlow, _Children[index + 1].ID,
+            _Children[index + 1].NumKeys, _Children[index + 1].Keys, _Children[index + 1].Contents,
+            _Children[index].ID, _Children[index].NumKeys,
+            _Children[index].Keys, _Children[index].Contents));
         }
         else
         {
@@ -283,6 +295,7 @@ namespace BTreeVisualization
             _Children[index] = _Children[index + 1];
           }
           _NumKeys--;
+          _BufferBlock.Post((Status.Merge, ID, NumKeys, Keys, Contents, 0, -1, [], []));
         }
       }
     }
@@ -301,6 +314,7 @@ namespace BTreeVisualization
       _Keys[_NumKeys] = dividerKey;
       _Contents[_NumKeys] = dividerData;
       _Children[++_NumKeys] = ((NonLeafNode<T>)sibiling).Children[0];
+      _BufferBlock.Post((Status.Shift, ID, NumKeys, Keys, Contents, Children[_NumKeys].ID, -1, [], []));
     }
 
     /// <summary>
@@ -346,6 +360,7 @@ namespace BTreeVisualization
       _Keys[0] = dividerKey;
       _Contents[0] = dividerData;
       _Children[0] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
+      _BufferBlock.Post((Status.Shift, ID, NumKeys, Keys, Contents, Children[0].ID, -1, [], []));
     }
 
     /// <summary>

@@ -47,11 +47,27 @@ public enum Status
   /// </summary>
   Deleted,
   /// <summary>
+  /// Sent everytime ForfeitKey is called on a node. Only ID sent.
+  /// </summary>
+  FSearching,
+  /// <summary>
+  /// Sent once it retrieves a key from a leaf node.
+  /// ID,NumKeys,Keys,Contents
+  /// values will be sent to update existing node.
+  /// </summary>
+  Forfeit,
+  /// <summary>
   /// Sent once from the node merge was called on. Alt refers the sibiling node being eaten.
   /// ID,NumKeys,Keys,Contents,AltID
   /// values will be sent to update existing node and delete sibiling node.
   /// </summary>
   Merge,
+  /// <summary>
+  /// Sent once after merging child nodes.
+  /// ID,NumKeys,Keys,Contents
+  /// values will be sent to update existing node.
+  /// </summary>
+  MergeParent,
   /// <summary>
   /// Sent when a full merge is not possible thus one sibiling takes a
   /// bite out of its sibiling. Alt refers the sibiling node being biten.
@@ -60,8 +76,9 @@ public enum Status
   UnderFlow,
   /// <summary>
   /// During both split and merge children will need to update who they point to.
-  /// Alt refers to new parent node.
-  /// ID,-1,[],[],AltID
+  /// Alt refers to child node.
+  /// ID,NumKeys,Keys,Contents,AltID
+  /// values will be sent to update parent node.
   /// </summary>
   Shift,
   /// <summary>
