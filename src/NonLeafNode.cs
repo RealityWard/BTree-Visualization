@@ -387,7 +387,8 @@ namespace BTreeVisualization
 		public override string Traverse(string x)
     {
       string output = Spacer(x) + "{\n";
-      output += Spacer(x) + "  \"node\":\"" + x + "\" | " + _ID + ",\n" + Spacer(x) + "  \"keys\":[";
+      output += Spacer(x) + "  \"node\":\"" + x + "\",\n" 
+        + Spacer(x) + "\"  ID\":" + _ID + ",\n" + Spacer(x) + "  \"keys\":[";
       for (int i = 0; i < _NumKeys; i++)
       {
         output += _Keys[i] + (i + 1 < _NumKeys ? "," : "");
@@ -402,7 +403,7 @@ namespace BTreeVisualization
       output += "],\n" + Spacer(x) + "  \"children\":[\n";
       for (int i = 0; i <= _NumKeys; i++)
       {
-        output += _Children[i].Traverse(x + "." + i) + (i + 1 < _NumKeys ? "," : "") + "\n";
+        output += _Children[i].Traverse(x + "." + i) + (i + 1 <= _NumKeys ? "," : "") + "\n";
       }
       return output + Spacer(x) + "  ]\n" + Spacer(x) + "}";
     }

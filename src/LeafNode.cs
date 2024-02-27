@@ -2,6 +2,7 @@
 Desc: Implements the leaf nodes of a B-Tree. Non-recursive function
 iteration due to no children.
 */
+using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 
 namespace BTreeVisualization
@@ -276,7 +277,8 @@ namespace BTreeVisualization
     public override string Traverse(string x)
     {
       string output = Spacer(x) + "{\n";
-      output += Spacer(x) + "  \"leafnode\":\"" + x + "\" | " + _ID + ",\n"
+      output += Spacer(x) + "  \"leafnode\":\"" + x + "\",\n" 
+        + Spacer(x) + "\"  ID\":" + _ID + ",\n"
         + Spacer(x) + "  \"keys\":[";
       for (int i = 0; i < _NumKeys; i++)
       {
