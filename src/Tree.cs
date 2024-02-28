@@ -147,9 +147,9 @@ namespace BTreeVisualization
 
     /// <summary>
     /// Author: Andreas Kramer
-    /// Calculates the Minimum Height of the B-Tree and returns it as an integer
+    /// Calculates the Minimum Height of the B-Tree
     /// </summary>
-    /// <returns></returns>
+    /// <returns> minimum height of the B-tree as an integer
     /// 
     public int GetMinHeight(){
       return GetMinHeight(_Root,0);
@@ -202,68 +202,13 @@ namespace BTreeVisualization
       }
       return currentLevel;
     }
-    /// <summary>
-    /// Author: Andreas Kramer
-    /// Alternate version of getting the maximum height of the tree, returns it as an integer
-    /// </summary>
-    /// <returns></returns>
-    /// 
-    public int GetMaxTreeHeightAlternate(){
-      return GetMaxTreeHeightAlternate(_Root);
-    }
-
-    private int GetMaxTreeHeightAlternate(BTreeNode<T> node){
-      if(node == null){
-        return 0;
-      }
-      if(node is LeafNode<T>){
-        return 1;
-      }
-      NonLeafNode<T> nonLeafNode = (NonLeafNode<T>)node;
-      int maxHeight = 0;
-      foreach(var child in nonLeafNode.Children){
-        int childHeight = GetMaxTreeHeightAlternate(child);
-        if(childHeight > maxHeight){
-            maxHeight = childHeight;
-        }
-      }
-      return maxHeight + 1;
-    }
-
-    /// <summary>
-    /// Author: Andreas Kramer
-    /// Alternate version of getting the minimum height of the tree, returns it as an integer
-    /// </summary>
-    /// <returns></returns>
-    /// 
-    public int GetMinTreeHeightAlternate(){
-      return GetMinTreeHeightAlternate(_Root);
-    }
-
-    private int GetMinTreeHeightAlternate(BTreeNode<T> node){
-      if(node == null){
-        return 0;
-      }
-      if(node is LeafNode<T>){
-        return 1;
-      }
-      NonLeafNode<T> nonLeafNode = (NonLeafNode<T>)node;
-      int minHeight = int.MaxValue;
-      foreach(var child in nonLeafNode.Children){
-        int childHeight = GetMinTreeHeightAlternate(child);
-        if(childHeight < minHeight){
-            minHeight = childHeight;
-        }
-      }
-      return minHeight + 1;
-    }
 
     /// <summary>
     /// Author: Andreas Kramer
     /// Method to check if the leafNodes of the tree are all on the same level (checking for tree balance)
+    /// Returns a boolean that indicates whether the BTree is balanced or not, only returns true if all subtrees are balanced
     /// </summary>
     /// <returns></returns>
-    /// 
 
     public bool IsBalanced() {
         if (_Root == null) {
@@ -284,11 +229,11 @@ namespace BTreeVisualization
         if (node is NonLeafNode<T> nonLeafNode) {
             foreach (var child in nonLeafNode.Children) {
                 if (!CheckNodeBalance(child, currentLevel + 1, ref leafLevel)) {
-                    return false; // If any subtree is unbalanced, the entire tree is unbalanced.
+                    return false;
                 }
             }
         }
-        return true; // If all subtrees are balanced, then this subtree is balanced.
+        return true;
     }
   }
 }

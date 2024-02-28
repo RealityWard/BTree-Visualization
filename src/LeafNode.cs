@@ -118,7 +118,7 @@ namespace BTreeVisualization
     {
       _BufferBlock.Post((Status.ISearching, ID, -1, [], [], 0, -1, [], []));
       int i = 0;
-      while (i < _NumKeys && key >= _Keys[i])
+      while (i < _NumKeys && key > _Keys[i])
         i++;
       if (key != _Keys[i] || key == 0)
       {

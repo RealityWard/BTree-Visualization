@@ -109,7 +109,6 @@ namespace tests
       {
         int key = random.Next(1, 10000);
         string name = $"Person {i}";
-        //making sure keys are unique
         if (!insertedKeys.ContainsKey(key))
         {
           _Tree.Insert(key, new Person(name));
@@ -197,6 +196,7 @@ namespace tests
     /// Secondary Author: Tristan for some edits to log history 2024-02-23
     /// This is a test for consistency of the tree, by inserting and deleting multiple random values
     /// we check the correct algorithm by searching for the keys that should have been deleted and searching for all the ones that are left
+    /// this is also testing the tree structure and properties by checking the balancedness of the tree
     /// </summary>
     /// <param name="numberOfEntries"></param>
     /// <param name="numberOfKeysToDelete"></param>
@@ -217,12 +217,13 @@ namespace tests
       Random random = new Random();
       string keysPrintOutInCaseOfError = "";
       string keysComparison = "";
-      int[] uniqueKeys = new int[numberOfEntries];
-      for (int i = 0; i < uniqueKeys.Length; i++)
+      int[] randomKeys = new int[numberOfEntries];
+      for (int i = 0; i < randomKeys.Length; i++)
       {
-        uniqueKeys[i] = random.Next(1, 10000);
-        keysPrintOutInCaseOfError += uniqueKeys[i] + ",";
+        randomKeys[i] = random.Next(1, 10000);
+        keysPrintOutInCaseOfError += randomKeys[i] + ",";
       }
+      int[] uniqueKeys = randomKeys.Distinct().ToArray(); 
       keysPrintOutInCaseOfError += "----------------";
       foreach (int key in uniqueKeys)
       {
@@ -230,7 +231,8 @@ namespace tests
       }
 
       List<int> allKeys = uniqueKeys.ToList();
-      List<int> deletedKeys = DeleteRandomKeysFromTreeHelper(numberOfEntries, numberOfKeysToDelete, ref allKeys);
+      int numberOfKeysToDeleteActual = allKeys.Count;
+      List<int> deletedKeys = DeleteRandomKeysFromTreeHelper(numberOfEntries, numberOfKeysToDeleteActual, ref allKeys);
 
       bool balanced =_Tree.IsBalanced();
       Assert.That(balanced,Is.True, $"Tree is unbalanced.");
@@ -249,7 +251,6 @@ namespace tests
       int maxHeight = _Tree.GetMaxHeight();
       int minHeight = _Tree.GetMinHeight();
       Assert.That(maxHeight == minHeight, Is.True, $"Tree's minimum height is {minHeight}. Tree's maximum height is {maxHeight}.");
-
     }
     private List<int> DeleteRandomKeysFromTreeHelper(int numberOfEntries , int numberOfKeysToDelete, ref List<int> allKeys){
       List<int> keysToDelete = new List<int>();
@@ -270,20 +271,16 @@ namespace tests
     /// Date: 2024-02-22
     /// Testing for Tree structure and properties
     /// </summary>
-    /// 
 
     [TestCase(10)]
     [TestCase(25)]
     [TestCase(250)]
     public void VerifyTreeHeightConsistency(int numberOfEntries){
       Random random = new Random();
-      //string keysPrintOutInCaseOfError = "";
       int[] uniqueKeys = new int[numberOfEntries];
       for(int i = 0; i < uniqueKeys.Length; i++){
         uniqueKeys[i] = random.Next(1,10000);
-        //keysPrintOutInCaseOfError += uniqueKeys[i] + ",";
       }
-      //keysPrintOutInCaseOfError += "----------------";
       foreach (int key in uniqueKeys) {
           _Tree.Insert(key, new Person("Example"));
       }
@@ -292,6 +289,20 @@ namespace tests
       int minHeight = _Tree.GetMinHeight();
       Assert.That(maxHeight == minHeight, Is.True, $"Tree's minimum height is {minHeight}. Tree's maximum height is {maxHeight}. \n BeloW: {output}");
     }
+    /// <summary>
+    /// Author: Andreas Kramer
+    /// The following tests are for testing the input filtering
+    /// </summary>
+    /// <param name="x"></param>
+    [Test]
+    public void InsertingDuplicateValues(){
+      int[] a = {2, 2};
+      _Tree.Insert(a[0], new Person("Example"));
+      _Tree.Insert(a[1], new Person("Example"));
+      _Tree.Delete(a[0]);
+      Assert.That(_Tree.Search(a[0]),Is.Null, $"Key {a[0]} should NOT be found. Duplicate values should be ignored at insertion.");     
+    }
+
 
     /// <summary>
     /// Working with insertion operations and using search and traverse to test correctness.
