@@ -8,16 +8,17 @@ namespace NodeData{
 
   }
 
-  public class Person : Data{
-    private string _Name;
+  public class Person(string name) : Data{
+    private string _Name = name;
 
-    public Person(string name){
-      _Name = name;
-    }
-
-    public string name{
+    public string Name{
       get { return _Name; }
       set { _Name = value; }
+    }
+
+    public override string ToString()
+    {
+      return "\"person\":{\"name\":\"" + _Name + "\"}";
     }
   }
 }
