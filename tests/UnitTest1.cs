@@ -153,24 +153,28 @@ namespace tests{
     /// <summary>
     /// Primary Author: Andreas
     /// Secondary Author: Tristan for some edits to log history 2024-02-23
+    /// This is a test for consistency of the tree, by inserting and deleting multiple random values
+    /// we check the correct algorithm by searching for the keys that should have been deleted and searching for all the ones that are left
     /// </summary>
     /// <param name="numberOfEntries"></param>
     /// <param name="numberOfKeysToDelete"></param>
+    [TestCase(100,50)]
     [TestCase(100,100)]
+    [TestCase(100,30)]
     [TestCase(100,100)]
+    [TestCase(100,90)]
+    [TestCase(100,80)]
+    [TestCase(100,10)]
+    [TestCase(100,70)]
     [TestCase(100,100)]
-    [TestCase(100,100)]
-    [TestCase(100,100)]
-    [TestCase(100,100)]
-    [TestCase(100,100)]
-    [TestCase(100,100)]
-    [TestCase(100,100)]
-    [TestCase(100,100)]
+    [TestCase(100,40)]
     [TestCase(100,100)]
     [TestCase(1000,1000)]
+    
     public void DeleteRandomKeysFromTree(int numberOfEntries, int numberOfKeysToDelete){
       Random random = new Random();
       string keysPrintOutInCaseOfError = "";
+      string keysComparison = "";
       int[] uniqueKeys = new int[numberOfEntries];
       for(int i = 0; i < uniqueKeys.Length; i++){
         uniqueKeys[i] = random.Next(1,10000);
@@ -180,18 +184,30 @@ namespace tests{
       foreach (int key in uniqueKeys) {
           _Tree.Insert(key, new Person("Name"));
       }
-      List<int> deletedKeys = DeleteRandomKeysFromTreeHelper(numberOfEntries, numberOfKeysToDelete, uniqueKeys);
+
+      List<int> allKeys = uniqueKeys.ToList();
+      List<int> deletedKeys = DeleteRandomKeysFromTreeHelper(numberOfEntries, numberOfKeysToDelete, ref allKeys);
+
+      bool balanced =_Tree.IsBalanced();
+      Assert.That(balanced,Is.True, $"Tree is unbalanced.");
 
       foreach(int key in deletedKeys){
         keysPrintOutInCaseOfError += key + ",";
         var result = _Tree.Search(key);
         Assert.That(result, Is.Null, $"Inserted key {key} should NOT be found. Below are the keys in order of entry and deletion.\n{keysPrintOutInCaseOfError}");
       }
-    }
+      foreach(int key in allKeys){
+        keysComparison += key + ", ";
+        var result = _Tree.Search(key);
+        Assert.That(result, Is.Not.Null, $"Inserted key {key} should be found. Below are the keys in order of entry and deletion. \n{keysComparison}");
+      }
+      int maxHeight = _Tree.GetMaxHeight();
+      int minHeight = _Tree.GetMinHeight();
+      Assert.That(maxHeight == minHeight, Is.True, $"Tree's minimum height is {minHeight}. Tree's maximum height is {maxHeight}.");
 
-    private List<int> DeleteRandomKeysFromTreeHelper(int numberOfEntries , int numberOfKeysToDelete, int[] uniqueKeys){
+    }
+    private List<int> DeleteRandomKeysFromTreeHelper(int numberOfEntries , int numberOfKeysToDelete, ref List<int> allKeys){
       List<int> keysToDelete = new List<int>();
-      List<int> allKeys = uniqueKeys.ToList();
       
       for (int i = 0; i < numberOfKeysToDelete; i++) {
         Random random = new Random();
@@ -211,15 +227,27 @@ namespace tests{
     /// </summary>
     /// 
 
-    [Test]
-    public void VerifyTreeHeightConsistency(){
-        
+    [TestCase(10)]
+    [TestCase(25)]
+    [TestCase(250)]
+    public void VerifyTreeHeightConsistency(int numberOfEntries){
+      Random random = new Random();
+      //string keysPrintOutInCaseOfError = "";
+      int[] uniqueKeys = new int[numberOfEntries];
+      for(int i = 0; i < uniqueKeys.Length; i++){
+        uniqueKeys[i] = random.Next(1,10000);
+        //keysPrintOutInCaseOfError += uniqueKeys[i] + ",";
+      }
+      //keysPrintOutInCaseOfError += "----------------";
+      foreach (int key in uniqueKeys) {
+          _Tree.Insert(key, new Person("Example"));
+      }
+      string output = _Tree.Traverse();
+      int maxHeight = _Tree.GetMaxHeight();
+      int minHeight = _Tree.GetMinHeight();
+      Assert.That(maxHeight == minHeight, Is.True, $"Tree's minimum height is {minHeight}. Tree's maximum height is {maxHeight}. \n BeloW: {output}");
     }
 
-
-
-
-    
     /// <summary>
     /// Author: Tristan Anderson
     /// Date: 2024-02-13

@@ -126,14 +126,16 @@ namespace BTreeVisualization{
 
     private int GetMinHeight(BTreeNode<T> node, int currentLevel){
       if(node == null || node is LeafNode<T>){
-        return currentLevel;
+        return currentLevel + 1;
       }
       if(node is NonLeafNode<T> nonLeafNode){
-        int minHeight = currentLevel;
+        int minHeight = int.MaxValue;
         foreach(var child in nonLeafNode.Children){
-          int childHeight = GetMinHeight(child, currentLevel + 1);
-          if(childHeight < minHeight){
-            minHeight = childHeight;
+          if(child != null){
+            int childHeight = GetMinHeight(child, currentLevel + 1);
+            if(childHeight < minHeight){
+              minHeight = childHeight;
+            }
           }
         }
       return minHeight;     
@@ -153,15 +155,17 @@ namespace BTreeVisualization{
 
     private int GetMaxHeight(BTreeNode<T> node, int currentLevel){
       if(node == null || node is LeafNode<T>){
-        return currentLevel;
+        return currentLevel + 1;
       }
       if(node is NonLeafNode<T> nonLeafNode){
         int maxHeight = currentLevel;
         foreach(var child in nonLeafNode.Children){
-          int childHeight = GetMinHeight(child, currentLevel + 1);
-          if(childHeight > maxHeight){
-            maxHeight = childHeight;
-          }
+          if(child != null){
+            int childHeight = GetMinHeight(child, currentLevel + 1);
+            if(childHeight > maxHeight){
+              maxHeight = childHeight;
+            }
+          }          
         }
       return maxHeight;     
       }
@@ -173,8 +177,11 @@ namespace BTreeVisualization{
     /// </summary>
     /// <returns></returns>
     /// 
+    public int GetMaxTreeHeightAlternate(){
+      return GetMaxTreeHeightAlternate(_Root);
+    }
 
-    public int GetMaxTreeHeightAlternate(BTreeNode<T> node){
+    private int GetMaxTreeHeightAlternate(BTreeNode<T> node){
       if(node == null){
         return 0;
       }
@@ -190,6 +197,34 @@ namespace BTreeVisualization{
         }
       }
       return maxHeight + 1;
+    }
+
+    /// <summary>
+    /// Author: Andreas Kramer
+    /// Alternate version of getting the minimum height of the tree, returns it as an integer
+    /// </summary>
+    /// <returns></returns>
+    /// 
+    public int GetMinTreeHeightAlternate(){
+      return GetMinTreeHeightAlternate(_Root);
+    }
+
+    private int GetMinTreeHeightAlternate(BTreeNode<T> node){
+      if(node == null){
+        return 0;
+      }
+      if(node is LeafNode<T>){
+        return 1;
+      }
+      NonLeafNode<T> nonLeafNode = (NonLeafNode<T>)node;
+      int minHeight = int.MaxValue;
+      foreach(var child in nonLeafNode.Children){
+        int childHeight = GetMinTreeHeightAlternate(child);
+        if(childHeight < minHeight){
+            minHeight = childHeight;
+        }
+      }
+      return minHeight + 1;
     }
 
     /// <summary>
@@ -222,7 +257,7 @@ namespace BTreeVisualization{
                 }
             }
         }
-        return true; // If all subtrees are balanced, then this subtree is also balanced.
+        return true; // If all subtrees are balanced, then this subtree is balanced.
     }
   }
 }
