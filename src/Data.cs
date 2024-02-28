@@ -18,7 +18,7 @@ namespace NodeData{
 
     public override string ToString()
     {
-      return "\"person\":{\"name\":\"" + _Name + "\"}";
+      return "{\"name\":\"" + _Name + "\"}";
     }
   }
 }
