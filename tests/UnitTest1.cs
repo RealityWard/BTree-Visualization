@@ -38,7 +38,6 @@ namespace tests{
     /// Date: 2024-02-14
     /// Testing the search functionality via different scenarios
     /// </summary>
-
     [Test]
     public void SearchInEmptyTreeTestReturnsNull(){
       Assert.That(_Tree.Search(1), Is.Null, "Search in an empty tree should return null.");
