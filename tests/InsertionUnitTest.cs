@@ -16,6 +16,10 @@ namespace tests{
         public void Setup(){
         _Tree = new(3,new BufferBlock<(Status status, long id, int numKeys, int[] keys, Person[] contents, long altID, int altNumKeys, int[] altKeys, Person[] altContents)>());
         }
+        /// <summary>
+        /// Author: Andreas Kramer
+        /// Testing insertion and searching for random keys
+        /// </summary>
         [Test]
         public void InsertAndSearchRandomKeys(){
             Random random = new Random();
@@ -25,7 +29,6 @@ namespace tests{
             for(int i = 0; i < numberOfKeys; i++){
                 int key = random.Next(1, 10000); 
                 string name = $"Person {i}";
-                //making sure keys are unique
                 if (!insertedKeys.ContainsKey(key)){
                     _Tree.Insert(key, new Person(name));
                     insertedKeys.Add(key, name);

@@ -179,6 +179,10 @@ namespace tests
     }
 
     //Delete Tests
+    /// <summary>
+    /// Author: Andreas Kramer
+    /// deletes a key from a leafnode and checks if it actually got deleted
+    /// </summary>
     [Test]
     public void DeleteLeafNodeKey()
     {
