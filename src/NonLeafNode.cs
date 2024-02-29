@@ -120,8 +120,8 @@ namespace BTreeVisualization
       int i = 0;
       while (i < _NumKeys && key > _Keys[i]){
         i++;
-      }       
-      if (key != _Keys[i] || key == 0)
+      }
+      if (i == _NumKeys || key != _Keys[i] || key == 0)
       {
         result = _Children[i].InsertKey(key, data);
         if (result.Item2 != null && result.Item1.Item2 != null)

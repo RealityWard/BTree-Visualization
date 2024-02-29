@@ -125,7 +125,7 @@ namespace BTreeVisualization
       int i = 0;
       while (i < _NumKeys && key > _Keys[i])
         i++;
-      if (key != _Keys[i] || key == 0)
+      if (i == _NumKeys || key != _Keys[i] || key == 0)
       {
         for (int j = _NumKeys - 1; j >= i; j--)
         {
