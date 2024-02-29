@@ -30,12 +30,10 @@ namespace tests
     {
       _Tree.Insert(1, new Person("Chad"));
       Assert.That(_Tree.Search(1), Is.Not.Null);
-      if (_Tree.Search(1) != null)
-      {
-        Assert.That(_Tree.Search(1).Name, Is.EqualTo("Chad"));
-        if (_Tree.Search(1).Name == "Chad")
-        {
-          Assert.That(Regex.Count(_Tree.Traverse(), "name"), Is.EqualTo(1));
+      if (_Tree.Search(1) != null){
+        Assert.That(_Tree.Search(1).Name,Is.EqualTo("Chad"));
+        if(_Tree.Search(1).Name == "Chad"){
+          Assert.That(Regex.Count(_Tree.Traverse(),"name"), Is.EqualTo(1));
         }
       }
       Assert.That(_Tree.Search(0), Is.Null);
@@ -311,6 +309,7 @@ namespace tests
     /// Date: 2024-02-13</remarks>
     /// <param name="x">Number of entries.</param>
     [TestCase(1)]
+    [TestCase(2)]
     [TestCase(2)]
     [TestCase(3)]
     [TestCase(4)]

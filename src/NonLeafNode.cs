@@ -1,7 +1,10 @@
-﻿/**
-Desc: Implements the non-leaf nodes of a B-Tree. Recursive function iteration due to children nodes.
+﻿/*
+Author: Emily Elzinga and Tristan Anderson
+Date: 2/07/2024
+Desc: Describes functionality for non-leaf nodes on the BTree. Recursive function iteration due to children nodes.
 */
 using System.Threading.Tasks.Dataflow;
+
 
 namespace BTreeVisualization
 {

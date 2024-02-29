@@ -1,5 +1,10 @@
+BTreeTreeVisualization.csproj
+tests.csproj
+tests.sln
 BTree-Visualization.sln
 **/bin/
 **/obj/
 .vs
 .vscode
+.gitignore
+.fake

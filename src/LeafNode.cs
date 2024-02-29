@@ -4,6 +4,10 @@ iteration due to no children.
 */
 using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
+using System.Text.RegularExpressions;
+using NodeData;
+
+
 
 namespace BTreeVisualization
 {
@@ -46,7 +50,8 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Iterates over the _Keys[] to find an entry == key.
+    /// Author: Tristan Anderson
+    /// Iterates over the _Keys array to find key. If found returns the index else returns -1.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
@@ -144,6 +149,7 @@ namespace BTreeVisualization
     }
 
     /// <summary>
+    /// Author: Tristan Anderson
     /// If the entry exists it deletes it.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
