@@ -12,7 +12,6 @@ namespace NodeData{
     private string _Name = name;
 
     public string Name{
-    public string Name{
       get { return _Name; }
       set { _Name = value; }
     }

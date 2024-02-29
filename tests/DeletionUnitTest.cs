@@ -5,6 +5,8 @@ Reference: https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-wi
 using System.Text.RegularExpressions;
 using BTreeVisualization;
 using NodeData;
+using System.Threading.Tasks.Dataflow;
+using System.Text.Json;
 
 namespace tests{
   [TestFixture]
@@ -12,7 +14,7 @@ namespace tests{
     private BTree<Person> _Tree;
     [SetUp]
     public void Setup(){
-      _Tree = new(3);
+      _Tree = new(3,new BufferBlock<(Status status, long id, int numKeys, int[] keys, Person[] contents, long altID, int altNumKeys, int[] altKeys, Person[] altContents)>());
     }
         
 
