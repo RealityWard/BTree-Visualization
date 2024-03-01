@@ -11,13 +11,13 @@ namespace B_TreeVisualizationGUI
     internal class GUINode
     {
         public int[] Keys { get; set; }
-        public GUINode[] Children { get; set; }
+        public GUINode[]? Children { get; set; }
         public bool IsLeaf { get; set; }
         public bool IsRoot { get; set; }
         public int NumKeys { get; set; }
         public float NodeWidth, NodeHeight;
 
-        public GUINode(int[] keys, bool isLeaf, bool IsRoot,  GUINode[] children = null)
+        public GUINode(int[] keys, bool isLeaf, bool IsRoot,  GUINode[]? children = null)
         {
             Keys = keys;
             Children = children;
