@@ -215,9 +215,7 @@ class Program
       }
       inputBuffer.Post((Action.Traverse, -1, new Person((-1).ToString())));
       inputBuffer.Post((Action.Close, -1, new Person((-1).ToString())));
-      while (await outputBuffer.OutputAvailableAsync())
-      {
-        (Status status,
+      List<(Status status,
         long id,
         int numKeys,
         int[] keys,
@@ -225,8 +223,11 @@ class Program
         long altID,
         int altNumKeys,
         int[] altKeys,
-        Person[] altContents) = await outputBuffer.ReceiveAsync();
-        switch (status)
+        Person[] altContents)> history = new();
+      while (await outputBuffer.OutputAvailableAsync())
+      {
+        history.Add(await outputBuffer.ReceiveAsync());
+        switch (history.Last().status)
         {
           case Status.Close:
             inputBuffer.Post((Action.Close, -1, null));
@@ -235,17 +236,8 @@ class Program
           default:// Will close threads upon receiving a bad Action.
             inputBuffer.Post((Action.Close, -1, null));
             outputBuffer.Complete();
-            Console.WriteLine("Action:{0} not recognized", status);
+            Console.WriteLine("Action:{0} not recognized", history.Last().status);
             break;
-        }
-        if (Status.Close != status)
-        {
-          Console.WriteLine("-------------------------------------\n" +
-                            "Status Code: {0}\nID: {1}", status, id);
-        }
-        else
-        {
-          inputBuffer.Complete();
         }
       }
     });
