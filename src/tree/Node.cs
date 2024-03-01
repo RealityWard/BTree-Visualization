@@ -4,6 +4,7 @@ Date: 2024-02-03
 Desc: Base class for all the node objects used in the BTree and B+Tree.
 */
 using System.Threading.Tasks.Dataflow;
+using ThreadCommunication;
 
 namespace BTreeVisualization
 {

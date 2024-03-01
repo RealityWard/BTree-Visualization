@@ -1,141 +1,141 @@
-// Program.cs
-
-using System.Text.RegularExpressions;
 using BTreeVisualization;
 using NodeData;
 using System.Threading.Tasks.Dataflow;
+using ThreadCommunication;
 
-/// <summary>
-/// Used to indicate the various message types
-/// being communicated to the display thread.
-/// </summary>
-/// <remarks>Author: Tristan Anderson</remarks>
-public enum Status
-{
+namespace ThreadCommunication{
   /// <summary>
-  /// Initial response to Insert Action. Nothing else sent.
+  /// Used to indicate the various message types
+  /// being communicated to the display thread.
   /// </summary>
-  Insert,
-  /// <summary>
-  /// Sent everytime InsertKey is called on a node. Only ID sent.
-  /// </summary>
-  ISearching,
-  /// <summary>
-  /// Sent once an insert to node occurs thus incrementing the NumKeys attribute. 
-  /// ID,NumKeys,Keys,Contents of altered node sent.
-  /// In the case of duplicate key ID,-1,[],[].
-  /// </summary>
-  Inserted,
-  /// <summary>
-  /// Sent once from the node split was called on. Alt refers to new sibiling node.
-  /// ID,NumKeys,Keys,Contents,AltID,AltNumKeys,AltKeys,AltContents
-  /// All values will be sent to update existing node and create sibiling node.
-  /// </summary>
-  Split,
-  /// <summary>
-  /// Initial response to Delete Action. Nothing else sent.
-  /// </summary>
-  Delete,
-  /// <summary>
-  /// Sent everytime DeleteKey is called on a node. Only ID sent.
-  /// </summary>
-  DSearching,
-  /// <summary>
-  /// Sent once a key was found or end of search.
-  /// ID,NumKeys,Keys,Contents of altered node sent.
-  /// ID,-1,[],[] in the case of not found.
-  /// </summary>
-  Deleted,
-  /// <summary>
-  /// Sent everytime ForfeitKey is called on a node. Only ID sent.
-  /// </summary>
-  FSearching,
-  /// <summary>
-  /// Sent once it retrieves a key from a leaf node.
-  /// ID,NumKeys,Keys,Contents
-  /// values will be sent to update existing node.
-  /// </summary>
-  Forfeit,
-  /// <summary>
-  /// Sent once from the node merge was called on. Alt refers the sibiling node being eaten.
-  /// ID,NumKeys,Keys,Contents,AltID
-  /// values will be sent to update existing node and delete sibiling node.
-  /// </summary>
-  Merge,
-  /// <summary>
-  /// Sent once after merging child nodes.
-  /// ID,NumKeys,Keys,Contents
-  /// values will be sent to update existing node.
-  /// </summary>
-  MergeParent,
-  /// <summary>
-  /// Sent when a full merge is not possible thus one sibiling takes a
-  /// bite out of its sibiling. Alt refers the sibiling node being biten.
-  /// ID,NumKeys,Keys,Contents,AltID,AltNumKeys,AltKeys,AltContents
-  /// </summary>
-  UnderFlow,
-  /// <summary>
-  /// During both split and merge children will need to update who they point to.
-  /// Alt refers to child node.
-  /// ID,-1,[],[],AltID
-  /// </summary>
-  Shift,
-  /// <summary>
-  /// Initial response to Search Action. Nothing else sent.
-  /// </summary>
-  Search,
-  /// <summary>
-  /// Sent everytime SearchKey is called on a node. Only ID sent.
-  /// </summary>
-  SSearching,
-  /// <summary>
-  /// Sent once a key was found or end of search.
-  /// In case of found, NumKeys will be index of the key in the node.
-  /// Keys will contain only the key searched for.
-  /// Contents will contain only the content belonging to the key.
-  /// ID,NumKeys,Keys,Contents
-  /// ID,-1,[],[] in the case of not found.
-  /// </summary>
-  Found,
-  /// <summary>
-  /// Sent to close/complete the buffer and as a result
-  /// terminate the thread using this buffer.
-  /// </summary>
-  Close
-}
+  /// <remarks>Author: Tristan Anderson</remarks>
+  public enum Status
+  {
+    /// <summary>
+    /// Initial response to Insert TreeCommand. Nothing else sent.
+    /// </summary>
+    Insert,
+    /// <summary>
+    /// Sent everytime InsertKey is called on a node. Only ID sent.
+    /// </summary>
+    ISearching,
+    /// <summary>
+    /// Sent once an insert to node occurs thus incrementing the NumKeys attribute. 
+    /// ID,NumKeys,Keys,Contents of altered node sent.
+    /// In the case of duplicate key ID,-1,[],[].
+    /// </summary>
+    Inserted,
+    /// <summary>
+    /// Sent once from the node split was called on. Alt refers to new sibiling node.
+    /// ID,NumKeys,Keys,Contents,AltID,AltNumKeys,AltKeys,AltContents
+    /// All values will be sent to update existing node and create sibiling node.
+    /// </summary>
+    Split,
+    /// <summary>
+    /// Initial response to Delete TreeCommand. Nothing else sent.
+    /// </summary>
+    Delete,
+    /// <summary>
+    /// Sent everytime DeleteKey is called on a node. Only ID sent.
+    /// </summary>
+    DSearching,
+    /// <summary>
+    /// Sent once a key was found or end of search.
+    /// ID,NumKeys,Keys,Contents of altered node sent.
+    /// ID,-1,[],[] in the case of not found.
+    /// </summary>
+    Deleted,
+    /// <summary>
+    /// Sent everytime ForfeitKey is called on a node. Only ID sent.
+    /// </summary>
+    FSearching,
+    /// <summary>
+    /// Sent once it retrieves a key from a leaf node.
+    /// ID,NumKeys,Keys,Contents
+    /// values will be sent to update existing node.
+    /// </summary>
+    Forfeit,
+    /// <summary>
+    /// Sent once from the node merge was called on. Alt refers the sibiling node being eaten.
+    /// ID,NumKeys,Keys,Contents,AltID
+    /// values will be sent to update existing node and delete sibiling node.
+    /// </summary>
+    Merge,
+    /// <summary>
+    /// Sent once after merging child nodes.
+    /// ID,NumKeys,Keys,Contents
+    /// values will be sent to update existing node.
+    /// </summary>
+    MergeParent,
+    /// <summary>
+    /// Sent when a full merge is not possible thus one sibiling takes a
+    /// bite out of its sibiling. Alt refers the sibiling node being biten.
+    /// ID,NumKeys,Keys,Contents,AltID,AltNumKeys,AltKeys,AltContents
+    /// </summary>
+    UnderFlow,
+    /// <summary>
+    /// During both split and merge children will need to update who they point to.
+    /// Alt refers to child node.
+    /// ID,-1,[],[],AltID
+    /// </summary>
+    Shift,
+    /// <summary>
+    /// Initial response to Search TreeCommand. Nothing else sent.
+    /// </summary>
+    Search,
+    /// <summary>
+    /// Sent everytime SearchKey is called on a node. Only ID sent.
+    /// </summary>
+    SSearching,
+    /// <summary>
+    /// Sent once a key was found or end of search.
+    /// In case of found, NumKeys will be index of the key in the node.
+    /// Keys will contain only the key searched for.
+    /// Contents will contain only the content belonging to the key.
+    /// ID,NumKeys,Keys,Contents
+    /// ID,-1,[],[] in the case of not found.
+    /// </summary>
+    Found,
+    /// <summary>
+    /// Sent to close/complete the buffer and as a result
+    /// terminate the thread using this buffer.
+    /// </summary>
+    Close
+  }
 
-/// <summary>
-/// Used to indicate what action to perform on the tree thread.
-/// </summary>
-/// <remarks>Author: Tristan Anderson</remarks>
-public enum Action
-{
   /// <summary>
-  /// Create new tree with the degree set from key attribute.
+  /// Used to indicate what action to perform on the tree thread.
   /// </summary>
-  Tree,
-  /// <summary>
-  /// Insert into tree object key with content.
-  /// </summary>
-  Insert,
-  /// <summary>
-  /// Delete key and the corresponding content
-  /// within the tree.
-  /// </summary>
-  Delete,
-  /// <summary>
-  /// Search for key within the tree.
-  /// </summary>
-  Search,
-  /// <summary>
-  /// Console output the tree traversal.
-  /// </summary>
-  Traverse,
-  /// <summary>
-  /// Sent to close/complete the buffer and as a result
-  /// terminate the thread using this buffer.
-  /// </summary>
-  Close
+  /// <remarks>Author: Tristan Anderson</remarks>
+  public enum TreeCommand
+  {
+    /// <summary>
+    /// Create new tree with the degree set from key attribute.
+    /// </summary>
+    Tree,
+    /// <summary>
+    /// Insert into tree object key with content.
+    /// </summary>
+    Insert,
+    /// <summary>
+    /// Delete key and the corresponding content
+    /// within the tree.
+    /// </summary>
+    Delete,
+    /// <summary>
+    /// Search for key within the tree.
+    /// </summary>
+    Search,
+    /// <summary>
+    /// Console output the tree traversal.
+    /// </summary>
+    Traverse,
+    /// <summary>
+    /// Sent to close/complete the buffer and as a result
+    /// terminate the thread using this buffer.
+    /// </summary>
+    Close
+  }
 }
 
 class Program
@@ -164,7 +164,7 @@ class Program
       )>();
 
     var inputBuffer = new BufferBlock<(
-      Action action,
+      TreeCommand action,
       int key,
       Person? content
       )>();
@@ -175,30 +175,30 @@ class Program
       Console.WriteLine("Producer");
       while (await inputBuffer.OutputAvailableAsync())
       {
-        (Action action, int key, Person content) = await inputBuffer.ReceiveAsync();
+        (TreeCommand action, int key, Person content) = await inputBuffer.ReceiveAsync();
         switch (action)
         {
-          case Action.Tree:
+          case TreeCommand.Tree:
             _Tree = new(key, outputBuffer);
             break;
-          case Action.Insert:
+          case TreeCommand.Insert:
             _Tree.Insert(key, content);
             break;
-          case Action.Delete:
+          case TreeCommand.Delete:
             _Tree.Delete(key);
             break;
-          case Action.Search:
+          case TreeCommand.Search:
             _Tree.Search(key);
             break;
-          case Action.Traverse:
+          case TreeCommand.Traverse:
             Console.WriteLine(_Tree.Traverse());
             break;
-          case Action.Close:
+          case TreeCommand.Close:
             inputBuffer.Complete();
             break;
-          default:// Will close buffer upon receiving a bad Action.
+          default:// Will close buffer upon receiving a bad TreeCommand.
             inputBuffer.Complete();
-            Console.WriteLine("Action:{0} not recognized", action);
+            Console.WriteLine("TreeCommand:{0} not recognized", action);
             break;
         }
       }
@@ -211,10 +211,10 @@ class Program
       int[] uniqueKeys1 = [0, 237, 321, 778, 709, 683, 250, 525, 352, 300, 980, 40, 721, 281, 532, 747, 58, 767, 196, 831, 884, 393, 83, 84];
       foreach (int key in uniqueKeys1)
       {
-        inputBuffer.Post((Action.Insert, key, new Person(key.ToString())));
+        inputBuffer.Post((TreeCommand.Insert, key, new Person(key.ToString())));
       }
-      inputBuffer.Post((Action.Traverse, -1, new Person((-1).ToString())));
-      inputBuffer.Post((Action.Close, -1, new Person((-1).ToString())));
+      inputBuffer.Post((TreeCommand.Traverse, -1, new Person((-1).ToString())));
+      inputBuffer.Post((TreeCommand.Close, -1, new Person((-1).ToString())));
       List<(Status status,
         long id,
         int numKeys,
@@ -230,13 +230,13 @@ class Program
         switch (history.Last().status)
         {
           case Status.Close:
-            inputBuffer.Post((Action.Close, -1, null));
+            inputBuffer.Post((TreeCommand.Close, -1, null));
             outputBuffer.Complete();
             break;
-          default:// Will close threads upon receiving a bad Action.
-            inputBuffer.Post((Action.Close, -1, null));
+          default:// Will close threads upon receiving a bad TreeCommand.
+            inputBuffer.Post((TreeCommand.Close, -1, null));
             outputBuffer.Complete();
-            Console.WriteLine("Action:{0} not recognized", history.Last().status);
+            Console.WriteLine("TreeCommand:{0} not recognized", history.Last().status);
             break;
         }
       }
