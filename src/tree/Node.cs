@@ -17,12 +17,12 @@ namespace BTreeVisualization
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class Node<N, T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
+  public abstract class Node<N, T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Output Buffer for Status updates to be externally viewed.
     /// </summary>
-    protected BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> _BufferBlock = bufferBlock;
+    protected BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock = bufferBlock;
     /// <summary>
     /// Determines the number of keys and children per node.
     /// </summary>
@@ -204,19 +204,41 @@ namespace BTreeVisualization
   /// <param name="degree">Same as parent node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class BTreeNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) : Node<BTreeNode<T>, T>(degree, bufferBlock)
+  public abstract class BTreeNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<BTreeNode<T>, T>(degree, bufferBlock)
   {
     /// <summary>
     /// Holds children for this node.
     /// </summary>
-    protected T[] _Contents = new T[2 * degree - 1];
+    protected T?[] _Contents = new T[2 * degree - 1];
 
     /// <summary>
     /// Getter for _Contents[]
     /// </summary>
-    public T[] Contents
+    public T?[] Contents
     {
       get { return _Contents; }
     }
+  }
+
+  /// <summary>
+  /// Thrown when a reference to a content object is null.
+  /// </summary>
+  /// <remarks>Author: Tristan Anderson</remarks>
+  public class NullContentReferenceException : Exception
+  {
+    public NullContentReferenceException() : base() { }
+    public NullContentReferenceException(string message) : base(message) { }
+    public NullContentReferenceException(string message, Exception inner) : base(message, inner) { }
+  }
+
+  /// <summary>
+  /// Thrown when a reference to a content object is null.
+  /// </summary>
+  /// <remarks>Author: Tristan Anderson</remarks>
+  public class NullChildReferenceException : Exception
+  {
+    public NullChildReferenceException() : base() { }
+    public NullChildReferenceException(string message) : base(message) { }
+    public NullChildReferenceException(string message, Exception inner) : base(message, inner) { }
   }
 }

@@ -156,11 +156,11 @@ class Program
       long id,
       int numKeys,
       int[] keys,
-      Person[] contents,
+      Person?[] contents,
       long altID,
       int altNumKeys,
       int[] altKeys,
-      Person[] altContents
+      Person?[] altContents
       )>();
 
     var inputBuffer = new BufferBlock<(

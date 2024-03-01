@@ -19,8 +19,8 @@ namespace BTreeVisualization
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
   public class LeafNode<T>(int degree, BufferBlock<(Status status,
-      long id, int numKeys, int[] keys, T[] contents, long altID,
-      int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
+      long id, int numKeys, int[] keys, T?[] contents, long altID,
+      int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
       : BTreeNode<T>(degree, bufferBlock)
   {
     /// <summary>
@@ -36,8 +36,8 @@ namespace BTreeVisualization
     /// externally viewed.</param>
     public LeafNode(int degree, int[] keys, T[] contents,
         BufferBlock<(Status status, long id, int numKeys, int[] keys,
-        T[] contents, long altID, int altNumKeys, int[] altKeys,
-        T[] altContents)> bufferBlock) : this(degree, bufferBlock)
+        T?[] contents, long altID, int altNumKeys, int[] altKeys,
+        T?[] altContents)> bufferBlock) : this(degree, bufferBlock)
     {
       _NumKeys = keys.Length;
       for (int i = 0; i < keys.Length; i++)
@@ -96,13 +96,17 @@ namespace BTreeVisualization
       for (int i = 0; i < _Degree - 1; i++)
       {
         newKeys[i] = _Keys[i + _Degree];
-        newContent[i] = _Contents[i + _Degree];
+        newContent[i] = _Contents[i + _Degree] 
+          ?? throw new NullContentReferenceException(
+            $"Content at index:{i + _Degree} within node:{ID}");
       }
       _NumKeys = _Degree - 1;
       LeafNode<T> newNode = new(_Degree, newKeys, newContent, _BufferBlock);
       _BufferBlock.Post((Status.Split, ID, NumKeys, Keys, Contents, newNode.ID,
                           newNode.NumKeys, newNode.Keys, newNode.Contents));
-      return ((_Keys[_NumKeys], _Contents[_NumKeys]), newNode);
+      return ((_Keys[_NumKeys], _Contents[_NumKeys] 
+        ?? throw new NullContentReferenceException(
+          $"Content at index:{NumKeys} within node:{ID}")), newNode);
     }
 
     /// <summary>
@@ -180,7 +184,9 @@ namespace BTreeVisualization
     {
       _NumKeys--;
       _BufferBlock.Post((Status.Forfeit, ID, NumKeys, Keys, Contents, 0, -1, [], []));
-      return (_Keys[_NumKeys], _Contents[_NumKeys]);
+      return (_Keys[_NumKeys], _Contents[_NumKeys] 
+        ?? throw new NullContentReferenceException(
+          $"Content at index:{_NumKeys} within node:{ID}"));
     }
 
     /// <summary>

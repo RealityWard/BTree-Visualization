@@ -10,7 +10,7 @@ using ThreadCommunication;
 
 namespace BTreeVisualization
 {
-  public class BTree<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
+  public class BTree<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Entry point of the tree.
@@ -86,7 +86,9 @@ namespace BTreeVisualization
       _Root.DeleteKey(key);
       if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
-        _Root = ((NonLeafNode<T>)_Root).Children[0];
+        _Root = ((NonLeafNode<T>)_Root).Children[0]
+          ?? throw new NullChildReferenceException(
+            $"Child of child on root node");;
       }
     }
 
@@ -140,7 +142,8 @@ namespace BTreeVisualization
       BTreeNode<T> currentNode = _Root;
       while(currentNode is NonLeafNode<T> nonLeafNode && nonLeafNode.Children.Length > 0)
       {
-        currentNode = nonLeafNode.Children[0];
+        currentNode = nonLeafNode.Children[0] ?? throw new NullChildReferenceException(
+          $"Child at index:0 within node:{nonLeafNode.ID}");
         height++;
       }
       return height;
@@ -228,7 +231,7 @@ namespace BTreeVisualization
 
         if (node is NonLeafNode<T> nonLeafNode) {
             foreach (var child in nonLeafNode.Children) {
-                if (!CheckNodeBalance(child, currentLevel + 1, ref leafLevel)) {
+                if (child != null && !CheckNodeBalance(child, currentLevel + 1, ref leafLevel)) {
                     return false;
                 }
             }
