@@ -5,8 +5,9 @@ Date: 2024-02-03
 Desc: Maintains the entry point of the BTree data 
 structure and initializes root and new node creation in the beginning.
 */
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks.Dataflow;
+using ThreadCommunication;
+
 namespace BTreeVisualization
 {
   public class BTree<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
@@ -154,8 +155,7 @@ namespace BTreeVisualization
     public int GetMinHeight(){
       return GetMinHeight(_Root,0);
     }
-
-    private int GetMinHeight(BTreeNode<T> node, int currentLevel){
+    static private int GetMinHeight(BTreeNode<T> node, int currentLevel){
       if(node == null || node is LeafNode<T>){
         return currentLevel + 1;
       }
@@ -183,7 +183,6 @@ namespace BTreeVisualization
     public int GetMaxHeight(){
       return GetMaxHeight(_Root,0);
     }
-
     private int GetMaxHeight(BTreeNode<T> node, int currentLevel){
       if(node == null || node is LeafNode<T>){
         return currentLevel + 1;
@@ -217,7 +216,8 @@ namespace BTreeVisualization
         int leafLevel = -1; 
         return CheckNodeBalance(_Root, 0, ref leafLevel);
     }
-    private bool CheckNodeBalance(BTreeNode<T> node, int currentLevel, ref int leafLevel) {
+
+    static private bool CheckNodeBalance(BTreeNode<T> node, int currentLevel, ref int leafLevel) {
         if (node is LeafNode<T>) {
             if (leafLevel == -1) {
                 leafLevel = currentLevel;
