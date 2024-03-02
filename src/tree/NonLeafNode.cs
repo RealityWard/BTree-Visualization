@@ -181,19 +181,25 @@ namespace BTreeVisualization
         newChildren[i] = _Children[i + _Degree]
           ?? throw new NullChildReferenceException(
             $"Child at index:{i + _Degree} within node:{ID}");
+        _Contents[i + _Degree] = default;
+        _Children[i + _Degree] = default;
         _BufferBlock.Post((Status.Shift, newChildren[i].ID, -1, [], [], ID, -1, [], []));
       }
       newChildren[i] = _Children[i + _Degree]
         ?? throw new NullChildReferenceException(
           $"Child at index:{i + _Degree} within node:{ID}");
+      _Children[i + _Degree] = default;
       _NumKeys = _Degree - 1;
       NonLeafNode<T> newNode = new(_Degree, newKeys, newContent,
         newChildren, _BufferBlock);
+      (int, T) dividerEntry = (_Keys[_NumKeys], _Contents[_NumKeys]
+        ?? throw new NullContentReferenceException(
+          $"Content at index:{_NumKeys} within node:{ID}"));
+      _Keys[_NumKeys] = default;
+      _Contents[_NumKeys] = default;
       _BufferBlock.Post((Status.Split, ID, NumKeys, Keys, Contents,
         newNode.ID, newNode.NumKeys, newNode.Keys, newNode.Contents));
-      return ((_Keys[_NumKeys], _Contents[_NumKeys]
-        ?? throw new NullContentReferenceException(
-          $"Content at index:{_NumKeys} within node:{ID}")), newNode);
+      return (dividerEntry, newNode);
     }
 
     /// <summary>
@@ -362,6 +368,9 @@ namespace BTreeVisualization
               index++;
               _Children[index] = _Children[index + 1];
             }
+            _Keys[index] = default;
+            _Contents[index] = default;
+            _Children[index + 1] = default;
             _NumKeys--;
             _BufferBlock.Post((Status.MergeParent, ID, NumKeys, Keys, Contents, 0, -1, [], []));
           }
@@ -403,7 +412,10 @@ namespace BTreeVisualization
         _Children[i] = _Children[i + 1];
       }
       _NumKeys--;
+      _Keys[_NumKeys] = default;
+      _Contents[_NumKeys] = default;
       _Children[_NumKeys] = _Children[_NumKeys + 1];
+      _Children[_NumKeys + 1] = default;
     }
 
     /// <summary>
@@ -438,7 +450,10 @@ namespace BTreeVisualization
     /// Date: 2024-02-22</remarks>
     public override void LosesToRight()
     {
+      _Children[_NumKeys] = default;
       _NumKeys--;
+      _Keys[_NumKeys] = default;
+      _Contents[_NumKeys] = default;
     }
 
     /// <summary>
