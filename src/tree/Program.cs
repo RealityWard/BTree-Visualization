@@ -172,7 +172,7 @@ class Program
     // Producer
     Task producer = Task.Run(async () =>
     {
-      Console.WriteLine("Producer");
+      Thread.CurrentThread.Name = "Producer";
       while (await inputBuffer.OutputAvailableAsync())
       {
         (TreeCommand action, int key, Person content) = await inputBuffer.ReceiveAsync();

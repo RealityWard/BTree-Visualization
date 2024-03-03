@@ -54,10 +54,10 @@ namespace tests{
       Assert.That(_Tree.Search(a[0]),Is.Null, $"Key {a[0]} should NOT be found. Duplicate values should be ignored at insertion.");     
     }
     /// <summary>
-    /// Author: Tristan Anderson
     /// Date: 2024-02-13
     /// Just testing how NUnit works and testing initial insert and retrieval.
     /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
     [Test]
     public void BasicTest(){
       _Tree.Insert(1,new Person("Chad"));
