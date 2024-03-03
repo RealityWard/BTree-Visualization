@@ -10,17 +10,14 @@ namespace B_TreeVisualizationGUI
 {
     internal class GUITree : Form1
     {
-        private GUINode root;
+        public GUINode root;
         public float centerx, centery;
         private Panel displayPanel;
-        
 
         public GUITree(GUINode root, Panel displayPanel)
         {
             this.root = root;
             this.displayPanel = displayPanel;
-            centerx = this.ClientSize.Width / 2;
-            centery = this.ClientSize.Height / 2;
         }
 
         public void DrawTree(Graphics graphics, GUINode currentNode, float x, float y)
@@ -29,29 +26,72 @@ namespace B_TreeVisualizationGUI
 
             var pen = new Pen(Color.MediumSlateBlue, 2);
 
-            // Draw node
+            // Calculate the total width of the current subtree
+            float subtreeWidth = CalculateSubtreeWidth(currentNode);
+
+            // Draw the current node
             currentNode.DisplayNode(graphics, x, y);
 
             // Recursively draw child nodes if this is not a leaf
-            if (currentNode.Children != null)
+            if (currentNode.Children != null && currentNode.NumKeys > 0)
             {
-                for (int i = 0; i < currentNode.NumKeys; i++)
+                float startX = x - subtreeWidth /2;
+                float nodeSlot = (subtreeWidth / currentNode.Children.Length); // Here
+
+                for (int i = 0; i < currentNode.Children.Length; i++)
                 {
-                    // Store parent coordinates
-                    float parentX = x;
-                    float parentY = y + currentNode.NodeHeight;
+                    GUINode childNode = i < currentNode.Children.Length ? currentNode.Children[i] : null; // FIX LATER
 
-                    // Calculate child node position
-                    float childX = x - (200 / 2) + (currentNode.NodeWidth * i) + currentNode.NodeWidth / 2;
-                    float childY = y + currentNode.NodeHeight + 50;
+                    // float childSubtreeWidth = CalculateSubtreeWidth(currentNode);
+                    
+                    float childX = startX + (i * nodeSlot) + nodeSlot / 2;
+                    float childY = y + currentNode.NodeHeight + 50; // Vertical spacing: FIX LATER
 
-                    // Draw child
-                    DrawTree(graphics, currentNode.Children[i], childX, childY);
+                    if (childNode != null)
+                    {
+                        // Draw the child subtree
+                        DrawTree(graphics, childNode, childX, childY);
 
-                    // Draw link from parent to child
-                    graphics.DrawLine(pen, parentX, parentY, childX + currentNode.NodeWidth / 2, childY);
+                        // Draw line from parent to child
+                        graphics.DrawLine(pen, x, y + currentNode.NodeHeight, childX, childY);
+                        
+                        //startX = startX - subtreeWidth / 2 + nodeSlot; // Here
+                    }
+                    else
+                    {
+                        // If a child node is null, we should still move startX to the right to keep the spacing consistent
+                        //startX += currentNode.NodeWidth * 2;
+                    }
                 }
             }
+        }
+
+        // Method to calculate the width needed for a subtree based on the widths of its children
+        private float CalculateSubtreeWidth(GUINode node)
+        {
+            // Return the node's own width if it is a leaf or has no children.
+            if (node.IsLeaf || node.Children == null)
+            {
+                return node.NodeWidth;
+            }
+
+            float width = 0;
+
+            // Loop through each child node
+            for (int i = 0; i < node.Children.Length; i++)
+            {
+                if (node.Children[i] != null)
+                {
+                    // Recursively calculate the subtree width of each child
+                    width += CalculateSubtreeWidth(node.Children[i]);
+                }
+            }
+
+            // Add the total width of children to the width of the node
+            width += (node.Children.Length - 1) * 10; // Add spacing between child nodes
+
+            // Ensure that the width is at least as wide as the node itself to maintain the tree structure
+            return Math.Max(width, node.NodeWidth);
         }
     }
 }
