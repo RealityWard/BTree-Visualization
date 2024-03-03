@@ -175,14 +175,16 @@ class Program
       Thread.CurrentThread.Name = "Producer";
       while (await inputBuffer.OutputAvailableAsync())
       {
-        (TreeCommand action, int key, Person content) = await inputBuffer.ReceiveAsync();
+        (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
         switch (action)
         {
           case TreeCommand.Tree:
             _Tree = new(key, outputBuffer);
             break;
           case TreeCommand.Insert:
-            _Tree.Insert(key, content);
+            _Tree.Insert(key, content 
+              ?? throw new NullContentReferenceException(
+                "Insert on tree with null content."));
             break;
           case TreeCommand.Delete:
             _Tree.Delete(key);
@@ -219,14 +221,14 @@ class Program
         long id,
         int numKeys,
         int[] keys,
-        Person[] contents,
+        Person?[] contents,
         long altID,
         int altNumKeys,
         int[] altKeys,
-        Person[] altContents)> history = new();
+        Person?[] altContents)> history = [];
       while (await outputBuffer.OutputAvailableAsync())
       {
-        history.Add(await outputBuffer.ReceiveAsync());
+        history.Add(outputBuffer.Receive());
         switch (history.Last().status)
         {
           case Status.Close:
