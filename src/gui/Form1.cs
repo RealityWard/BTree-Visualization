@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Reflection.Metadata;
 using System.Windows.Forms;
 
 namespace B_TreeVisualizationGUI
@@ -6,15 +7,29 @@ namespace B_TreeVisualizationGUI
     public partial class Form1 : Form
     {
         // Global variables
-        int scrollableWidth = 5000;
-        int scrollableHeight = 5000;
+        int scrollableWidth = 10000;
+        int scrollableHeight = 10000;
         private GUITree _tree; // Class member to store the tree
         Dictionary<int, GUINode> nodeDictionary = new Dictionary<int, GUINode>();
+        private System.Windows.Forms.Timer scrollTimer;
 
         public Form1()
         {
             InitializeComponent();
             panel1.Scroll += Panel1_Scroll;
+
+            // Flicker fixes
+            scrollTimer = new System.Windows.Forms.Timer();
+            scrollTimer.Interval = 200; // Adjust the delay as needed
+            scrollTimer.Tick += ScrollTimer_Tick;
+        }
+
+        private async void ScrollTimer_Tick(object sender, EventArgs e)
+        {
+            scrollTimer.Stop();
+
+            // Redraw panel after a delay
+            panel1.Invalidate();
         }
 
         private void cmbxMaxDegree_SelectedIndexChanged(object sender, EventArgs e)
@@ -25,42 +40,56 @@ namespace B_TreeVisualizationGUI
         private void InitializeTree()
         {
             // Generate the tree structure once
-            GUINode[] nodearr = new GUINode[51];
-            for (int i = 0; i < 5; i++)
+            int[] arr = new int[1];
+            GUINode[] nodearr = new GUINode[3];
+            for (int i = 0; i < 3; i++)
             {
                 GUINode[] childrenarr = new GUINode[2];
                 for (int j = 0; j < 2; j++)
                 {
-                    GUINode child = new GUINode(generateKeys(), false, false);
+                    // Create new leaf nodes for each child
+                    GUINode[] leafChildrenArr = new GUINode[2];
+                    for (int k = 0; k < 2; k++)
+                    {
+                        GUINode leafChild = new GUINode(arr, true, false, 3);
+                        leafChildrenArr[k] = leafChild;
+                    }
+
+                    // Now, 'child' is not a leaf anymore since it has its own children
+                    GUINode child = new GUINode(generateKeys(), false, false, 2, leafChildrenArr);
+                    
                     childrenarr[j] = child;
                 }
-                GUINode node = new GUINode(generateKeys(), false, false, childrenarr);
-                nodearr[i + 1] = node;
+                GUINode node = new GUINode(generateKeys(), false, false, 1, childrenarr);
+                nodearr[i] = node;
             }
-            GUINode root = new GUINode(generateKeys(), false, true, nodearr);
-            _tree = new GUITree(root, panel1);
+            GUINode root = new GUINode(generateKeys(), false, true, 0, nodearr);
+            _tree = new GUITree(root, panel1); // Assuming _tree and panel1 are defined elsewhere
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            // Create horizontal scroll bar
             System.Windows.Forms.ScrollBar hScrollBar1 = new HScrollBar();
             hScrollBar1.Dock = DockStyle.Bottom;
 
             hScrollBar1.Scroll += (s, ea) =>
             {
                 panel1.HorizontalScroll.Value = hScrollBar1.Value;
-                panel1.Invalidate();
+                scrollTimer.Start(); // Start the timer when scrolling occurs
             };
 
+            // Create vertical scroll bar
             System.Windows.Forms.ScrollBar vScrollBar1 = new VScrollBar();
             vScrollBar1.Dock = DockStyle.Right;
 
             vScrollBar1.Scroll += (s, ea) =>
             {
                 panel1.VerticalScroll.Value = vScrollBar1.Value;
-                panel1.Invalidate();
+                scrollTimer.Start(); // Start the timer when scrolling occurs
             };
 
+            // Add scroll bars to panel
             panel1.Controls.Add(vScrollBar1);
             panel1.Controls.Add(hScrollBar1);
             panel1.AutoScrollMinSize = new Size(scrollableWidth, scrollableHeight);
@@ -71,7 +100,7 @@ namespace B_TreeVisualizationGUI
 
         private void Panel1_Scroll(object sender, ScrollEventArgs e)
         {
-            panel1.Invalidate();
+            //panel1.Invalidate();
         }
 
         private void panel1_Paint(object sender, PaintEventArgs e)
@@ -82,14 +111,20 @@ namespace B_TreeVisualizationGUI
             float adjustedCenterX = scrollableWidth / 2 - panel1.HorizontalScroll.Value;
             float adjustedCenterY = 10 - panel1.VerticalScroll.Value;
 
+            // Calculate tree width
+            float width = _tree.CalculateSubtreeWidth(_tree.root);
+
+            // Initialize dictionary
+            Dictionary<int, int> depthNodesDrawn = new Dictionary<int, int>();
+
             // Use the stored tree for drawing
-            _tree.DrawTree(e.Graphics, _tree.root, adjustedCenterX, adjustedCenterY);
+            _tree.DrawTree(e.Graphics, _tree.root, adjustedCenterX, adjustedCenterX, adjustedCenterY, width, depthNodesDrawn);
         }
 
         public int[] generateKeys()
         {
             Random random = new Random();
-            int[] keys = new int[random.Next(1, 4)];
+            int[] keys = new int[random.Next(1, 3)];
             for (int i = 0; i < keys.Length; i++)
             {
                 keys[i] = random.Next(5000);

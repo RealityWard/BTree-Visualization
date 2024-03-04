@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
 using System.Windows.Forms;
+using System.ComponentModel.Design.Serialization;
 
 namespace B_TreeVisualizationGUI
 {
@@ -20,42 +21,66 @@ namespace B_TreeVisualizationGUI
             this.displayPanel = displayPanel;
         }
 
-        public void DrawTree(Graphics graphics, GUINode currentNode, float x, float y)
+        public void DrawTree(Graphics graphics, GUINode currentNode, float centerX, float x, float y, float subtreeWidth, Dictionary<int, int> depthNodesDrawn, int depth = 0)
         {
-            if (currentNode == null) return;
+            if (currentNode == null) return; // Null check
 
-            var pen = new Pen(Color.MediumSlateBlue, 2);
+            var pen = new Pen(Color.MediumSlateBlue, 2); // Pen for drawing
 
-            // Calculate the total width of the current subtree
-            float subtreeWidth = CalculateSubtreeWidth(currentNode);
+            // Ensure current depth is initialized in the dictionary
+            if (!depthNodesDrawn.ContainsKey(depth))
+            {
+                depthNodesDrawn.Add(depth, 0);
+            }
 
-            // Draw the current node
-            currentNode.DisplayNode(graphics, x, y);
+            currentNode.DisplayNode(graphics, x, y); // Draw the current node
+
+            depthNodesDrawn[depth]++;
 
             // Recursively draw child nodes if this is not a leaf
             if (currentNode.Children != null && currentNode.NumKeys > 0)
             {
-                float startX = x - subtreeWidth /2;
-                float nodeSlot = (subtreeWidth / currentNode.Children.Length); // Here
+                depth++; // Increase depth since we are going deeper into the tree
+
+                // Initialize new depth
+                if (!depthNodesDrawn.ContainsKey(depth))
+                {
+                    depthNodesDrawn.Add(depth, 0);
+                } 
+                float leftX = centerX - subtreeWidth / 2; // Calculate left x-coordinate of the tree
+                float nodeSlot = (subtreeWidth / GetNodesAtDepth(currentNode.Depth + 1).Count); // Find how much space a node takes up
+
+                // Makes sure no nodes are going to overlap
+                foreach (GUINode child in currentNode.Children)
+                {
+                    while (child.NodeWidth >= nodeSlot)
+                    {
+                        nodeSlot += nodeSlot / 4;
+                        int leafcount = root.CountLeaves();
+                        subtreeWidth = nodeSlot * leafcount;
+                    }
+                }
 
                 for (int i = 0; i < currentNode.Children.Length; i++)
                 {
                     GUINode childNode = i < currentNode.Children.Length ? currentNode.Children[i] : null; // FIX LATER
-
-                    // float childSubtreeWidth = CalculateSubtreeWidth(currentNode);
                     
-                    float childX = startX + (i * nodeSlot) + nodeSlot / 2;
+                    float childX = leftX + (depthNodesDrawn[depth] * nodeSlot) + nodeSlot / 2; // Horizontal spacing aka center of the node's slot
                     float childY = y + currentNode.NodeHeight + 50; // Vertical spacing: FIX LATER
 
                     if (childNode != null)
                     {
                         // Draw the child subtree
-                        DrawTree(graphics, childNode, childX, childY);
-
+                        //depthNodesDrawn[depth]++;
+                        DrawTree(graphics, childNode, centerX, childX, childY, subtreeWidth, depthNodesDrawn, depth);
+                        
+                        if (depthNodesDrawn[depth] >= currentNode.Children.Length)
+                        {
+                            //depth--;
+                        }
+                       
                         // Draw line from parent to child
                         graphics.DrawLine(pen, x, y + currentNode.NodeHeight, childX, childY);
-                        
-                        //startX = startX - subtreeWidth / 2 + nodeSlot; // Here
                     }
                     else
                     {
@@ -67,7 +92,7 @@ namespace B_TreeVisualizationGUI
         }
 
         // Method to calculate the width needed for a subtree based on the widths of its children
-        private float CalculateSubtreeWidth(GUINode node)
+        public float CalculateSubtreeWidth(GUINode node)
         {
             // Return the node's own width if it is a leaf or has no children.
             if (node.IsLeaf || node.Children == null)
@@ -92,6 +117,33 @@ namespace B_TreeVisualizationGUI
 
             // Ensure that the width is at least as wide as the node itself to maintain the tree structure
             return Math.Max(width, node.NodeWidth);
+        }
+
+        public List<GUINode> GetNodesAtDepth(int targetDepth)
+        {
+            List<GUINode> nodesAtDepth = new List<GUINode>();
+            Traverse(root, 0, targetDepth, nodesAtDepth);
+            return nodesAtDepth;
+        }
+
+        private void Traverse(GUINode node, int currentDepth, int targetDepth, List<GUINode> nodesAtDepth)
+        {
+            if (node == null)
+            {
+                return;
+            }
+
+            if (currentDepth == targetDepth)
+            {
+                nodesAtDepth.Add(node);
+                return;
+            }
+
+            // Increment depth and traverse child nodes
+            for (int i = 0; i < node.Children.Count(); i++)
+            {
+                Traverse(node.Children[i], currentDepth + 1, targetDepth, nodesAtDepth);
+            }
         }
     }
 }
