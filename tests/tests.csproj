@@ -18,7 +18,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\BTree-Visualization.csproj" />
+    <ProjectReference Include="..\src\BTree-Visualization\BTree-Visualization.csproj" />
   </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\src\BPlusTree-Visualization\BPlusTree-Visualization.csproj" />
+  </ItemGroup>
 </Project>
