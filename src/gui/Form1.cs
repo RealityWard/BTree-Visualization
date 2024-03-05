@@ -39,31 +39,32 @@ namespace B_TreeVisualizationGUI
 
         private void InitializeTree()
         {
-            // Generate the tree structure once
+            // Generate makedo tree structure
             int[] arr = new int[1];
-            GUINode[] nodearr = new GUINode[3];
-            for (int i = 0; i < 3; i++)
+            int firstRowChildren = 3;
+            int secondRowChildren = 3;
+            GUINode[] nodearr = new GUINode[firstRowChildren];
+            for (int i = 0; i < firstRowChildren; i++)
             {
-                GUINode[] childrenarr = new GUINode[2];
-                for (int j = 0; j < 2; j++)
+                GUINode[] childrenarr = new GUINode[secondRowChildren];
+                for (int j = 0; j < secondRowChildren; j++)
                 {
                     // Create new leaf nodes for each child
                     GUINode[] leafChildrenArr = new GUINode[2];
                     for (int k = 0; k < 2; k++)
                     {
-                        GUINode leafChild = new GUINode(arr, true, false, 3);
+                        GUINode leafChild = new GUINode(generateKeys(3), true, false, 3);
                         leafChildrenArr[k] = leafChild;
                     }
 
-                    // Now, 'child' is not a leaf anymore since it has its own children
-                    GUINode child = new GUINode(generateKeys(), false, false, 2, leafChildrenArr);
+                    GUINode child = new GUINode(generateKeys(3), false, false, 2, leafChildrenArr);
                     
                     childrenarr[j] = child;
                 }
-                GUINode node = new GUINode(generateKeys(), false, false, 1, childrenarr);
+                GUINode node = new GUINode(generateKeys(2), false, false, 1, childrenarr);
                 nodearr[i] = node;
             }
-            GUINode root = new GUINode(generateKeys(), false, true, 0, nodearr);
+            GUINode root = new GUINode(generateKeys(2), false, true, 0, nodearr);
             _tree = new GUITree(root, panel1); // Assuming _tree and panel1 are defined elsewhere
         }
 
@@ -121,10 +122,22 @@ namespace B_TreeVisualizationGUI
             _tree.DrawTree(e.Graphics, _tree.root, adjustedCenterX, adjustedCenterX, adjustedCenterY, width, depthNodesDrawn);
         }
 
-        public int[] generateKeys()
+        public int[] generateKeys(int numKeys)
         {
             Random random = new Random();
-            int[] keys = new int[random.Next(1, 3)];
+            int[] keys = new int[random.Next(1, numKeys + 1)];
+            for (int i = 0; i < keys.Length; i++)
+            {
+                keys[i] = random.Next(5000);
+            }
+            return keys;
+        }
+
+        public int[] generateKeys1()
+        {
+            Random random = new Random();
+            //int[] keys = new int[random.Next(1, 2)];
+            int[] keys = new int[2];
             for (int i = 0; i < keys.Length; i++)
             {
                 keys[i] = random.Next(5000);

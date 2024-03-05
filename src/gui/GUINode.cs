@@ -28,10 +28,11 @@ namespace B_TreeVisualizationGUI
             this.Depth = Depth;
 
             // Calculate node width based on keys
-            NodeWidth = 40 * NumKeys; //Here
+            NodeWidth = 40 * NumKeys;
             NodeHeight = 40;
         }
 
+        // Counts the leaves it can find searching starting from this node
         public int CountLeaves()
         {
             if (IsLeaf)
@@ -48,6 +49,34 @@ namespace B_TreeVisualizationGUI
             return leafCount;
         }
 
+        // Finds the depth of the first leaf node it finds starting from the root
+        public int FindDepthOfFirstLeaf()
+        {
+            return FindDepthOfFirstLeafHelper(this);
+        }
+
+        // Helper method to traverse the tree and find the depth of the first leaf node encountered
+        private int FindDepthOfFirstLeafHelper(GUINode node)
+        {
+            if (node.IsLeaf)
+            {
+                return node.Depth;
+            }
+
+            if (node.Children != null)
+            {
+                foreach (var child in node.Children)
+                {
+                    int depth = FindDepthOfFirstLeafHelper(child);
+                    if (depth != -1) // If leaf is found in the child subtree
+                        return depth;
+                }
+            }
+
+            return -1; // Leaf not found in this subtree
+        }
+
+        // Displays the node with the help of the DrawTree method
         public void DisplayNode(Graphics graphics, float x, float y)
         {
             // Brushes

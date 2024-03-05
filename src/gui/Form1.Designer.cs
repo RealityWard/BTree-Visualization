@@ -55,6 +55,7 @@
             this.btnInsert.Text = "insert";
             this.btnInsert.TextColor = System.Drawing.Color.White;
             this.btnInsert.UseVisualStyleBackColor = false;
+            this.btnInsert.Click += new System.EventHandler(this.btnInsert_Click);
             // 
             // btnDelete
             // 
