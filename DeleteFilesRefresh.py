@@ -28,7 +28,7 @@ for root, dirs, files in os.walk('.'):
         _FilesToWorkOn.append(os.path.join(root, file))
         print('file: ' + os.path.join(root, file))
 
-if input("Continue(y/n)") == 'y':
+if input("Are you sure you wish to delete the found files?(y/n)") == 'y':
   for file in _FilesToWorkOn:
     try:
       Path.unlink(Path(file),missing_ok=True)
