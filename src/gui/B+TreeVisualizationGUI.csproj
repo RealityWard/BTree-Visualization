@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\tree\BTree-Visualization.csproj" />
+    <ProjectReference Include="..\BTree-Visualization\BTree-Visualization.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
