@@ -2,6 +2,7 @@
 **/bin/
 **/obj/
 **/build/
+a.out
 .vs
 .vscode
 .fake

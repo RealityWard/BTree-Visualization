@@ -19,7 +19,7 @@ namespace BTreeVisualization
     /// <summary>
     /// Determines the number of keys and children per node.
     /// </summary>
-    private readonly int _Degree = degree;
+    public readonly int _Degree = degree;
     /// <summary>
     /// Tracks whether a key of zero is in use in the tree.
     /// </summary>
@@ -53,7 +53,7 @@ namespace BTreeVisualization
           allow a zero key insertion*/
         if (key == 0)
           zeroKeyUsed = true;
-        bufferBlock.Post((Status.Insert, 0, -1, [], [], 0, -1, [], []));
+        bufferBlock.SendAsync((Status.Insert, 0, -1, [], [], 0, -1, [], []));
         ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data);
         if (result.Item2 != null && result.Item1.Item2 != null)
         {
@@ -64,7 +64,7 @@ namespace BTreeVisualization
       }
       else
       {
-        bufferBlock.Post((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
+        bufferBlock.SendAsync((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
     }
 
@@ -80,7 +80,7 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public void Delete(int key)
     {
-      bufferBlock.Post((Status.Delete, 0, -1, [], [], 0, -1, [], []));
+      bufferBlock.SendAsync((Status.Delete, 0, -1, [], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
       _Root.DeleteKey(key);
@@ -101,7 +101,7 @@ namespace BTreeVisualization
     /// <returns>Data object stored under key.</returns>
     public T? Search(int key)
     {
-      bufferBlock.Post((Status.Search, 0, -1, [], [], 0, -1, [], []));
+      bufferBlock.SendAsync((Status.Search, 0, -1, [], [], 0, -1, [], []));
       (int, BTreeNode<T>?) result = _Root.SearchKey(key);
       if (result.Item1 == -1 || result.Item2 == null)
       {
@@ -237,6 +237,28 @@ namespace BTreeVisualization
             }
         }
         return true;
+    }
+
+    /// <summary>
+    /// Gets the total number of keys in this tree.
+    /// </summary>
+    /// <returns>Count of all keys.</returns>
+    public long KeyCount(){
+      if (_Root as NonLeafNode<T> != null)
+        return NonLeafNode<T>.KeyCount((NonLeafNode<T>)_Root);
+      else
+        return _Root.NumKeys;
+    }
+
+    /// <summary>
+    /// Gets the total number of nodes in this tree.
+    /// </summary>
+    /// <returns>Count of all keys.</returns>
+    public int NodeCount(){
+      if (_Root as NonLeafNode<T> != null)
+        return NonLeafNode<T>.NodeCount((NonLeafNode<T>)_Root);
+      else
+        return 1;
     }
   }
 }
