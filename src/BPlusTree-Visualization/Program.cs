@@ -2,18 +2,30 @@
 
 using System.Text.RegularExpressions;
 using System.Threading.Tasks.Dataflow;
+using BPlusTreeVisualization;
+using NodeData;
 
 class Program
 {
   static void Main()
   {
-    /* 
-    BTree<Person> _Tree = new(3);
-    for (int i = 0; i < 100; i++)
-    {
-      _Tree.Insert(i, new Person(i.ToString()));
-    }
-    */
+        var outputBuffer = new BufferBlock<(
+      Status status,
+      long id,
+      int numKeys,
+      int[] keys,
+      Person[] contents,
+      long altID,
+      int altNumKeys,
+      int[] altKeys,
+      Person[] altContents
+      )>();
+
+    BPlusTree<Person> bPlusTree = new(3,outputBuffer);
+
+    bPlusTree.Insert(1,new Person("hello"));
+    bPlusTree.Traverse();
+    
     Thread.CurrentThread.Name = "Main";
 
   }
