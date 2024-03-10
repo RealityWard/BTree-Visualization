@@ -2,11 +2,9 @@
 Desc: For making new unit tests using NUnit module.
 Reference: https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-with-nunit
 */
-using System.Text.RegularExpressions;
 using BTreeVisualization;
 using NodeData;
 using System.Threading.Tasks.Dataflow;
-using System.Text.Json;
 
 namespace Science
 {
@@ -14,8 +12,10 @@ namespace Science
   /// Tests for CHEM 1100 Scientific Method Project 
   /// </summary>
   /// <remarks>Author: Tristan Anderson</remarks>
-  [TestFixture]
-  public partial class BenchMarkTests()
+  // [TestFixture(3)]
+  // [TestFixture(30)]
+  // [TestFixture(300)]
+  public partial class BenchMarkTests(int degree)
   {
     private BufferBlock<(Status status, long id, int numKeys, int[] keys
       , Person?[] contents, long altID, int altNumKeys, int[] altKeys
@@ -26,27 +26,19 @@ namespace Science
     Dictionary<int, string> _InsertedKeys = [];
     private readonly int _NumberOfKeys = 1000000;
     private Task? _Producer;
+    private Task? _Consumer;
 
+    /// <summary>
+    /// NUnit setup for this class. 
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
     [SetUp]
     public void Setup()
     {
-      
-    }
-
-#pragma warning disable CA1861 // Avoid constant arrays as arguments
-    [TestCase(3, new int[] { 1000, 10000, 100000 })]
-    // [TestCase(30, new int[] { 1000, 10000, 100000 })]
-    // [TestCase(300, new int[] { 1000, 10000, 100000 })]
-#pragma warning restore CA1861 // Avoid constant arrays as arguments
-    public void DegreeTest(int degree, int[] tests){
+      _OutputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 20 });
+      _InputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 10 });
+      _InsertedKeys = [];
       _Tree = new(degree, _OutputBuffer);
-      Task consumer = Task.Run(async () => 
-      {
-        while (await _OutputBuffer.OutputAvailableAsync())
-        {
-          _OutputBuffer.Receive();
-        }
-      });
       Random random = new();
       int key;
       for (int i = 0; i < _NumberOfKeys; i++)
@@ -58,54 +50,59 @@ namespace Science
         _Tree.Insert(key, new Person(key.ToString()));
         _InsertedKeys.Add(key, key.ToString());
       }
-      _Producer = Task.Run(async () =>
+      _Consumer = Task.Run(async () =>
       {
-        Dictionary<TreeCommand,long> counter = [];
-        foreach(TreeCommand i in (TreeCommand[])Enum.GetValues(typeof(TreeCommand))){
-          counter.Add(i,0);
-        }
-        while (await _InputBuffer.OutputAvailableAsync())
+        while (await _OutputBuffer.OutputAvailableAsync())
         {
-          (TreeCommand action, int key, Person? content) = _InputBuffer.Receive();
-          counter[action] += 1;
-          switch (action)
-          {
-            case TreeCommand.Tree:
-              _Tree = new(key, _OutputBuffer);
-              break;
-            case TreeCommand.Insert:
-#pragma warning disable CS8604 // Possible null reference argument.
-              _Tree.Insert(key, content);
-#pragma warning restore CS8604 // Possible null reference argument.
-              break;
-            case TreeCommand.Delete:
-              _Tree.Delete(key);
-              break;
-            case TreeCommand.Search:
-              _Tree.Search(key);
-              break;
-            case TreeCommand.Traverse:
-              Console.WriteLine(_Tree.Traverse());
-              break;
-            case TreeCommand.Close:
-              _OutputBuffer.Complete();
-              _InputBuffer.Complete();
-              break;
-            default:// Will close buffer upon receiving a bad TreeCommand.
-              _InputBuffer.Complete();
-              Console.WriteLine("TreeCommand:{0} not recognized", action);
-              break;
-          }
-        }
-        foreach(TreeCommand i in (TreeCommand[])Enum.GetValues(typeof(TreeCommand))){
-          Console.WriteLine(i.ToString() + ":" + counter[i]);
+          _OutputBuffer.Receive();
         }
       });
-      foreach(int x in tests){
-        InsertionTest(x);
-        DeletionTest(x);
-        SearchTest(x);
+      _Producer = TreeProduce();
+    }
+
+    /// <summary>
+    /// Task creation for the tree object.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <returns>Task running the tree.</returns>
+    private async Task TreeProduce()
+    {
+      while (await _InputBuffer.OutputAvailableAsync())
+      {
+        (TreeCommand action, int key, Person? content) = _InputBuffer.Receive();
+        switch (action)
+        {
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+          case TreeCommand.Tree:
+            _Tree = new(key, _OutputBuffer);
+            break;
+          case TreeCommand.Insert:
+            _Tree.Insert(key, content);
+            break;
+          case TreeCommand.Delete:
+            _Tree.Delete(key);
+            break;
+          case TreeCommand.Search:
+            _Tree.Search(key);
+            break;
+          case TreeCommand.Traverse:
+            Console.Write(_Tree.Traverse());
+            break;
+          case TreeCommand.Close:
+            _OutputBuffer.Complete();
+            _InputBuffer.Complete();
+            break;
+          default:// Will close buffer upon receiving a bad TreeCommand.
+            _InputBuffer.Complete();
+            Console.Write("TreeCommand:{0} not recognized", action);
+            break;
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
       }
+      _OutputBuffer.Complete();
+      _InputBuffer.Complete();
     }
 
     /// <summary>
@@ -113,7 +110,10 @@ namespace Science
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="x">Number of insertions</param>
-    private void InsertionTest(int x)
+    // [TestCase(1000)]
+    // [TestCase(10000)]
+    // [TestCase(100000)]
+    public void InsertionTest(int x)
     {
       long memBefore = GC.GetTotalMemory(true);
       var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -123,7 +123,7 @@ namespace Science
       {
         do
         {
-          key = random.Next(0, _NumberOfKeys * 10);
+          key = random.Next(1, _NumberOfKeys * 10);
         } while (_InsertedKeys.ContainsKey(key));
         _InputBuffer.SendAsync((TreeCommand.Insert, key
           , new Person(key.ToString())));
@@ -139,16 +139,19 @@ namespace Science
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
       long keyCount = _Tree.KeyCount();
       int nodeCount = _Tree.NodeCount();
-      Console.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().Name},{_Tree._Degree},{x},{elapsedMs},{Math.Abs(memBefore - memAfter)},{keyCount},{nodeCount}");
+      Console.Write($"{System.Reflection.MethodBase.GetCurrentMethod().Name},{_Tree._Degree},{x},{elapsedMs},{Math.Abs(memBefore - memAfter)},{keyCount},{nodeCount}");
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
     }
-    
+
     /// <summary>
     /// Simply test deletion times
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="x">Number of deletions</param>
-    private void DeletionTest(int x)
+    // [TestCase(1000)]
+    // [TestCase(10000)]
+    // [TestCase(100000)]
+    public void DeletionTest(int x)
     {
       long memBefore = GC.GetTotalMemory(true);
       var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -170,17 +173,20 @@ namespace Science
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
       long keyCount = _Tree.KeyCount();
       int nodeCount = _Tree.NodeCount();
-      Console.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().Name},{_Tree._Degree},{x},{elapsedMs},{Math.Abs(memBefore - memAfter)},{keyCount},{nodeCount}");
+      Console.Write($"{System.Reflection.MethodBase.GetCurrentMethod().Name},{_Tree._Degree},{x},{elapsedMs},{Math.Abs(memBefore - memAfter)},{keyCount},{nodeCount}");
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
     }
 
-    
+
     /// <summary>
     /// Simply test deletion times
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="x">Number of searches</param>
-    private void SearchTest(int x)
+    // [TestCase(1000)]
+    // [TestCase(10000)]
+    // [TestCase(100000)]
+    public void SearchTest(int x)
     {
       long memBefore = GC.GetTotalMemory(true);
       var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -202,9 +208,8 @@ namespace Science
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
       long keyCount = _Tree.KeyCount();
       int nodeCount = _Tree.NodeCount();
-      Console.WriteLine($"{System.Reflection.MethodBase.GetCurrentMethod().Name},{_Tree._Degree},{x},{elapsedMs},{Math.Abs(memBefore - memAfter)},{keyCount},{nodeCount}");
+      Console.Write($"{System.Reflection.MethodBase.GetCurrentMethod().Name},{_Tree._Degree},{x},{elapsedMs},{Math.Abs(memBefore - memAfter)},{keyCount},{nodeCount}");
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
     }
   }
-
 }
