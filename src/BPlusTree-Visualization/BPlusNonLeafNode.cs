@@ -47,7 +47,7 @@ namespace BPlusTreeVisualization
       for (int i = 0; i < keys.Length; i++)
       {
         _Keys[i] = keys[i];
-        _Contents[i] = data[i];
+        //_Contents[i] = data[i];
         _Children[i] = children[i];
       }
       _Children[keys.Length] = children[keys.Length];
@@ -135,11 +135,11 @@ namespace BPlusTreeVisualization
           for (int j = _NumKeys - 1; j >= i; j--)
           {
             _Keys[j + 1] = _Keys[j];
-            _Contents[j + 1] = _Contents[j];
+            //_Contents[j + 1] = _Contents[j];
             _Children[j + 2] = _Children[j + 1];
           }
           _Keys[i] = result.Item1.Item1;
-          _Contents[i] = result.Item1.Item2;
+          //_Contents[i] = result.Item1.Item2;
           _Children[i + 1] = result.Item2;
           _NumKeys++;
           _BufferBlock.SendAsync((Status.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
@@ -173,13 +173,15 @@ namespace BPlusTreeVisualization
       for (; i < _Degree - 1; i++)
       {
         newKeys[i] = _Keys[i + _Degree];
+        /*
         newContent[i] = _Contents[i + _Degree]
           ?? throw new NullContentReferenceException(
             $"Content at index:{_NumKeys} within node:{ID}");
+            */
         newChildren[i] = _Children[i + _Degree]
           ?? throw new NullChildReferenceException(
             $"Child at index:{i + _Degree} within node:{ID}");
-        _Contents[i + _Degree] = default;
+        //_Contents[i + _Degree] = default;
         _Children[i + _Degree] = default;
         _BufferBlock.SendAsync((Status.Shift, newChildren[i].ID, -1, [], [], ID, -1, [], []));
       }
@@ -194,7 +196,7 @@ namespace BPlusTreeVisualization
         ?? throw new NullContentReferenceException(
           $"Content at index:{_NumKeys} within node:{ID}"));
       _Keys[_NumKeys] = default;
-      _Contents[_NumKeys] = default;
+      //_Contents[_NumKeys] = default;
       _BufferBlock.SendAsync((Status.Split, ID, NumKeys, Keys, Contents,
         newNode.ID, newNode.NumKeys, newNode.Keys, newNode.Contents));
       return (dividerEntry, newNode);

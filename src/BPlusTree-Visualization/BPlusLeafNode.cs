@@ -11,6 +11,7 @@ namespace BPlusTreeVisualization{
 
         private BPlusLeafNode<T>? _PrevNode;
 
+
         public BPlusLeafNode(int degree, int[] keys, T[] contents,
                 BufferBlock<(Status status, long id, int numKeys, int[] keys,
                 T?[] contents, long altID, int altNumKeys, int[] altKeys,
@@ -22,6 +23,8 @@ namespace BPlusTreeVisualization{
                     _Keys[i] = keys[i];
                     _Contents[i] = contents[i];
                 }
+                _NextNode = null;
+                _PrevNode = null;
             }
         private int Search(int key){
             for (int i = 0; i < _NumKeys; i++)
@@ -56,6 +59,12 @@ namespace BPlusTreeVisualization{
             BPlusLeafNode<T> newNode = new(_Degree, newKeys, newContent, _BufferBlock);
             _BufferBlock.SendAsync((Status.Split, ID, NumKeys, Keys, Contents, newNode.ID,
                           newNode.NumKeys, newNode.Keys, newNode.Contents));
+            newNode._NextNode = _NextNode;
+            _NextNode = newNode;
+            newNode._PrevNode = this;
+            if(newNode._NextNode != null){
+                newNode._NextNode._PrevNode = newNode;
+            }
             (int,T) dividerEntry = (_Keys[_NumKeys], _Contents[_NumKeys] 
             ?? throw new NullContentReferenceException(
             $"Content at index:{NumKeys} within node:{ID}"));
@@ -168,6 +177,7 @@ namespace BPlusTreeVisualization{
             string output = Spacer(x) + "{\n";
             output += Spacer(x) + "  \"leafnode\":\"" + x + "\",\n" 
             + Spacer(x) + "\"  ID\":" + _ID + ",\n"
+            //+ Spacer(x) + "\" Prev\":" + _PrevNode.ID           
             + Spacer(x) + "  \"keys\":[";
             for (int i = 0; i < _NumKeys; i++){
                 output += _Keys[i] + (i + 1 < _NumKeys ? "," : "");
@@ -177,6 +187,13 @@ namespace BPlusTreeVisualization{
                 #pragma warning disable CS8602 // Dereference of a possibly null reference.
                 output += _Contents[i].ToString() + (i + 1 < _NumKeys ? "," : "");
                 #pragma warning restore CS8602 // Dereference of a possibly null reference.
+            }
+            output += "\n";
+            if(_NextNode != null){
+                output += Spacer(x) + "\"  Next\":" + _NextNode._ID + ",\n";
+            }
+            if(_PrevNode != null){
+                output += Spacer(x) + "\"  Prev\":" + _PrevNode._ID + ",\n";
             }
             return output + "]\n" + Spacer(x) + "}";
         }
