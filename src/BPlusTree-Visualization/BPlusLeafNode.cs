@@ -1,9 +1,10 @@
 using System.Threading.Tasks.Dataflow;
+using ThreadCommunication;
 
 namespace BPlusTreeVisualization{
 
     public  class BPlusLeafNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, 
-            T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)    
+            T?[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)    
             : BPlusTreeNode<T>(degree, bufferBlock)
     {
         private BPlusLeafNode<T>? _NextNode;
@@ -12,7 +13,7 @@ namespace BPlusTreeVisualization{
 
         public BPlusLeafNode(int degree, int[] keys, T[] contents,
                 BufferBlock<(Status status, long id, int numKeys, int[] keys,
-                T[] contents, long altID, int altNumKeys, int[] altKeys,
+                T?[] contents, long altID, int altNumKeys, int[] altKeys,
                 T[] altContents)> bufferBlock) : this(degree, bufferBlock)
             {
             _NumKeys = keys.Length;

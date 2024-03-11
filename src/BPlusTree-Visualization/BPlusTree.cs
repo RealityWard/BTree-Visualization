@@ -7,9 +7,10 @@ structure and initializes root and new node creation in the beginning.
 */
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks.Dataflow;
+using ThreadCommunication;
 namespace BPlusTreeVisualization
 {
-  public class BPlusTree<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
+  public class BPlusTree<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Entry point of the tree.
@@ -122,7 +123,7 @@ namespace BPlusTreeVisualization
     }
     
     public void Clear(){
-      _Root = new BPlusLeafNode<T>(_Degree,bufferBlock);
+      _Root = new BPlusLeafNode<T>(_Degree, bufferBlock);
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 using System.Threading.Tasks.Dataflow;
 //using BTreeVisualization;
+using ThreadCommunication;
 
 
 namespace BPlusTreeVisualization
@@ -13,12 +14,12 @@ namespace BPlusTreeVisualization
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class Node<N, T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
+  public abstract class Node<N, T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Output Buffer for Status updates to be externally viewed.
     /// </summary>
-    protected BufferBlock<(Status status, long id, int numKeys, int[] keys, T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> _BufferBlock = bufferBlock;
+    protected BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> _BufferBlock = bufferBlock;
     /// <summary>
     /// Determines the number of keys and children per node.
     /// </summary>
@@ -175,7 +176,7 @@ namespace BPlusTreeVisualization
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
     public abstract class BPlusTreeNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, 
-                T[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) 
+                T?[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) 
                 : Node<BPlusTreeNode<T>, T>(degree, bufferBlock)
     {
         protected T[] _Contents = new T[2 * degree - 1];

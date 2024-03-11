@@ -4,17 +4,18 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks.Dataflow;
 using BPlusTreeVisualization;
 using NodeData;
+using ThreadCommunication;
 
 class Program
 {
   static void Main()
   {
-        var outputBuffer = new BufferBlock<(
+      var outputBuffer = new BufferBlock<(
       Status status,
       long id,
       int numKeys,
       int[] keys,
-      Person[] contents,
+      Person?[] contents,
       long altID,
       int altNumKeys,
       int[] altKeys,
