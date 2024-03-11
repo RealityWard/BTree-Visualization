@@ -24,7 +24,8 @@ class Program
     BPlusTree<Person> bPlusTree = new(3,outputBuffer);
 
     bPlusTree.Insert(1,new Person("hello"));
-    bPlusTree.Traverse();
+    
+    Console.WriteLine(bPlusTree.Traverse());
     
     Thread.CurrentThread.Name = "Main";
 
