@@ -14,12 +14,12 @@ namespace BPlusTreeVisualization
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class Node<N, T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
+  public abstract class Node<N, T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Output Buffer for Status updates to be externally viewed.
     /// </summary>
-    protected BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> _BufferBlock = bufferBlock;
+    protected BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock = bufferBlock;
     /// <summary>
     /// Determines the number of keys and children per node.
     /// </summary>
@@ -59,6 +59,13 @@ namespace BPlusTreeVisualization
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
     /// smaller than all the keys in the called node.)</param>
+    
+    public abstract void Merge(int dividerKey, T dividerData, N sibiling);
+
+    public abstract void GainsFromRight(int dividerKey, T dividerData, N sibiling);
+
+    public abstract void GainsFromLeft(int dividerKey, T dividerData, N sibiling);
+
     public abstract void LosesToLeft();
     /// <summary>
     /// Removes the last entry of this node.
@@ -176,13 +183,33 @@ namespace BPlusTreeVisualization
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
     public abstract class BPlusTreeNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, 
-                T?[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock) 
+                T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) 
                 : Node<BPlusTreeNode<T>, T>(degree, bufferBlock)
     {
-        protected T[] _Contents = new T[2 * degree - 1];
+        protected T?[] _Contents = new T[2 * degree - 1];
 
-        public T[] Contents{
+        public T?[] Contents{
             get { return _Contents; }
         }
+
+        
     }
+
+    public class NullContentReferenceException : Exception
+  {
+    public NullContentReferenceException() : base() { }
+    public NullContentReferenceException(string message) : base(message) { }
+    public NullContentReferenceException(string message, Exception inner) : base(message, inner) { }
+  }
+
+  /// <summary>
+  /// Thrown when a reference to a content object is null.
+  /// </summary>
+  /// <remarks>Author: Tristan Anderson</remarks>
+  public class NullChildReferenceException : Exception
+  {
+    public NullChildReferenceException() : base() { }
+    public NullChildReferenceException(string message) : base(message) { }
+    public NullChildReferenceException(string message, Exception inner) : base(message, inner) { }
+  }
 }

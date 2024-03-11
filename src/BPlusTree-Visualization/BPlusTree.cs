@@ -1,5 +1,4 @@
 /**
-Primary Author: Tristan Anderson
 Secondary Author: Andreas Kramer (for tree height methods)
 Date: 2024-02-03
 Desc: Maintains the entry point of the BTree data 
@@ -7,10 +6,11 @@ structure and initializes root and new node creation in the beginning.
 */
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks.Dataflow;
+using BTreeVisualization;
 using ThreadCommunication;
 namespace BPlusTreeVisualization
 {
-  public class BPlusTree<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
+  public class BPlusTree<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Entry point of the tree.
@@ -53,7 +53,7 @@ namespace BPlusTreeVisualization
           allow a zero key insertion*/
         if (key == 0)
           zeroKeyUsed = true;
-        bufferBlock.Post((Status.Insert, 0, -1, [], [], 0, -1, [], []));
+        bufferBlock.SendAsync((Status.Insert, 0, -1, [], [], 0, -1, [], []));
         ((int, T?), BPlusTreeNode<T>?) result = _Root.InsertKey(key, data);
         if (result.Item2 != null && result.Item1.Item2 != null)
         {
@@ -64,7 +64,7 @@ namespace BPlusTreeVisualization
       }
       else
       {
-        bufferBlock.Post((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
+        bufferBlock.SendAsync((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
     }
 
@@ -80,13 +80,15 @@ namespace BPlusTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public void Delete(int key)
     {
-      bufferBlock.Post((Status.Delete, 0, -1, [], [], 0, -1, [], []));
+      bufferBlock.SendAsync((Status.Delete, 0, -1, [], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
       _Root.DeleteKey(key);
       if (_Root.NumKeys == 0 && _Root as BPlusNonLeafNode<T> != null)
       {
-        _Root = ((BPlusNonLeafNode<T>)_Root).Children[0];
+        _Root = ((BPlusNonLeafNode<T>)_Root).Children[0]
+        ?? throw new NullChildReferenceException(
+            $"Child of child on root node");;
       }
     }
 
@@ -99,7 +101,7 @@ namespace BPlusTreeVisualization
     /// <returns>Data object stored under key.</returns>
     public T? Search(int key)
     {
-      bufferBlock.Post((Status.Search, 0, -1, [], [], 0, -1, [], []));
+      bufferBlock.SendAsync((Status.Search, 0, -1, [], [], 0, -1, [], []));
       (int, BPlusTreeNode<T>?) result = _Root.SearchKey(key);
       if (result.Item1 == -1 || result.Item2 == null)
       {
@@ -110,6 +112,8 @@ namespace BPlusTreeVisualization
         return result.Item2.Contents[result.Item1];
       }
     }
+
+  
 
     /// <summary>
     /// Invokes Traverse recursively through out the 
@@ -140,7 +144,8 @@ namespace BPlusTreeVisualization
       BPlusTreeNode<T> currentNode = _Root;
       while(currentNode is BPlusNonLeafNode<T> nonLeafNode && nonLeafNode.Children.Length > 0)
       {
-        currentNode = nonLeafNode.Children[0];
+        currentNode = nonLeafNode.Children[0] ?? throw new NullChildReferenceException(
+          $"Child at index:0 within node:{nonLeafNode.ID}");
         height++;
       }
       return height;
@@ -229,12 +234,34 @@ namespace BPlusTreeVisualization
 
         if (node is BPlusNonLeafNode<T> nonLeafNode) {
             foreach (var child in nonLeafNode.Children) {
-                if (!CheckNodeBalance(child, currentLevel + 1, ref leafLevel)) {
+                if (child != null && !CheckNodeBalance(child, currentLevel + 1, ref leafLevel)) {
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    /// <summary>
+    /// Gets the total number of keys in this tree.
+    /// </summary>
+    /// <returns>Count of all keys.</returns>
+    public long KeyCount(){
+      if (_Root as NonLeafNode<T> != null)
+        return BPlusNonLeafNode<T>.KeyCount((BPlusNonLeafNode<T>)_Root);
+      else
+        return _Root.NumKeys;
+    }
+
+    /// <summary>
+    /// Gets the total number of nodes in this tree.
+    /// </summary>
+    /// <returns>Count of all keys.</returns>
+    public int NodeCount(){
+      if (_Root as NonLeafNode<T> != null)
+        return BPlusNonLeafNode<T>.NodeCount((BPlusNonLeafNode<T>)_Root);
+      else
+        return 1;
     }
   }
 }

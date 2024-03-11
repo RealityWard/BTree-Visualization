@@ -19,12 +19,19 @@ class Program
       long altID,
       int altNumKeys,
       int[] altKeys,
-      Person[] altContents
+      Person?[] altContents
       )>();
 
     BPlusTree<Person> bPlusTree = new(3,outputBuffer);
 
     bPlusTree.Insert(1,new Person("hello"));
+    bPlusTree.Insert(2,new Person("hello"));
+    bPlusTree.Insert(3,new Person("hello"));
+    bPlusTree.Insert(4,new Person("hello"));
+    bPlusTree.Insert(5,new Person("hello"));
+    bPlusTree.Insert(6,new Person("hello"));
+    bPlusTree.Insert(7,new Person("hello"));
+
     
     Console.WriteLine(bPlusTree.Traverse());
     
