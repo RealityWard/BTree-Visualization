@@ -38,16 +38,14 @@ namespace BPlusTreeVisualization
     /// </summary>
     /// <param name="degree">Same as parent non-leaf node/tree</param>
     /// <param name="keys">Values to initialize in _Keys[]</param>
-    /// <param name="data">Values to initialize in _Contents[]</param>
     /// <param name="children">Child nodes to initialize in _Children[]</param>
     /// <param name="bufferBlock">Output Buffer for Status updates to be externally viewed.</param>
-    public BPlusNonLeafNode(int degree, int[] keys, T[] data, BPlusTreeNode<T>[] children, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : this(degree, bufferBlock)
+    public BPlusNonLeafNode(int degree, int[] keys, BPlusTreeNode<T>[] children, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : this(degree, bufferBlock)
     {
       _NumKeys = keys.Length;
       for (int i = 0; i < keys.Length; i++)
       {
         _Keys[i] = keys[i];
-        //_Contents[i] = data[i];
         _Children[i] = children[i];
       }
       _Children[keys.Length] = children[keys.Length];
@@ -60,18 +58,12 @@ namespace BPlusTreeVisualization
     /// LeafNode.Search()</remarks>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
     /// <returns>If found returns the index else returns -1.</returns>
+    
     private int Search(int key)
     {
-      //searches for correct key, finds it returns the node, else returns -1
-      for (int i = 0; i < _NumKeys; i++)
-      {
-        if (_Keys[i] >= key)
-        {
-          return i;
-        }
-      }
-      return -1;
+      return 1;
     }
+    
 
     /// <summary>
     /// Iterates over the _Keys array to find key. If found returns the index and this else returns -1 and this.
@@ -80,28 +72,12 @@ namespace BPlusTreeVisualization
     /// LeafNode.SearchKey()</remarks>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
+ 
     public override (int, BPlusTreeNode<T>) SearchKey(int key)
     {
-      _BufferBlock.Post((Status.SSearching, ID, -1, [], [], 0, -1, [], []));
-      int result = Search(key);
-      if (result == -1)
-      {
-        return (_Children[_NumKeys]
-        ?? throw new NullChildReferenceException(
-            $"Child at index:{_NumKeys} within node:{ID}")).SearchKey(key);
-      }
-      else if (_Keys[result] == key)
-      {
-        _BufferBlock.SendAsync((Status.Found, ID, result, [key], [Contents[result]], 0, -1, [], []));
-        return (result, this);
-      }
-      else
-      {
-        return (_Children[result]
-          ?? throw new NullChildReferenceException(
-            $"Child at index:{result} within node:{ID}")).SearchKey(key);
-      }
+      return (-1, this);
     }
+    
 
     /// <summary>
     /// Calls InsertKey on _Children[i] where i == _Keys[i] < key < _Keys[i+1].
@@ -112,48 +88,41 @@ namespace BPlusTreeVisualization
     /// <remarks>Copied and modified from
     /// LeafNode.InsertKey()</remarks>
     /// <param name="key">Integer to be placed into _Keys[] of this node.</param>
-    /// <param name="data">Coresponding data to be stored in _Contents[]
+    /// <param name="data">Corresponding data to be stored in _Contents[]
     /// of this node at the same index as key in _Keys[].</param>
     /// <returns>If this node reaches capacity it calls split and returns
     /// the new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).
     /// Otherwise it returns ((-1, null), null).</returns>
-    public override ((int, T?), BPlusTreeNode<T>?) InsertKey(int key, T data)
+    public override ((int,T?), BPlusTreeNode<T>?) InsertKey(int key, T data)
     {
-      _BufferBlock.SendAsync((Status.ISearching, ID, -1, [], [], 0, -1, [], []));
-      ((int, T?), BPlusTreeNode<T>?) result;
+      _BufferBlock.SendAsync((Status.ISearching,ID,-1,[],[],0,-1,[],[]));
+      ((int,T?),BPlusTreeNode<T>?) result;
       int i = 0;
-      while (i < _NumKeys && key > _Keys[i]){
+      while(i < NumKeys && key > _Keys[i]){
         i++;
       }
-      if (i == _NumKeys || key != _Keys[i] || key == 0)
-      {
-        result = (_Children[i]?? throw new NullChildReferenceException(
-            $"Child at index:{i} within node:{ID}")).InsertKey(key, data);
-        if (result.Item2 != null && result.Item1.Item2 != null)
-        {
+      if(i == _NumKeys || key != _Keys[i] || key == 0){
+        result = (Children[i]?? throw new NullChildReferenceException(
+          $"Child at index:{i} within node:{ID}")).InsertKey(key,data);
+        if(result.Item2 != null && result.Item1.Item2 != null){
           for (int j = _NumKeys - 1; j >= i; j--)
           {
             _Keys[j + 1] = _Keys[j];
-            //_Contents[j + 1] = _Contents[j];
             _Children[j + 2] = _Children[j + 1];
           }
           _Keys[i] = result.Item1.Item1;
-          //_Contents[i] = result.Item1.Item2;
           _Children[i + 1] = result.Item2;
           _NumKeys++;
-          _BufferBlock.SendAsync((Status.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          _BufferBlock.SendAsync((Status.Inserted, ID, NumKeys, Keys, [], 0, -1, [], []));
           if (IsFull())
           {
             return Split();
           }
         }
       }
-      else
-      {
-        _BufferBlock.SendAsync((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
-      }
-      return ((-1, default(T)), null);
+      
+      return ((-1, default(T)),this);
     }
 
     /// <summary>
@@ -164,42 +133,9 @@ namespace BPlusTreeVisualization
     /// LeafNode.Split()</remarks>
     /// <returns>The new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).</returns>
-    public override ((int, T), BPlusTreeNode<T>) Split()
+    public ((int,T), BPlusTreeNode<T>) Split()
     {
-      int[] newKeys = new int[_Degree - 1];
-      T[] newContent = new T[_Degree - 1];
-      BPlusTreeNode<T>[] newChildren = new BPlusTreeNode<T>[_Degree];
-      int i = 0;
-      for (; i < _Degree - 1; i++)
-      {
-        newKeys[i] = _Keys[i + _Degree];
-        /*
-        newContent[i] = _Contents[i + _Degree]
-          ?? throw new NullContentReferenceException(
-            $"Content at index:{_NumKeys} within node:{ID}");
-            */
-        newChildren[i] = _Children[i + _Degree]
-          ?? throw new NullChildReferenceException(
-            $"Child at index:{i + _Degree} within node:{ID}");
-        //_Contents[i + _Degree] = default;
-        _Children[i + _Degree] = default;
-        _BufferBlock.SendAsync((Status.Shift, newChildren[i].ID, -1, [], [], ID, -1, [], []));
-      }
-      newChildren[i] = _Children[i + _Degree]
-        ?? throw new NullChildReferenceException(
-          $"Child at index:{i + _Degree} within node:{ID}");
-      _Children[i + _Degree] = default;
-      _NumKeys = _Degree - 1;
-      BPlusNonLeafNode<T> newNode = new(_Degree, newKeys, newContent,
-        newChildren, _BufferBlock);
-      (int, T) dividerEntry = (_Keys[_NumKeys], _Contents[_NumKeys]
-        ?? throw new NullContentReferenceException(
-          $"Content at index:{_NumKeys} within node:{ID}"));
-      _Keys[_NumKeys] = default;
-      //_Contents[_NumKeys] = default;
-      _BufferBlock.SendAsync((Status.Split, ID, NumKeys, Keys, Contents,
-        newNode.ID, newNode.NumKeys, newNode.Keys, newNode.Contents));
-      return (dividerEntry, newNode);
+      return ((-1,default(T)),this);
     }
 
     /// <summary>
@@ -211,6 +147,7 @@ namespace BPlusTreeVisualization
     /// </summary>
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
+ /*
 		public override void DeleteKey(int key)
     {
       _BufferBlock.SendAsync((Status.DSearching, ID, -1, [], [], 0, -1, [], []));
@@ -463,6 +400,7 @@ namespace BPlusTreeVisualization
     /// Date: 2024-02-13</remarks>
     /// <param name="x">Hierachical Node ID</param>
     /// <returns>String with the entirety of this node's keys and contents arrays formmatted in JSON syntax.</returns>
+    */
 		public override string Traverse(string x)
     {
       string output = Spacer(x) + "{\n";
@@ -476,7 +414,7 @@ namespace BPlusTreeVisualization
       for (int i = 0; i < _NumKeys; i++)
       {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-        output += _Contents[i].ToString() + (i + 1 < _NumKeys ? "," : "");
+        //output += _Contents[i].ToString() + (i + 1 < _NumKeys ? "," : "");
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
       }
       output += "],\n" + Spacer(x) + "  \"children\":[\n";

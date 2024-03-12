@@ -11,6 +11,12 @@ namespace BPlusTreeVisualization{
 
         private BPlusLeafNode<T>? _PrevNode;
 
+        protected T?[] _Contents = new T[2 * degree - 1];
+
+        public T?[] Contents{
+            get { return _Contents; }
+        }
+
 
         public BPlusLeafNode(int degree, int[] keys, T[] contents,
                 BufferBlock<(Status status, long id, int numKeys, int[] keys,
@@ -44,7 +50,7 @@ namespace BPlusTreeVisualization{
             return (Search(key), this);
         }
 
-        public override ((int, T), BPlusTreeNode<T>) Split(){
+        public ((int, T), BPlusTreeNode<T>) Split(){
             int[] newKeys = new int[_Degree - 1];
             T[] newContent = new T[_Degree - 1];
             for (int i = 0; i < _Degree - 1; i++){
@@ -96,7 +102,7 @@ namespace BPlusTreeVisualization{
       }
             return ((-1, default(T)), null);
         }
-
+        /*
         public override void DeleteKey(int key){
             _BufferBlock.SendAsync((Status.DSearching, ID, -1, [], [], 0, -1, [], []));
             int i = Search(key);
@@ -172,7 +178,7 @@ namespace BPlusTreeVisualization{
             _Keys[_NumKeys] = default;
             _Contents[_NumKeys] = default;
         }
-
+        */
         public override string Traverse(string x){
             string output = Spacer(x) + "{\n";
             output += Spacer(x) + "  \"leafnode\":\"" + x + "\",\n" 
@@ -182,20 +188,24 @@ namespace BPlusTreeVisualization{
             for (int i = 0; i < _NumKeys; i++){
                 output += _Keys[i] + (i + 1 < _NumKeys ? "," : "");
             }
+            
             output += "],\n" + Spacer(x) + "  \"contents\":[";
+            
             for (int i = 0; i < _NumKeys; i++){
                 #pragma warning disable CS8602 // Dereference of a possibly null reference.
                 output += _Contents[i].ToString() + (i + 1 < _NumKeys ? "," : "");
                 #pragma warning restore CS8602 // Dereference of a possibly null reference.
             }
-            output += "\n";
+            
+            output += "]\n";
             if(_NextNode != null){
                 output += Spacer(x) + "\"  Next\":" + _NextNode._ID + ",\n";
             }
             if(_PrevNode != null){
                 output += Spacer(x) + "\"  Prev\":" + _PrevNode._ID + ",\n";
             }
-            return output + "]\n" + Spacer(x) + "}";
+            return output + Spacer(x) + "}";
         }
+        
     }
 }

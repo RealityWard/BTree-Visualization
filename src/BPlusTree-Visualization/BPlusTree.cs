@@ -32,7 +32,7 @@ namespace BPlusTreeVisualization
     /// <param name="rNode">Value returned from InsertKey on _Root node.</param>
     private void Split(((int, T), BPlusTreeNode<T>) rNode)
     {
-      _Root = new BPlusNonLeafNode<T>(_Degree, [rNode.Item1.Item1], [rNode.Item1.Item2]
+      _Root = new BPlusNonLeafNode<T>(_Degree, [rNode.Item1.Item1]
         , [_Root, rNode.Item2], bufferBlock);
     }
 
@@ -78,6 +78,7 @@ namespace BPlusTreeVisualization
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
+/*
     public void Delete(int key)
     {
       bufferBlock.SendAsync((Status.Delete, 0, -1, [], [], 0, -1, [], []));
@@ -91,6 +92,7 @@ namespace BPlusTreeVisualization
             $"Child of child on root node");;
       }
     }
+    */
 
     /// <summary>
     /// Using searchKey on the nodes to return the data 
@@ -107,10 +109,11 @@ namespace BPlusTreeVisualization
       {
         return default;
       }
-      else
-      {
-        return result.Item2.Contents[result.Item1];
-      }
+      else if(result.Item2 is BPlusLeafNode<T> leaf){
+          return leaf.Contents[result.Item1];
+        }else{
+          throw new InvalidOperationException("Unexpected return type.");
+        }       
     }
 
   
