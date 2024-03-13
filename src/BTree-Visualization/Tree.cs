@@ -10,20 +10,31 @@ using ThreadCommunication;
 
 namespace BTreeVisualization
 {
-  public class BTree<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+  public class BTree<T>
   {
     /// <summary>
     /// Entry point of the tree.
     /// </summary>
-    private BTreeNode<T> _Root = new LeafNode<T>(degree, bufferBlock);
+    private BTreeNode<T> _Root;
     /// <summary>
     /// Determines the number of keys and children per node.
     /// </summary>
-    public readonly int _Degree = degree;
+    public readonly int _Degree;
     /// <summary>
     /// Tracks whether a key of zero is in use in the tree.
     /// </summary>
-    private bool zeroKeyUsed = false;
+    private bool zeroKeyUsed;
+    private BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock;
+
+    
+    public BTree(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+    {
+      _Degree = degree;
+      _Root = new LeafNode<T>(degree, bufferBlock);
+      zeroKeyUsed = false;
+      _BufferBlock = bufferBlock;
+      _BufferBlock.SendAsync((NodeStatus.Inserted, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
+    }
 
     /// <summary>
     /// Takes a node and the key and data to place into root.
@@ -33,7 +44,7 @@ namespace BTreeVisualization
     private void Split(((int, T), BTreeNode<T>) rNode)
     {
       _Root = new NonLeafNode<T>(_Degree, [rNode.Item1.Item1], [rNode.Item1.Item2]
-        , [_Root, rNode.Item2], bufferBlock);
+        , [_Root, rNode.Item2], _BufferBlock);
     }
 
     /// <summary>
@@ -53,7 +64,7 @@ namespace BTreeVisualization
           allow a zero key insertion*/
         if (key == 0)
           zeroKeyUsed = true;
-        bufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [], [], 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [], [], 0, -1, [], []));
         ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data);
         if (result.Item2 != null && result.Item1.Item2 != null)
         {
@@ -64,7 +75,7 @@ namespace BTreeVisualization
       }
       else
       {
-        bufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
     }
 
@@ -80,7 +91,7 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public void Delete(int key)
     {
-      bufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
       _Root.DeleteKey(key);
@@ -101,7 +112,7 @@ namespace BTreeVisualization
     /// <returns>Data object stored under key.</returns>
     public T? Search(int key)
     {
-      bufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
       (int, BTreeNode<T>?) result = _Root.SearchKey(key);
       if (result.Item1 == -1 || result.Item2 == null)
       {
@@ -125,7 +136,7 @@ namespace BTreeVisualization
     }
     
     public void Clear(){
-      _Root = new LeafNode<T>(_Degree,bufferBlock);
+      _Root = new LeafNode<T>(_Degree,_BufferBlock);
     }
 
     /// <summary>
