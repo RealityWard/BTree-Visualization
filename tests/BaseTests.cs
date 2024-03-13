@@ -14,7 +14,7 @@ namespace tests{
     private BTree<Person> _Tree;
     [SetUp]
     public void Setup(){
-      _Tree = new(3, new BufferBlock<(Status status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>());
+      _Tree = new(3, new BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>());
     }
 
     /// <summary>

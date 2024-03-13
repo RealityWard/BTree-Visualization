@@ -17,7 +17,7 @@ namespace Science
   // [TestFixture(300)]
   public partial class BenchMarkTests(int degree)
   {
-    private BufferBlock<(Status status, long id, int numKeys, int[] keys
+    private BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys
       , Person?[] contents, long altID, int altNumKeys, int[] altKeys
       , Person?[] altContents)> _OutputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 20 });
     private BufferBlock<(TreeCommand action, int key

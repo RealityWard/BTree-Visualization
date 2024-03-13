@@ -2,138 +2,251 @@
 Desc: For making new unit tests using NUnit module.
 Reference: https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-with-nunit
 */
-using System.Text.RegularExpressions;
 using BTreeVisualization;
 using NodeData;
 using System.Threading.Tasks.Dataflow;
-using System.Text.Json;
 
-namespace tests
+namespace ThreadTesting
 {
   /// <summary>
-  /// Tests everything to do with threading.
+  /// Tests for CHEM 1100 Scientific Method Project 
   /// </summary>
   /// <remarks>Author: Tristan Anderson</remarks>
-  [TestFixture]
-  public partial class ThreadTest
+  [TestFixture(300)]
+  public partial class ThreadTests(int degree)
   {
-    private BTree<Person> _Tree;
-    private BufferBlock<(Status status, long id, int numKeys, int[] keys
+    private BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys
       , Person?[] contents, long altID, int altNumKeys, int[] altKeys
-      , Person?[] altContents)> _OutputBuffer;
+      , Person?[] altContents)> _OutputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 20 });
     private BufferBlock<(TreeCommand action, int key
-      , Person? content)> _InputBuffer;
+      , Person? content)> _InputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 10 });
+    private BTree<Person>? _Tree;
+    Dictionary<int, string> _InsertedKeys = [];
+    Dictionary<TreeCommand, int> _CommandCount = [];
+    private readonly int _NumberOfKeys = 100000;
+    private Task? _Producer;
+    private Task? _Consumer;
+    private IList<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>? _Toss;
+
+    /// <summary>
+    /// NUnit setup for this class. 
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
     [SetUp]
     public void Setup()
     {
-      _OutputBuffer = new();
-      _InputBuffer = new();
-      _Tree = new(3, _OutputBuffer);
-
-      Task producer = Task.Run(async () =>
+      _OutputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 20 });
+      _InputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 10 });
+      _InsertedKeys = [];
+      _CommandCount = [];
+      foreach (TreeCommand treeCommand in Enum.GetValues(typeof(TreeCommand)))
       {
-        Thread.CurrentThread.Name = "Producer";
-        while (await _InputBuffer.OutputAvailableAsync())
+        _CommandCount.Add(treeCommand, 0);
+      }
+      _Tree = new(degree, _OutputBuffer);
+      _Producer = TreeProduce();
+      _Consumer = GuiConsume();
+      Random random = new();
+      int key = 0;
+      for (int i = 0; i < _NumberOfKeys; i++)
+      {
+        do
         {
-          (TreeCommand action, int key, Person? content) = _InputBuffer.Receive();
-          switch (action)
-          {
-            case TreeCommand.Tree:
-              _Tree = new(key, _OutputBuffer);
-              break;
-            case TreeCommand.Insert:
-#pragma warning disable CS8604 // Possible null reference argument.
-              _Tree.Insert(key, content);
-#pragma warning restore CS8604 // Possible null reference argument.
-              break;
-            case TreeCommand.Delete:
-              _Tree.Delete(key);
-              break;
-            case TreeCommand.Search:
-              _Tree.Search(key);
-              break;
-            case TreeCommand.Traverse:
-              Console.WriteLine(_Tree.Traverse());
-              break;
-            case TreeCommand.Close:
-              _InputBuffer.Complete();
-              break;
-            default:// Will close buffer upon receiving a bad TreeCommand.
-              _InputBuffer.Complete();
-              Console.WriteLine("TreeCommand:{0} not recognized", action);
-              break;
-          }
-        }
-      });
+          key = random.Next(1, _NumberOfKeys * 10);
+        } while (_InsertedKeys.ContainsKey(key));
+        _Tree.Insert(key, new Person(key.ToString()));
+        _InsertedKeys.Add(key, key.ToString());
+      }
     }
 
     /// <summary>
-    /// Simply test whether messages are sent correctly.
+    /// Task creation for the tree object.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
-    [TestCase(1)]
-    [TestCase(10)]
-    [TestCase(100)]
+    /// <returns>Task running the tree.</returns>
+    private async Task TreeProduce()
+    {
+      while (await _InputBuffer.OutputAvailableAsync())
+      {
+        (TreeCommand action, int key, Person? content) = _InputBuffer.Receive();
+        switch (action)
+        {
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+          case TreeCommand.Tree:
+            _Tree = new(key, _OutputBuffer);
+            break;
+          case TreeCommand.Insert:
+            _Tree.Insert(key, content);
+            break;
+          case TreeCommand.Delete:
+            _Tree.Delete(key);
+            break;
+          case TreeCommand.Search:
+            _Tree.Search(key);
+            break;
+          case TreeCommand.Traverse:
+            Console.Write(_Tree.Traverse());
+            break;
+          case TreeCommand.Close:
+            await _OutputBuffer.SendAsync((NodeStatus.Close, 0, -1, [], [], 0, -1, [], [])).ConfigureAwait(false);
+            _InputBuffer.Complete();
+            break;
+          default:// Will close buffer upon receiving a bad TreeCommand.
+            _InputBuffer.Complete();
+            Console.Write("TreeCommand:{0} not recognized", action);
+            break;
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
+        if (_CommandCount.ContainsKey(action))
+          _CommandCount[action]++;
+      }
+    }
+
+    private async Task GuiConsume()
+    {
+      while (await _OutputBuffer.OutputAvailableAsync())
+      {
+        (NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID,
+          int altNumKeys, int[] altKeys, Person?[] altContents) = _OutputBuffer.Receive();
+        switch (status)
+        {
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+          case NodeStatus.Insert:
+            break;
+          case NodeStatus.ISearching:
+            break;
+          case NodeStatus.Inserted:
+            break;
+          case NodeStatus.Split:
+            break;
+          case NodeStatus.Delete:
+            break;
+          case NodeStatus.DSearching:
+            break;
+          case NodeStatus.Deleted:
+            break;
+          case NodeStatus.FSearching:
+            break;
+          case NodeStatus.Forfeit:
+            break;
+          case NodeStatus.Merge:
+            break;
+          case NodeStatus.MergeParent:
+            break;
+          case NodeStatus.UnderFlow:
+            break;
+          case NodeStatus.Shift:
+            break;
+          case NodeStatus.Search:
+            break;
+          case NodeStatus.SSearching:
+            break;
+          case NodeStatus.Found:
+            break;
+          case NodeStatus.Close:
+            _OutputBuffer.Complete();
+            break;
+          default:// Will close buffer upon receiving a bad TreeCommand.
+            Console.Write("TreeCommand:{0} not recognized", status);
+            break;
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
+      }
+    }
+
+    /// <summary>
+    /// Simply test insertion times
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="x">Number of insertions</param>
     [TestCase(1000)]
     [TestCase(10000)]
-    public void MessageWorks(int x)
+    // [TestCase(100000)]
+    public void InsertionTest(int x)
     {
-      BufferBlock<int> testInsertions = new();
-      Task consumer = Task.Run(async () =>
+      Random random = new();
+      int key;
+      for (int i = 0; i < x; i++)
       {
-        string innerHistory = "innerH:";
-        Thread.CurrentThread.Name = "Consumer";
-        (Status status, long id, int numKeys, int[] keys
-          , Person?[] contents, long altID, int altNumKeys, int[] altKeys
-          , Person?[] altContents) nextBufferTuple = new();
-        int nextBufferInt = 0;
-        bool continueInnerWhile = true;
-        while (await testInsertions.OutputAvailableAsync())
+        do
         {
-          nextBufferInt = testInsertions.Receive();
-          innerHistory += nextBufferInt + ",";
-          while (await _OutputBuffer.OutputAvailableAsync() 
-            && continueInnerWhile)
-          {
-            nextBufferTuple = _OutputBuffer.Receive();
-            // Console.WriteLine("oBH:Status:" + nextBufferTuple.status + "NumKeys:" + nextBufferTuple.numKeys);
-            if (nextBufferTuple.status == Status.Close)
-            {
-              _OutputBuffer.Complete();
-            }
-            continueInnerWhile = nextBufferTuple.status != Status.Inserted;
-          }
-          continueInnerWhile = true;
-          // string keysArray = ":Keys:";
-          // if(nextBufferTuple.keys != null)
-          //   for(int i = 0; i < nextBufferTuple.numKeys; i++)
-          //     keysArray += nextBufferTuple.keys[i] + ", ";
-          // Console.WriteLine(innerHistory + "\nnBI:" + nextBufferInt + keysArray);
-          Assert.That(nextBufferTuple.keys, Does.Contain(nextBufferInt)
-            , $"Out of order\n{innerHistory}");
-        }
-        Console.WriteLine(_Tree.Traverse());
-      });
-      Task taskCreator = Task.Run(() => 
+          key = random.Next(1, _NumberOfKeys * 10);
+        } while (_InsertedKeys.ContainsKey(key));
+        if(!_InputBuffer.SendAsync((TreeCommand.Insert, key
+          , new Person(key.ToString()))).Result)
+          Assert.Fail("Rejected insert to the _InputBuffer");
+        _InsertedKeys.Add(key, key.ToString());
+      }
+      if(!_InputBuffer.SendAsync((TreeCommand.Close, 0, null)).Result)
+        Assert.Fail("Rejected close to the _InputBuffer");
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+      _Producer.Wait();
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+      Assert.That(_CommandCount[TreeCommand.Insert], Is.EqualTo(x), "Not all commands are getting through.");
+    }
+
+    /// <summary>
+    /// Simply test deletion times
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="x">Number of deletions</param>
+    // [TestCase(1000)]
+    // [TestCase(10000)]
+    // [TestCase(100000)]
+    public void DeletionTest(int x)
+    {
+      int key;
+      Random random = new();
+      for (int i = 0; i < x; i++)
       {
-        string history = "x:" + x + "\n";
-        Random random = new();
-        int[] uniqueKeys = new int[x];
-        for (int i = 0; i < x; i++)
-        {
-          uniqueKeys[i] = random.Next(0, x * 100);
-          _InputBuffer.Post((TreeCommand.Insert, uniqueKeys[i]
-            , new Person(uniqueKeys[i].ToString())));
-          history += uniqueKeys[i] + ",";
-          testInsertions.Post(uniqueKeys[i]);
-          // _InputBuffer.Post((TreeCommand.Traverse, 0, null));
-        }
-        Console.WriteLine("\nHistory:" + history);
-        _InputBuffer.Complete();
-        _OutputBuffer.Complete();
-        testInsertions.Complete();
-      });
+        key = _InsertedKeys.ElementAt(random.Next(0, _InsertedKeys.Count)).Key;
+        _InputBuffer.SendAsync((TreeCommand.Delete, key, null));
+        _InsertedKeys.Remove(key);
+      }
+      _InputBuffer.SendAsync((TreeCommand.Close, 0, null));
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+      _Producer.Wait();
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+      Assert.That(_CommandCount[TreeCommand.Delete], Is.EqualTo(x), "Not all commands are getting through.");
+    }
+
+
+    /// <summary>
+    /// Simply test deletion times
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="x">Number of searches</param>
+    // [TestCase(1000)]
+    // [TestCase(10000)]
+    // [TestCase(100000)]
+    public void SearchTest(int x)
+    {
+      long memBefore = GC.GetTotalMemory(true);
+      var watch = System.Diagnostics.Stopwatch.StartNew();
+      int key;
+      Random random = new();
+      for (int i = 0; i < x; i++)
+      {
+        key = _InsertedKeys.ElementAt(random.Next(0, _InsertedKeys.Count)).Key;
+        _InputBuffer.SendAsync((TreeCommand.Search, key, null));
+        _InsertedKeys.Remove(key);
+      }
+      _InputBuffer.SendAsync((TreeCommand.Close, 0, null));
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+      _Producer.Wait();
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+      watch.Stop();
+      long memAfter = GC.GetTotalMemory(true);
+      long elapsedMs = watch.ElapsedMilliseconds;
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+      long keyCount = _Tree.KeyCount();
+      int nodeCount = _Tree.NodeCount();
+      Console.Write($"{System.Reflection.MethodBase.GetCurrentMethod().Name},{_Tree._Degree},{x},{elapsedMs},{Math.Abs(memBefore - memAfter)},{keyCount},{nodeCount}");
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
     }
   }
-
 }

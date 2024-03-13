@@ -19,7 +19,7 @@ namespace BPlusTreeVisualization
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public class LeafNode<T>(int degree, BufferBlock<(Status status,
+  public class LeafNode<T>(int degree, BufferBlock<(NodeStatus status,
       long id, int numKeys, int[] keys, T[] contents, long altID,
       int altNumKeys, int[] altKeys, T[] altContents)> bufferBlock)
       : BTreeNode<T>(degree, bufferBlock)
@@ -36,7 +36,7 @@ namespace BPlusTreeVisualization
     /// <param name="bufferBlock">Output Buffer for Status updates to be
     /// externally viewed.</param>
     public LeafNode(int degree, int[] keys, T[] contents,
-        BufferBlock<(Status status, long id, int numKeys, int[] keys,
+        BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys,
         T[] contents, long altID, int altNumKeys, int[] altKeys,
         T[] altContents)> bufferBlock) : this(degree, bufferBlock)
     {
@@ -61,11 +61,11 @@ namespace BPlusTreeVisualization
       {
         if (_Keys[i] == key)
         {
-          _BufferBlock.Post((Status.Found, ID, i, [key], [Contents[i]], 0, -1, [], []));
+          _BufferBlock.Post((NodeStatus.Found, ID, i, [key], [Contents[i]], 0, -1, [], []));
           return i;
         }
       }
-      _BufferBlock.Post((Status.Found, ID, -1, [], [], 0, -1, [], []));
+      _BufferBlock.Post((NodeStatus.Found, ID, -1, [], [], 0, -1, [], []));
       return -1;
     }
 
@@ -79,7 +79,7 @@ namespace BPlusTreeVisualization
     /// this node.</returns>
     public override (int, BTreeNode<T>) SearchKey(int key)
     {
-      _BufferBlock.Post((Status.SSearching, ID, -1, [], [], 0, -1, [], []));
+      _BufferBlock.Post((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       return (Search(key), this);
     }
 
@@ -101,7 +101,7 @@ namespace BPlusTreeVisualization
       }
       _NumKeys = _Degree - 1;
       LeafNode<T> newNode = new(_Degree, newKeys, newContent, _BufferBlock);
-      _BufferBlock.Post((Status.Split, ID, NumKeys, Keys, Contents, newNode.ID,
+      _BufferBlock.Post((NodeStatus.Split, ID, NumKeys, Keys, Contents, newNode.ID,
                           newNode.NumKeys, newNode.Keys, newNode.Contents));
       return ((_Keys[_NumKeys], _Contents[_NumKeys]), newNode);
     }
@@ -120,7 +120,7 @@ namespace BPlusTreeVisualization
     /// Otherwise it returns ((-1, null), null).</returns>
     public override ((int, T?), BTreeNode<T>?) InsertKey(int key, T data)
     {
-      _BufferBlock.Post((Status.ISearching, ID, -1, [], [], 0, -1, [], []));
+      _BufferBlock.Post((NodeStatus.ISearching, ID, -1, [], [], 0, -1, [], []));
       int i = 0;
       while (i < _NumKeys && key > _Keys[i])
         i++;
@@ -134,7 +134,7 @@ namespace BPlusTreeVisualization
         _Keys[i] = key;
         _Contents[i] = data;
         _NumKeys++;
-        _BufferBlock.Post((Status.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+        _BufferBlock.Post((NodeStatus.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
         if (IsFull())
         {
           return Split();
@@ -142,7 +142,7 @@ namespace BPlusTreeVisualization
       }
       else
       {
-        _BufferBlock.Post((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
+        _BufferBlock.Post((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
       return ((-1, default(T)), null);
     }
@@ -155,7 +155,7 @@ namespace BPlusTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public override void DeleteKey(int key)
     {
-      _BufferBlock.Post((Status.DSearching, ID, -1, [], [], 0, -1, [], []));
+      _BufferBlock.Post((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
       int i = Search(key);
       if (i != -1)
       {
@@ -165,9 +165,9 @@ namespace BPlusTreeVisualization
           _Contents[i] = _Contents[i + 1];
         }
         _NumKeys--;
-        _BufferBlock.Post((Status.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+        _BufferBlock.Post((NodeStatus.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
       }
-      _BufferBlock.Post((Status.Deleted, ID, -1, [], [], 0, -1, [], []));
+      _BufferBlock.Post((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
     }
 
     /// <summary>
@@ -180,7 +180,7 @@ namespace BPlusTreeVisualization
     public override (int, T) ForfeitKey()
     {
       _NumKeys--;
-      _BufferBlock.Post((Status.Forfeit, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+      _BufferBlock.Post((NodeStatus.Forfeit, ID, NumKeys, Keys, Contents, 0, -1, [], []));
       return (_Keys[_NumKeys], _Contents[_NumKeys]);
     }
 
@@ -205,7 +205,7 @@ namespace BPlusTreeVisualization
         _Contents[_NumKeys + i] = sibiling.Contents[i];
       }
       _NumKeys += sibiling.NumKeys;
-      _BufferBlock.Post((Status.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
+      _BufferBlock.Post((NodeStatus.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
     }
 
     /// <summary>
