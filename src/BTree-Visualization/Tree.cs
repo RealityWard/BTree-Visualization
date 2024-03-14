@@ -45,6 +45,11 @@ namespace BTreeVisualization
     {
       _Root = new NonLeafNode<T>(_Degree, [rNode.Item1.Item1], [rNode.Item1.Item2]
         , [_Root, rNode.Item2], _BufferBlock);
+      _BufferBlock.SendAsync((NodeStatus.Inserted, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[0]
+        ?? throw new NullChildReferenceException($"Child of new root node at index:0")).ID, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[1]
+        ?? throw new NullChildReferenceException($"Child of new root node at index:1")).ID, -1, [], []));
     }
 
     /// <summary>
@@ -64,7 +69,7 @@ namespace BTreeVisualization
           allow a zero key insertion*/
         if (key == 0)
           zeroKeyUsed = true;
-        _BufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [], [], 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [key], [data], 0, -1, [], []));
         ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data);
         if (result.Item2 != null && result.Item1.Item2 != null)
         {
@@ -97,9 +102,11 @@ namespace BTreeVisualization
       _Root.DeleteKey(key);
       if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
+        long temp = _Root.ID;
         _Root = ((NonLeafNode<T>)_Root).Children[0]
           ?? throw new NullChildReferenceException(
-            $"Child of child on root node");;
+            $"Child of child on root node");
+        _BufferBlock.SendAsync((NodeStatus.Merge, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
       }
     }
 

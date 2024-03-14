@@ -301,8 +301,9 @@ namespace BTreeVisualization
     public override string Traverse(string x)
     {
       string output = Spacer(x) + "{\n";
-      output += Spacer(x) + "  \"leafnode\":\"" + x + "\",\n" 
-        + Spacer(x) + "\"  ID\":" + _ID + ",\n"
+      output += Spacer(x) + "  \"type\":\"leafnode\",\n" 
+        + Spacer(x) + "  \"node\":\"" + x + "\",\n" 
+        + Spacer(x) + "  \"ID\":" + _ID + ",\n"
         + Spacer(x) + "  \"keys\":[";
       for (int i = 0; i < _NumKeys; i++)
       {

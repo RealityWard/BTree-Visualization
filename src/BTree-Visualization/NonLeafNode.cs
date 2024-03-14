@@ -183,7 +183,6 @@ namespace BTreeVisualization
             $"Child at index:{i + _Degree} within node:{ID}");
         _Contents[i + _Degree] = default;
         _Children[i + _Degree] = default;
-        _BufferBlock.SendAsync((NodeStatus.Shift, newChildren[i].ID, -1, [], [], ID, -1, [], []));
       }
       newChildren[i] = _Children[i + _Degree]
         ?? throw new NullChildReferenceException(
@@ -199,6 +198,11 @@ namespace BTreeVisualization
       _Contents[_NumKeys] = default;
       _BufferBlock.SendAsync((NodeStatus.Split, ID, NumKeys, Keys, Contents,
         newNode.ID, newNode.NumKeys, newNode.Keys, newNode.Contents));
+      for(int j = 0; j <= newNode.NumKeys; j++)
+      {
+        _BufferBlock.SendAsync((NodeStatus.Shift, newNode.ID, -1, [], [], (newNode.Children[j]
+          ?? throw new NullChildReferenceException($"Child at index:{j} within node:{newNode.ID}")).ID, -1, [], []));
+      }
       return (dividerEntry, newNode);
     }
 
@@ -467,8 +471,9 @@ namespace BTreeVisualization
 		public override string Traverse(string x)
     {
       string output = Spacer(x) + "{\n";
-      output += Spacer(x) + "  \"node\":\"" + x + "\",\n"
-        + Spacer(x) + "\"  ID\":" + _ID + ",\n" + Spacer(x) + "  \"keys\":[";
+      output += Spacer(x) + "  \"type\":\"node\",\n"
+        + Spacer(x) + "  \"node\":\"" + x + "\",\n"
+        + Spacer(x) + "  \"ID\":" + _ID + ",\n" + Spacer(x) + "  \"keys\":[";
       for (int i = 0; i < _NumKeys; i++)
       {
         output += _Keys[i] + (i + 1 < _NumKeys ? "," : "");

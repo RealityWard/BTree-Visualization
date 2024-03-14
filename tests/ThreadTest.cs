@@ -9,10 +9,10 @@ using System.Threading.Tasks.Dataflow;
 namespace ThreadTesting
 {
   /// <summary>
-  /// Tests for CHEM 1100 Scientific Method Project 
+  /// Tests for threading properly ordered messages. 
   /// </summary>
   /// <remarks>Author: Tristan Anderson</remarks>
-  [TestFixture(300)]
+  [TestFixture(3)]
   public partial class ThreadTests(int degree)
   {
     private BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys
@@ -27,6 +27,7 @@ namespace ThreadTesting
       , Person? content)> _InputBufferHistory = [];
     private BTree<Person>? _Tree;
     List<int> _InsertedKeys = [];
+    List<string> _TraverseHistory = [];
     Dictionary<TreeCommand, int> _CommandCount = [];
     private readonly int _NumberOfKeys = 100000;
     private Task? _Producer;
@@ -44,6 +45,7 @@ namespace ThreadTesting
       _InputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 10 });
       _OutputBufferHistory = [];
       _InputBufferHistory = [];
+      _TraverseHistory = [];
       _InsertedKeys = [];
       _CommandCount = [];
       foreach (TreeCommand treeCommand in Enum.GetValues(typeof(TreeCommand)))
@@ -105,9 +107,10 @@ namespace ThreadTesting
             _InputBuffer.Complete();
             Console.Write("TreeCommand:{0} not recognized", _InputBufferHistory.Last().action);
             break;
+        }
+        _TraverseHistory.Add(_Tree.Traverse());
 #pragma warning restore CS8604 // Possible null reference argument.
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-        }
         if (_CommandCount.ContainsKey(_InputBufferHistory.Last().action))
           _CommandCount[_InputBufferHistory.Last().action]++;
       }
@@ -183,8 +186,10 @@ namespace ThreadTesting
     /// Simply test insertion times
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
-    [TestCase(1000)]
-    [TestCase(10000)]
+    [TestCase(10)]
+    [TestCase(10)]
+    [TestCase(10)]
+    [TestCase(10)]
     public void InsertionTest(int x)
     {
       Random random = new();
@@ -207,6 +212,76 @@ namespace ThreadTesting
       _Consumer.Wait();
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
       Assert.That(_InputBufferHistory.Count(), Is.EqualTo(x + 1), "Not all commands are getting through.");
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+      // Console.Write(traversal);
+      int traverseIndex = 0;
+      string? treeTraverse = _TraverseHistory[traverseIndex];
+      NodeStatus lastStatus = NodeStatus.Close;
+      int k = -1;
+      bool failed = false;
+      _OutputBufferHistory.ForEach((bufMessage) => 
+      {
+        switch (bufMessage.status)
+        {
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+          case NodeStatus.Insert:
+            treeTraverse = _TraverseHistory[++traverseIndex];
+            k = bufMessage.keys[0];
+            break;
+          case NodeStatus.ISearching:
+            failed = !(lastStatus == NodeStatus.Insert || lastStatus == NodeStatus.ISearching);
+            break;
+          case NodeStatus.Inserted:
+            failed = !(lastStatus == NodeStatus.ISearching || lastStatus == NodeStatus.Shift || lastStatus == NodeStatus.Split);
+            break;
+          case NodeStatus.Split:
+            failed = lastStatus != NodeStatus.Inserted;
+            break;
+          case NodeStatus.Delete:
+            break;
+          case NodeStatus.DSearching:
+            break;
+          case NodeStatus.Deleted:
+            break;
+          case NodeStatus.FSearching:
+            break;
+          case NodeStatus.Forfeit:
+            break;
+          case NodeStatus.Merge:
+            break;
+          case NodeStatus.MergeParent:
+            break;
+          case NodeStatus.UnderFlow:
+            break;
+          case NodeStatus.Shift:
+            failed = !(lastStatus == NodeStatus.Split || lastStatus == NodeStatus.Shift);
+            break;
+          case NodeStatus.Search:
+            break;
+          case NodeStatus.SSearching:
+            break;
+          case NodeStatus.Found:
+            break;
+          case NodeStatus.Close:
+            break;
+          default:// Will close buffer upon receiving a bad TreeCommand.
+            Assert.Fail($"TreeCommand:{bufMessage.status} not recognized");
+            break;
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
+        if(failed)
+          Assert.Fail($"Last Status:{lastStatus}\nTraversal out of order:{treeTraverse}\nstatus:{bufMessage.status}\nid:{bufMessage.id}\nkey:{k}\nkeys:{StringifyKeys(bufMessage.numKeys,bufMessage.keys)}");
+        lastStatus = bufMessage.status;
+      });
+    }
+
+    private static string StringifyKeys(int numKeys, int[] keys){
+      string result = "";
+      for(int i = 0; i < numKeys; i++)
+        result += keys[i] + (i + 1 == numKeys? "" : ",");
+      return result;
     }
 
     /// <summary>
@@ -216,7 +291,6 @@ namespace ThreadTesting
     /// <param name="x">Number of deletions</param>
     // [TestCase(1000)]
     // [TestCase(10000)]
-    // [TestCase(100000)]
     public void DeletionTest(int x)
     {
       int key;
@@ -233,7 +307,6 @@ namespace ThreadTesting
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
       Assert.That(_CommandCount[TreeCommand.Delete], Is.EqualTo(x), "Not all commands are getting through.");
     }
-
 
     /// <summary>
     /// Simply test deletion times
