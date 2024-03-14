@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -18,8 +19,10 @@ namespace B_TreeVisualizationGUI
         public float NodeWidth, NodeHeight;
         public int Depth { get; set; }
 
-        public GUINode(int[] keys, bool isLeaf, bool IsRoot, int Depth,  GUINode[] children = null)
-        {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+    public GUINode(int[] keys, bool isLeaf, bool IsRoot, int Depth, GUINode[] children = null)
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+    {
             Keys = keys;
             Children = children;
             IsLeaf = isLeaf;
@@ -76,7 +79,6 @@ namespace B_TreeVisualizationGUI
             return -1; // Leaf not found in this subtree
         }
 
-        // Displays the node with the help of the DrawTree method
         public void DisplayNode(Graphics graphics, float x, float y)
         {
             // Brushes
@@ -89,22 +91,18 @@ namespace B_TreeVisualizationGUI
             graphics.FillRectangle(brush, x - NodeWidth / 2, y, NodeWidth, NodeHeight);
             graphics.DrawRectangle(pen, x - NodeWidth / 2, y, NodeWidth, NodeHeight);
 
-            // Divide node into slots
-            float slot = NodeWidth / NumKeys;
+            // Calculate slot width for each key
+            float slotWidth = NodeWidth / Math.Max(1, NumKeys); // Avoid division by zero
 
-            // Draw keys in node
-            for (int i = 0; i < NumKeys; i++)
+            for (int i = 0; i < NumKeys && i < Keys.Length; i++) // Use both NumKeys and Keys.Length for safety
             {
-                string key = Keys[i].ToString();
-
-                // Measure the total width and height of the key string and print it in the center of the node
-                SizeF textSize = graphics.MeasureString(key, font);
-                float slotCenterX = x - (NodeWidth / 2) + (slot * (i + 0.5f));
-                float textCenterX = slotCenterX - (textSize.Width / 2);
-                textCenterX = (float)Math.Round(textCenterX);
-                float textCenterY = y + (NodeHeight / 2) - (textSize.Height / 2);
-                textCenterY = (float)Math.Round(textCenterY);
-                graphics.DrawString(key, font, textBrush, textCenterX, textCenterY);
+                // Display each key within its slot
+                string keyString = Keys[i].ToString();
+                SizeF textSize = graphics.MeasureString(keyString, font);
+                float slotCenterX = x - (NodeWidth / 2) + (slotWidth * (i + 0.5f));
+                float textX = slotCenterX - (textSize.Width / 2);
+                float textY = y + (NodeHeight - textSize.Height) / 2; // Center text vertically within the node
+                graphics.DrawString(keyString, font, textBrush, textX, textY);
             }
         }
     }

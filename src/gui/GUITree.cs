@@ -11,7 +11,7 @@ using System.Drawing.Design;
 
 namespace B_TreeVisualizationGUI
 {
-    internal class GUITree : Form1
+    internal class GUITree
     {
         public GUINode root;
         public float centerx, centery;
@@ -23,6 +23,11 @@ namespace B_TreeVisualizationGUI
         {
             this.root = root;
             this.displayPanel = displayPanel;
+            leafStart = initializeLeafStart();
+        }
+
+        public void ResetAndInitializeLeafStart()
+        {
             leafStart = initializeLeafStart();
         }
 
@@ -52,7 +57,7 @@ namespace B_TreeVisualizationGUI
                 if (!depthNodesDrawn.ContainsKey(depth))
                 {
                     depthNodesDrawn.Add(depth, 0);
-                } 
+                }
                 float leftX = centerX - subtreeWidth / 2; // Calculate left x-coordinate of the tree
 
                 float nodeSlot; // Initialize nodeSlot aka, the space that a node is going to be centered in
