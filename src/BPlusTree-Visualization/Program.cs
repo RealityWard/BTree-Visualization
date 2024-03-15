@@ -27,6 +27,14 @@ class Program
     for(int i = 0; i<20;i++){
       bPlusTree.Insert(i,new Person("hello"));
     }
+
+    Person? search = bPlusTree.Search(2);
+    if(search != null){
+      Console.WriteLine(search.ToString());
+    }
+    else{
+      Console.WriteLine("Not found");
+    }
     
 
     

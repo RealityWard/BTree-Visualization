@@ -61,7 +61,14 @@ namespace BPlusTreeVisualization
     
     private int Search(int key)
     {
-      return 1;
+      for (int i = 0; i < _NumKeys; i++)
+      {
+        if (_Keys[i] >= key)
+        {
+          return i;
+        }
+      }
+      return -1;
     }
     
 
@@ -75,6 +82,18 @@ namespace BPlusTreeVisualization
  
     public override (int, BPlusTreeNode<T>) SearchKey(int key)
     {
+      _BufferBlock.SendAsync((Status.SSearching, ID, -1, [], [], 0, -1, [], []));
+      int index = Search(key);
+  
+      if(index != -1 &&_Children[index] != null) {
+
+        if(_Children[index] is BPlusLeafNode<T> leaf){
+          (int, BPlusTreeNode<T>) result = leaf.SearchKey(key);
+          return result;
+        }else if(_Children[index] is BPlusNonLeafNode<T> NonLeaf){
+          return NonLeaf.SearchKey(key);
+        }
+      }       
       return (-1, this);
     }
     
@@ -120,9 +139,11 @@ namespace BPlusTreeVisualization
             return Split();
           }
         }
-      }
+      }else{
+          _BufferBlock.SendAsync((Status.Inserted,0,-1,[],[],0,-1,[],[]));
+        }
       
-      return ((-1, default(T)),this);
+      return ((-1, default(T)),null);
     }
 
     /// <summary>
@@ -133,9 +154,31 @@ namespace BPlusTreeVisualization
     /// LeafNode.Split()</remarks>
     /// <returns>The new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).</returns>
-    public ((int,T), BPlusTreeNode<T>) Split()
-    {
-      return ((-1,default(T)),this);
+    public ((int,T?), BPlusTreeNode<T>) Split()
+    { 
+      int[] newKeys = new int[_Degree - 1];
+      BPlusTreeNode<T>[] newChildren = new BPlusTreeNode<T>[_Degree];
+      int i = 0;
+      for (; i < _Degree - 1; i++)
+      {
+        newKeys[i] = _Keys[i + _Degree];
+        newChildren[i] = _Children[i + _Degree]
+          ?? throw new NullChildReferenceException(
+            $"Child at index:{i + _Degree} within node:{ID}");
+        _Children[i + _Degree] = default;
+        _BufferBlock.SendAsync((Status.Shift, newChildren[i].ID, -1, [], [], ID, -1, [], []));
+      }
+      newChildren[i] = _Children[i + _Degree]
+        ?? throw new NullChildReferenceException(
+          $"Child at index:{i + _Degree} within node:{ID}");
+      _Children[i + _Degree] = default;
+      _NumKeys = _Degree - 1;
+      BPlusNonLeafNode<T> newNode = new(_Degree, newKeys, newChildren, _BufferBlock);
+      (int,T?) dividerEntry = (_Keys[_NumKeys],default(T));
+      _Keys[_NumKeys] = default;
+      _BufferBlock.SendAsync((Status.Split, ID, NumKeys, Keys, [],
+        newNode.ID, newNode.NumKeys, newNode.Keys, []));
+      return (dividerEntry, newNode);
     }
 
     /// <summary>

@@ -55,7 +55,7 @@ namespace BPlusTreeVisualization
           zeroKeyUsed = true;
         bufferBlock.SendAsync((Status.Insert, 0, -1, [], [], 0, -1, [], []));
         ((int, T?), BPlusTreeNode<T>?) result = _Root.InsertKey(key, data);
-        if (result.Item2 != null && result.Item1.Item2 != null)
+        if (result.Item2 != null || result.Item1.Item2 != null)
         {
             #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
           Split(result);
