@@ -9,7 +9,7 @@ namespace ThreadCommunication{
   /// being communicated to the display thread.
   /// </summary>
   /// <remarks>Author: Tristan Anderson</remarks>
-  public enum Status
+  public enum NodeStatus
   {
     /// <summary>
     /// Initial response to Insert TreeCommand. Nothing else sent.
@@ -152,7 +152,7 @@ class Program
     Thread.CurrentThread.Name = "Main";
 
     var outputBuffer = new BufferBlock<(
-      Status status,
+      NodeStatus status,
       long id,
       int numKeys,
       int[] keys,
@@ -217,7 +217,7 @@ class Program
       }
       inputBuffer.Post((TreeCommand.Traverse, -1, new Person((-1).ToString())));
       inputBuffer.Post((TreeCommand.Close, -1, new Person((-1).ToString())));
-      List<(Status status,
+      List<(NodeStatus status,
         long id,
         int numKeys,
         int[] keys,
@@ -231,7 +231,7 @@ class Program
         history.Add(outputBuffer.Receive());
         switch (history.Last().status)
         {
-          case Status.Close:
+          case NodeStatus.Close:
             inputBuffer.Post((TreeCommand.Close, -1, null));
             outputBuffer.Complete();
             break;
