@@ -10,7 +10,7 @@ using BTreeVisualization;
 using ThreadCommunication;
 namespace BPlusTreeVisualization
 {
-  public class BPlusTree<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+  public class BPlusTree<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Entry point of the tree.
@@ -33,7 +33,7 @@ namespace BPlusTreeVisualization
     private void Split(((int, T), BPlusTreeNode<T>) rNode)
     {
       _Root = new BPlusNonLeafNode<T>(_Degree, [rNode.Item1.Item1]
-        , [_Root, rNode.Item2], bufferBlock);
+        , [_Root, rNode.Item2],bufferBlock);
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ namespace BPlusTreeVisualization
           allow a zero key insertion*/
         if (key == 0)
           zeroKeyUsed = true;
-        bufferBlock.SendAsync((Status.Insert, 0, -1, [], [], 0, -1, [], []));
+        bufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [], [], 0, -1, [], []));
         ((int, T?), BPlusTreeNode<T>?) result = _Root.InsertKey(key, data);
         if (result.Item2 != null || result.Item1.Item2 != null)
         {
@@ -64,7 +64,7 @@ namespace BPlusTreeVisualization
       }
       else
       {
-        bufferBlock.SendAsync((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
+        bufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
     }
 
@@ -103,7 +103,7 @@ namespace BPlusTreeVisualization
     /// <returns>Data object stored under key.</returns>
     public T? Search(int key)
     {
-      bufferBlock.SendAsync((Status.Search, 0, -1, [], [], 0, -1, [], []));
+      bufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
       (int, BPlusTreeNode<T>?) result = _Root.SearchKey(key);
       if (result.Item1 == -1 || result.Item2 == null)
       {

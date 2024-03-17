@@ -14,12 +14,12 @@ namespace BPlusTreeVisualization
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class Node<N, T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+  public abstract class Node<N, T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Output Buffer for Status updates to be externally viewed.
     /// </summary>
-    protected BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock = bufferBlock;
+    protected BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock = bufferBlock;
     /// <summary>
     /// Determines the number of keys and children per node.
     /// </summary>
@@ -35,7 +35,7 @@ namespace BPlusTreeVisualization
     /// <summary>
     /// Holds key entries for this node.
     /// </summary>
-    protected int[] _Keys = new int[2 * degree - 1];
+    protected int[] _Keys = new int[degree];
 
     /// <summary>
     /// Find a key in this node or in its children.
@@ -100,7 +100,7 @@ namespace BPlusTreeVisualization
     /// */
     public bool IsFull()
     {
-      return _NumKeys == 2 * _Degree - 1;
+      return _NumKeys > _Degree - 1;
     }
     /// <summary>
     /// Checks if this node is below minimum capacity.
@@ -208,7 +208,7 @@ namespace BPlusTreeVisualization
   /// <param name="degree">Same as parent node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-    public abstract class BPlusTreeNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, 
+    public abstract class BPlusTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, 
                 T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) 
                 : Node<BPlusTreeNode<T>, T>(degree, bufferBlock)
     {

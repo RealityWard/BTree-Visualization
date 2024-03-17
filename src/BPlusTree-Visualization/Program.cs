@@ -11,7 +11,7 @@ class Program
   static void Main()
   {
       var outputBuffer = new BufferBlock<(
-      Status status,
+      NodeStatus status,
       long id,
       int numKeys,
       int[] keys,
@@ -24,13 +24,13 @@ class Program
 
     BPlusTree<Person> bPlusTree = new(3,outputBuffer);
 
-    for(int i = 0; i<20;i++){
-      bPlusTree.Insert(i,new Person("hello"));
+    for(int i = 0; i<8;i++){
+      bPlusTree.Insert(i,new Person("hello " + i));
     }
 
     Person? search = bPlusTree.Search(2);
     if(search != null){
-      Console.WriteLine(search.ToString());
+      Console.WriteLine("Found: " + search.ToString());
     }
     else{
       Console.WriteLine("Not found");

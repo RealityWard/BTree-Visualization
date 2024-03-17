@@ -3,7 +3,7 @@ using ThreadCommunication;
 
 namespace BPlusTreeVisualization{
 
-    public  class BPlusLeafNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, 
+    public  class BPlusLeafNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, 
             T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)    
             : BPlusTreeNode<T>(degree, bufferBlock)
     {
@@ -11,20 +11,19 @@ namespace BPlusTreeVisualization{
 
         private BPlusLeafNode<T>? _PrevNode;
 
-        protected T?[] _Contents = new T[2 * degree - 1];
+        protected T?[] _Contents = new T[degree];
 
         public T?[] Contents{
             get { return _Contents; }
         }
 
-
-        public BPlusLeafNode(int degree, int[] keys, T[] contents,
-                BufferBlock<(Status status, long id, int numKeys, int[] keys,
+        public BPlusLeafNode(int degree, int[] keys, T[] contents, int numKeys,
+                BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys,
                 T?[] contents, long altID, int altNumKeys, int[] altKeys,
                 T?[] altContents)> bufferBlock) : this(degree, bufferBlock)
             {
-            _NumKeys = keys.Length;
-            for (int i = 0; i < keys.Length; i++)
+            _NumKeys = numKeys;
+            for (int i = 0; i < numKeys; i++)
                 {
                     _Keys[i] = keys[i];
                     _Contents[i] = contents[i];
@@ -37,52 +36,23 @@ namespace BPlusTreeVisualization{
             {
                 if (_Keys[i] == key)
                 {
-                    _BufferBlock.SendAsync((Status.Found, ID, i, [key], [Contents[i]], 0, -1, [], []));
+                    _BufferBlock.SendAsync((NodeStatus.Found, ID, i, [key], [Contents[i]], 0, -1, [], []));
                     return i;
                 }
             }
-            _BufferBlock.SendAsync((Status.Found, ID, -1, [], [], 0, -1, [], []));
+            _BufferBlock.SendAsync((NodeStatus.Found, ID, -1, [], [], 0, -1, [], []));
             return -1;
         }
 
         public override (int, BPlusTreeNode<T>) SearchKey(int key){
-            _BufferBlock.SendAsync((Status.SSearching, ID, -1, [], [], 0, -1, [], []));
+            _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
             return (Search(key), this);
         }
 
-        public ((int, T), BPlusTreeNode<T>) Split(){
-            int[] newKeys = new int[_Degree - 1];
-            T[] newContent = new T[_Degree - 1];
-            for (int i = 0; i < _Degree - 1; i++){
-                newKeys[i] = _Keys[i + _Degree];
-                newContent[i] = _Contents[i + _Degree] 
-                ?? throw new NullContentReferenceException(
-                $"Content at index:{i + _Degree} within node:{ID}");
-                _Keys[i + _Degree] = default;
-                _Contents[i + _Degree] = default;
-            }
-            _NumKeys = _Degree - 1;
-            BPlusLeafNode<T> newNode = new(_Degree, newKeys, newContent, _BufferBlock);
-            _BufferBlock.SendAsync((Status.Split, ID, NumKeys, Keys, Contents, newNode.ID,
-                          newNode.NumKeys, newNode.Keys, newNode.Contents));
-            newNode._NextNode = _NextNode;
-            _NextNode = newNode;
-            newNode._PrevNode = this;
-            if(newNode._NextNode != null){
-                newNode._NextNode._PrevNode = newNode;
-            }
-            (int,T) dividerEntry = (_Keys[_NumKeys], _Contents[_NumKeys] 
-            ?? throw new NullContentReferenceException(
-            $"Content at index:{NumKeys} within node:{ID}"));
-            _Keys[_NumKeys] = default;
-            _Contents[_NumKeys] = default;
-            return (dividerEntry, newNode);
-        }
-
         public override ((int, T?), BPlusTreeNode<T>?) InsertKey(int key, T data){
-            _BufferBlock.SendAsync((Status.ISearching, ID, -1, [], [], 0, -1, [], []));
+            _BufferBlock.SendAsync((NodeStatus.ISearching, ID, -1, [], [], 0, -1, [], []));
             int i = 0;
-            while (i < _NumKeys && key > _Keys[i])
+            while (i < _NumKeys && key >= _Keys[i])
                 i++;
             if (i == _NumKeys || key != _Keys[i] || key == 0){
                 for (int j = _NumKeys - 1; j >= i; j--){
@@ -92,16 +62,53 @@ namespace BPlusTreeVisualization{
                 _Keys[i] = key;
                 _Contents[i] = data;
                 _NumKeys++;
-                _BufferBlock.SendAsync((Status.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+                _BufferBlock.SendAsync((NodeStatus.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
                 if (IsFull()){
                     return Split();
                 }
             }
             else{
-                _BufferBlock.SendAsync((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
-      }
+                _BufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
+            }
             return ((-1, default(T)), null);
         }
+
+        public ((int, T), BPlusTreeNode<T>) Split(){
+            int dividerIndex = _NumKeys / 2;
+            int[] newKeys = new int[_Degree];
+            T[] newContent = new T[_Degree];
+            (int,T) dividerEntry = (_Keys[dividerIndex], _Contents[dividerIndex] 
+            ?? throw new NullContentReferenceException(
+            $"Content at index:{NumKeys} within node:{ID}"));
+
+            for (int i = 0; i < _NumKeys - dividerIndex; i++){
+                newKeys[i] = _Keys[i + dividerIndex];
+                newContent[i] = _Contents[i + dividerIndex] 
+                ?? throw new NullContentReferenceException(
+                $"Content at index:{i + _Degree} within node:{ID}");
+                _Keys[i + dividerIndex] = default;
+                _Contents[i + dividerIndex] = default;
+            }
+
+            
+            int NewNumKeys = _NumKeys - dividerIndex;
+            _NumKeys = dividerIndex;
+            BPlusLeafNode<T> newNode = new(_Degree, newKeys, newContent,NewNumKeys, _BufferBlock){
+                _NextNode = _NextNode
+                
+            };
+            //newNode._NumKeys = _NumKeys - dividerIndex;
+            _NextNode = newNode;
+            newNode._PrevNode = this;
+            if(newNode._NextNode != null){
+                newNode._NextNode._PrevNode = newNode;
+            }
+            _BufferBlock.SendAsync((NodeStatus.Split, ID, NumKeys, Keys, Contents, newNode.ID,
+                          newNode.NumKeys, newNode.Keys, newNode.Contents));
+            return (dividerEntry, newNode);
+        }
+
+        
         /*
         public override void DeleteKey(int key){
             _BufferBlock.SendAsync((Status.DSearching, ID, -1, [], [], 0, -1, [], []));
