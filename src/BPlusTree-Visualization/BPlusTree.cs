@@ -1,7 +1,7 @@
 /**
-Secondary Author: Andreas Kramer (for tree height methods)
+Author: Andreas Kramer working with code from Tristan Anderson
 Date: 2024-02-03
-Desc: Maintains the entry point of the BTree data 
+Desc: Maintains the entry point of the B+Tree data 
 structure and initializes root and new node creation in the beginning.
 */
 using System.Reflection.Metadata.Ecma335;

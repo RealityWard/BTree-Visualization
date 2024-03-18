@@ -1,7 +1,7 @@
 /*
-Author: Emily Elzinga and Tristan Anderson
-Date: 2/07/2024
-Desc: Describes functionality for non-leaf nodes on the BTree. Recursive function iteration due to children nodes.
+Author: Andreas Kramer
+Date: 03/04/2024
+Desc: Describes functionality for non-leaf nodes on the B+Tree. Recursive function iteration due to children nodes.
 */
 using System.Threading.Tasks.Dataflow;
 using System.Text.RegularExpressions;
@@ -173,7 +173,7 @@ namespace BPlusTreeVisualization
           $"Child at index:{i + _Degree} within node:{ID}");
       _Children[i + dividerIndex] = default;
       _Keys[dividerIndex] = default;
-      //int newNumKeys = _NumKeys - dividerIndex;
+
       BPlusNonLeafNode<T> newNode = new(_Degree, newKeys, newChildren, _BufferBlock)
             {
             _NumKeys = _NumKeys - dividerIndex - 1

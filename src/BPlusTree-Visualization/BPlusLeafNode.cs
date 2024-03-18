@@ -23,7 +23,7 @@ namespace BPlusTreeVisualization{
                 T?[] altContents)> bufferBlock) : this(degree, bufferBlock)
             {
             _NumKeys = keys.Length;
-            for (int i = 0; i < keys.Length; i++)       //do it similar to nonleaf; keep keys.length etc...
+            for (int i = 0; i < keys.Length; i++)       
                 {
                     _Keys[i] = keys[i];
                     _Contents[i] = contents[i];
@@ -207,10 +207,10 @@ namespace BPlusTreeVisualization{
             
             output += "]\n";
             if(_NextNode != null){
-                output += Spacer(x) + "\"  Next\":" + _NextNode._ID + ",\n";
+                output += Spacer(x) + "\"  next\":" + _NextNode._ID + ",\n";
             }
             if(_PrevNode != null){
-                output += Spacer(x) + "\"  Prev\":" + _PrevNode._ID + ",\n";
+                output += Spacer(x) + "\"  prev\":" + _PrevNode._ID + ",\n";
             }
             return output + Spacer(x) + "}";
         }
