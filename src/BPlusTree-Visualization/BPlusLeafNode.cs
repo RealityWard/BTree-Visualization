@@ -17,13 +17,13 @@ namespace BPlusTreeVisualization{
             get { return _Contents; }
         }
 
-        public BPlusLeafNode(int degree, int[] keys, T[] contents, int numKeys,
+        public BPlusLeafNode(int degree, int[] keys, T[] contents,
                 BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys,
                 T?[] contents, long altID, int altNumKeys, int[] altKeys,
                 T?[] altContents)> bufferBlock) : this(degree, bufferBlock)
             {
-            _NumKeys = numKeys;
-            for (int i = 0; i < numKeys; i++)
+            _NumKeys = keys.Length;
+            for (int i = 0; i < keys.Length; i++)       //do it similar to nonleaf; keep keys.length etc...
                 {
                     _Keys[i] = keys[i];
                     _Contents[i] = contents[i];
@@ -91,13 +91,14 @@ namespace BPlusTreeVisualization{
             }
 
             
-            int NewNumKeys = _NumKeys - dividerIndex;
-            _NumKeys = dividerIndex;
-            BPlusLeafNode<T> newNode = new(_Degree, newKeys, newContent,NewNumKeys, _BufferBlock){
-                _NextNode = _NextNode
-                
+            //int NewNumKeys = _NumKeys - dividerIndex;
+
+            BPlusLeafNode<T> newNode = new(_Degree, newKeys, newContent, _BufferBlock)
+            {
+                _NextNode = _NextNode,
+                _NumKeys = _NumKeys - dividerIndex
             };
-            //newNode._NumKeys = _NumKeys - dividerIndex;
+            _NumKeys = dividerIndex;
             _NextNode = newNode;
             newNode._PrevNode = this;
             if(newNode._NextNode != null){
