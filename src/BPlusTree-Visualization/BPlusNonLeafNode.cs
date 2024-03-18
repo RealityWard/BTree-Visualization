@@ -69,7 +69,6 @@ namespace BPlusTreeVisualization
       return index;
     }
     
-
     /// <summary>
     /// Iterates over the _Keys array to find key. If found returns the index and this else returns -1 and this.
     /// </summary>
@@ -145,11 +144,8 @@ namespace BPlusTreeVisualization
     }
 
     /// <summary>
-    /// Evenly splits the _Contents[] and _Keys[] of this node giving
-    /// up the greater half to a new node.
+    /// Splits _Keys[] of this node giving up the greater half to a new node.
     /// </summary>
-    /// <remarks>Copied and modified from
-    /// LeafNode.Split()</remarks>
     /// <returns>The new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).</returns>
     public ((int,T?), BPlusTreeNode<T>) Split()

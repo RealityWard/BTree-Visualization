@@ -24,13 +24,28 @@ class Program
 
     BPlusTree<Person> bPlusTree = new(4,outputBuffer);
 
-    for(int i = 20; i<30;i++){
+    for(int i = 50; i<100;i++){
       bPlusTree.Insert(i,new Person("hello " + i));
-      int j = i -10;
-      bPlusTree.Insert(i-10,new Person("hello " + j));
+      int j = i -50;
+      bPlusTree.Insert(i-50,new Person("hello " + j));
+      Person? search1 = bPlusTree.Search(i);
+      if(search1 != null){
+        Console.WriteLine("Found: " + search1.ToString());
+      }
+      else{
+        Console.WriteLine("Not found");
+      }
+      Person? search3 = bPlusTree.Search(j);
+  
+      if(search3 != null){
+        Console.WriteLine("Found: " + search3.ToString());
+      }
+      else{
+        Console.WriteLine("Not found");
+      }
     }
 
-    Person? search = bPlusTree.Search(2);
+    Person? search = bPlusTree.Search(56);
   
     if(search != null){
       Console.WriteLine("Found: " + search.ToString());
@@ -38,7 +53,7 @@ class Program
     else{
       Console.WriteLine("Not found");
     }
-    Person? search2 = bPlusTree.Search(8);
+    Person? search2 = bPlusTree.Search(89);
     if(search2 != null){
       Console.WriteLine("Found: " + search2.ToString());
     }
@@ -46,7 +61,7 @@ class Program
       Console.WriteLine("Not found");
     }
   
-    Console.WriteLine(bPlusTree.Traverse());
+    //Console.WriteLine(bPlusTree.Traverse());
     
     Thread.CurrentThread.Name = "Main";
 
