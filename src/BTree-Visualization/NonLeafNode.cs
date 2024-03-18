@@ -80,7 +80,7 @@ namespace BTreeVisualization
     /// LeafNode.SearchKey()</remarks>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
-    public override (int, BTreeNode<T>) SearchKey(int key)
+    public override (int key, T value)? SearchKey(int key)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       int result = Search(key);
@@ -93,7 +93,8 @@ namespace BTreeVisualization
       else if (_Keys[result] == key)
       {
         _BufferBlock.SendAsync((NodeStatus.Found, ID, result, [key], [Contents[result]], 0, -1, [], []));
-        return (result, this);
+        return (Keys[result], Contents[result] ?? throw new NullContentReferenceException(
+            $"Content at index:{result} within node:{ID}"));
       }
       else
       {
@@ -101,6 +102,39 @@ namespace BTreeVisualization
           ?? throw new NullChildReferenceException(
             $"Child at index:{result} within node:{ID}")).SearchKey(key);
       }
+    }
+
+    /// <summary>
+    /// Recursively searches for all keys, wihtin this node and children nodes, (equal to or greater than key) and less than endKey.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Lower bound inclusive.</param>
+    /// <param name="endKey">Upper bound exclusive.</param>
+    /// <returns>A list of key-value pairs from the matching range in order of found.</returns>
+    /// <exception cref="NullChildReferenceException">In the case that one of the children
+    /// nodes in the range is null.</exception>
+    /// <exception cref="NullContentReferenceException">In the case that one of the key-value
+    /// pairs would have a null for a value.</exception>
+    public override List<(int key, T value)> SearchKey(int key, int endKey)
+    {
+      _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
+      List<(int, T)> result = [];
+      for (int i = 0; i < _NumKeys; i++)
+      {
+        if (_Keys[i] >= key && _Keys[i] < endKey)
+        {
+          result.AddRange((_Children[i]
+            ?? throw new NullChildReferenceException(
+              $"Child at index:{i} within node:{ID}")).SearchKey(key, endKey));
+          result.Add((Keys[i], Contents[i] ?? throw new NullContentReferenceException(
+            $"Content at index:{i} within node:{ID}")));
+        }
+      }
+      if(_Keys[_NumKeys - 1] >= key && _Keys[_NumKeys - 1] < endKey)
+        result.AddRange((_Children[_NumKeys]
+          ?? throw new NullChildReferenceException(
+            $"Child at index:{NumKeys} within node:{ID}")).SearchKey(key, endKey));
+      return result;
     }
 
     /// <summary>

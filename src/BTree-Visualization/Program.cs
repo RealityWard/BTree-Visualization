@@ -97,6 +97,14 @@ namespace ThreadCommunication{
     /// </summary>
     Found,
     /// <summary>
+    /// Sent once at end of search over a range. In case of found the 
+    /// Keys will contain the matching keys in the range and the
+    /// Contents will contain the corresponding contents in the range.
+    /// Root.ID,Keys.Length,Keys,Contents
+    /// Root.ID,-1,[],[] in the case of not found.
+    /// </summary>
+    FoundRange,
+    /// <summary>
     /// Sent to close/complete the buffer and as a result
     /// terminate the thread using this buffer.
     /// </summary>
