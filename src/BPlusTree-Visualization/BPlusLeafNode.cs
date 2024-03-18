@@ -1,7 +1,25 @@
+/*
+Author: Andreas Kramer (using BTree structure from Tristan Anderson)
+Date: 03/04/2024
+Desc: Describes functionality for non-leaf nodes on the B+Tree. Recursive function iteration due to children nodes.
+*/
+
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
 
+
+
 namespace BPlusTreeVisualization{
+
+    /// <summary>
+    /// Creates a leaf node for a B+Tree data structure with
+    /// empty arrays of keys and contents as well as references to a next node and a previous node forming a doubly linked list
+    /// </summary>
+    /// <remarks>Author: Andreas Kramer</remarks>
+    /// <typeparam name="T">Data type of the content to be stored under key.</typeparam>
+    /// <param name="degree">Same as parent non-leaf node/tree</param>
+    /// <param name="bufferBlock">Output Buffer for Status updates to
+    /// be externally viewed.</param>
 
     public  class BPlusLeafNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, 
             T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)    
@@ -17,6 +35,18 @@ namespace BPlusTreeVisualization{
             get { return _Contents; }
         }
 
+        /// <summary>
+        /// Creates a leaf node for a B+Tree data structure
+        /// with starting values of the passed arrays of
+        /// keys and contents. Sets the NumKeys to the length of keys[].
+        /// </summary>
+        /// <remarks>Author: Andreas Kramern</remarks>
+        /// <param name="degree">Same as parent non-leaf node</param>
+        /// <param name="keys">Values to initialize in _Keys[]</param>
+        /// <param name="contents">Values to initialize in _Contents[]</param>
+        /// <param name="bufferBlock">Output Buffer for Status updates to be
+        /// externally viewed.</param>
+
         public BPlusLeafNode(int degree, int[] keys, T[] contents,
                 BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys,
                 T?[] contents, long altID, int altNumKeys, int[] altKeys,
@@ -30,7 +60,13 @@ namespace BPlusTreeVisualization{
                 }
                 _NextNode = null;
                 _PrevNode = null;
-            }
+        }
+        /// <summary>
+        /// Traverses through the node to find the index of the found key
+        /// </summary>
+        /// <param name="key">Key that is being searched for</param>
+        /// <returns>If found returns index, if not, returns -1.</returns>
+
         private int Search(int key){
             for (int i = 0; i < _NumKeys; i++)
             {
@@ -44,10 +80,24 @@ namespace BPlusTreeVisualization{
             return -1;
         }
 
+        /// <summary>
+        /// Initializes searching for a key in a leaf node
+        /// </summary>
+        /// <param name="key">Key that is being searched for</param>
+        /// <returns>returns the correct index or -1 and this node.</returns>
+
         public override (int, BPlusTreeNode<T>) SearchKey(int key){
             _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
             return (Search(key), this);
         }
+        /// <summary>
+        /// Inserts a key and the corresponding data into the right index of this node.
+        /// If full calls Split() and propagates changes upward
+        /// </summary>
+        /// <param name="key">Key to be inserted int _Keys[]</param>
+        /// <param name="data">Corresponding data to be inserted into _Contents[]</param>
+        /// <returns>If Split() is called, propagates changes upward ((dividerkey,Content),new Node)
+        /// if not, returns a default value.</returns>
 
         public override ((int, T?), BPlusTreeNode<T>?) InsertKey(int key, T data){
             _BufferBlock.SendAsync((NodeStatus.ISearching, ID, -1, [], [], 0, -1, [], []));
@@ -72,7 +122,12 @@ namespace BPlusTreeVisualization{
             }
             return ((-1, default(T)), null);
         }
-
+        /// <summary>
+        /// Splits this leaf node into two leaf nodes and gives the bigger half to the new node
+        /// Contents and keys are split up, both NumKeys values are adjusted as well as new linking of the doubly linked list
+        /// </summary>
+        /// <returns>Returns the dividerEntry (dividerKey and content) and the new node.</returns>
+        /// <exception cref="NullContentReferenceException"></exception>
         public ((int, T), BPlusTreeNode<T>) Split(){
             int dividerIndex = _NumKeys / 2;
             int[] newKeys = new int[_Degree];
@@ -89,9 +144,6 @@ namespace BPlusTreeVisualization{
                 _Keys[i + dividerIndex] = default;
                 _Contents[i + dividerIndex] = default;
             }
-
-            
-            //int NewNumKeys = _NumKeys - dividerIndex;
 
             BPlusLeafNode<T> newNode = new(_Degree, newKeys, newContent, _BufferBlock)
             {
@@ -187,6 +239,12 @@ namespace BPlusTreeVisualization{
             _Contents[_NumKeys] = default;
         }
         */
+        /// <summary>
+        /// Prints out the contents of the node in JSON format.
+        /// </summary>
+        /// <remarks>Author: Tristan Anderson, modified by Andreas Kramer
+        /// <param name="x">Hierachical Node ID</param>
+        /// <returns>String with the entirety of this node's keys and contents arrays formmatted in JSON syntax.</returns>
         public override string Traverse(string x){
             string output = Spacer(x) + "{\n";
             output += Spacer(x) + "  \"leafnode\":\"" + x + "\",\n" 

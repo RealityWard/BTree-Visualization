@@ -41,7 +41,7 @@ namespace BPlusTreeVisualization
     /// leaf node if root isn't yet created. It also 
     /// checks for a split afterwards.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <remarks>Author: Tristan Anderson modified by Andreas Kramer</remarks>
     /// <param name="key">Integer to insert into the tree.</param>
     /// <param name="data">Coresponding data belonging to key.</param>
     public void Insert(int key, T data)

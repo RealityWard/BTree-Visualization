@@ -1,5 +1,8 @@
-// Program.cs
-
+/**
+Author: Andreas Kramer
+Date: 2024-02-03
+Desc: Main for B+Tree implementation, running code here + initial testing
+*/
 using System.Text.RegularExpressions;
 using System.Threading.Tasks.Dataflow;
 using BPlusTreeVisualization;

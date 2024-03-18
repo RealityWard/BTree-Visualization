@@ -1,5 +1,5 @@
 /*
-Author: Andreas Kramer
+Author: Andreas Kramer (using BTree structure from Tristan Anderson)
 Date: 03/04/2024
 Desc: Describes functionality for non-leaf nodes on the B+Tree. Recursive function iteration due to children nodes.
 */
@@ -11,7 +11,7 @@ using ThreadCommunication;
 namespace BPlusTreeVisualization
 {
   /// <summary>
-  /// Creates a non-leaf node for a B-Tree data structure with
+  /// Creates a non-leaf node for a B+Tree data structure with
   /// empty arrays of keys, contents, and children.
   /// </summary>
   /// <typeparam name="T">Data type of the content to be stored under key.</typeparam>
@@ -32,9 +32,9 @@ namespace BPlusTreeVisualization
     }
 
     /// <summary>
-    /// Creates a non-leaf node for a B-Tree data structure
+    /// Creates a non-leaf node for a B+Tree data structure
     /// with starting values of the passed arrays of keys,
-    /// contents, and children. Sets the NumKeys to the length of keys[].
+    /// and children. Sets the NumKeys to the length of keys[]. (Numkeys  gets set separately when non-leaf node gets created)
     /// </summary>
     /// <param name="degree">Same as parent non-leaf node/tree</param>
     /// <param name="keys">Values to initialize in _Keys[]</param>
@@ -52,12 +52,10 @@ namespace BPlusTreeVisualization
     }
 
     /// <summary>
-    /// Iterates over the _Keys[] to find an entry == key.
+    /// Finds the index of the key within the node (which subtree to go into)
     /// </summary>
-    /// <remarks>Copied and modified from
-    /// LeafNode.Search()</remarks>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
-    /// <returns>If found returns the index else returns -1.</returns>
+    /// <returns>Returns the index of the subtree to go into</returns>
     
     private int Search(int key)
     {
@@ -70,12 +68,11 @@ namespace BPlusTreeVisualization
     }
     
     /// <summary>
-    /// Iterates over the _Keys array to find key. If found returns the index and this else returns -1 and this.
+    /// Searches for a specific key, gets the right index and checks its children
+    /// recursively traverses down the tree and checks its children, eventually ends up in leafnodes and returns found index and its node
     /// </summary>
-    /// <remarks>Copied and modified from
-    /// LeafNode.SearchKey()</remarks>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
-    /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
+    /// <returns>If found returns index, and its node, if not returns -1 and this.</returns>
  
     public override (int, BPlusTreeNode<T>) SearchKey(int key)
     {
@@ -94,21 +91,21 @@ namespace BPlusTreeVisualization
       return (-1, this);
     }
     
-
     /// <summary>
     /// Calls InsertKey on _Children[i] where i == _Keys[i] < key < _Keys[i+1].
     /// Then checks if a split occured. If so it inserts the new 
-    /// ((dividing Key, Content), new Node) to itself.
+    /// ((dividing Key, null), new Node) to itself. 
     /// Afterwards calls split if full.
     /// </summary>
     /// <remarks>Copied and modified from
     /// LeafNode.InsertKey()</remarks>
     /// <param name="key">Integer to be placed into _Keys[] of this node.</param>
-    /// <param name="data">Corresponding data to be stored in _Contents[]
-    /// of this node at the same index as key in _Keys[].</param>
+    /// <param name="data">Corresponding data to be stored in _Contents[] of leaf nodes
+    /// at the same index as key in _Keys[].</param>
     /// <returns>If this node reaches capacity it calls split and returns
     /// the new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).
+    /// <remarks>as non-leaf nodes do not contain contents it will return ((dividing Key, null), new Node).</remarks>
     /// Otherwise it returns ((-1, null), null).</returns>
     public override ((int,T?), BPlusTreeNode<T>?) InsertKey(int key, T data)
     {
@@ -438,7 +435,7 @@ namespace BPlusTreeVisualization
     /// <summary>
     /// Prints out the contents of the node in JSON format.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
+    /// <remarks>Author: Tristan Anderson, modified by Andreas Kramer
     /// Date: 2024-02-13</remarks>
     /// <param name="x">Hierachical Node ID</param>
     /// <returns>String with the entirety of this node's keys and contents arrays formmatted in JSON syntax.</returns>

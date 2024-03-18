@@ -8,7 +8,7 @@ namespace BPlusTreeVisualization
   /// <summary>
   /// Base class for all the node objects used in the BTree and B+Tree.
   /// </summary>
-  /// <remarks>Author: Tristan Anderson</remarks>
+  /// <remarks>Author: Tristan Anderson, Secondary Author: Andreas Kramer</remarks>
   /// <typeparam name="N">Type of node.</typeparam>
   /// <typeparam name="T">Data type of the content to be stored under key.</typeparam>
   /// <param name="degree">Same as parent non-leaf node/tree</param>
@@ -202,7 +202,7 @@ namespace BPlusTreeVisualization
   }
 
   /// <summary>
-  /// Skeleton for B-Tree nodes
+  /// Skeleton for B+Tree nodes
   /// </summary>
   /// <typeparam name="T">Data type of the content to be stored under key.</typeparam>
   /// <param name="degree">Same as parent node/tree</param>
@@ -212,13 +212,6 @@ namespace BPlusTreeVisualization
                 T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) 
                 : Node<BPlusTreeNode<T>, T>(degree, bufferBlock)
     {
-      /*
-        protected T?[] _Contents = new T[2 * degree - 1];
-
-        public T?[] Contents{
-            get { return _Contents; }
-        }
-        */
 
         
     }
