@@ -1,4 +1,4 @@
-﻿/*
+/*
 Author: Emily Elzinga and Tristan Anderson
 Date: 2/07/2024
 Desc: Describes functionality for non-leaf nodes on the BTree. Recursive function iteration due to children nodes.
@@ -181,6 +181,7 @@ namespace BTreeVisualization
         newChildren[i] = _Children[i + _Degree]
           ?? throw new NullChildReferenceException(
             $"Child at index:{i + _Degree} within node:{ID}");
+        _Keys[i + _Degree] = default;
         _Contents[i + _Degree] = default;
         _Children[i + _Degree] = default;
       }
