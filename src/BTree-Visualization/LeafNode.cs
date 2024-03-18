@@ -5,8 +5,6 @@ iteration due to no children.
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
 
-
-
 namespace BTreeVisualization
 {
   /// <summary>
@@ -60,11 +58,9 @@ namespace BTreeVisualization
       {
         if (_Keys[i] == key)
         {
-          _BufferBlock.SendAsync((NodeStatus.Found, ID, i, [key], [Contents[i]], 0, -1, [], []));
           return i;
         }
       }
-      _BufferBlock.SendAsync((NodeStatus.Found, ID, -1, [], [], 0, -1, [], []));
       return -1;
     }
 
@@ -79,7 +75,12 @@ namespace BTreeVisualization
     public override (int, BTreeNode<T>) SearchKey(int key)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
-      return (Search(key), this);
+      int result = Search(key);
+      if(result != -1)
+        _BufferBlock.SendAsync((NodeStatus.Found, ID, result, [key], [Contents[result]], 0, -1, [], []));
+      else
+        _BufferBlock.SendAsync((NodeStatus.Found, ID, -1, [], [], 0, -1, [], []));
+      return (result, this);
     }
 
     /// <summary>
