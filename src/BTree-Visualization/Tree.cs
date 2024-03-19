@@ -26,7 +26,6 @@ namespace BTreeVisualization
     private bool zeroKeyUsed;
     private BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock;
 
-
     public BTree(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
     {
       _Degree = degree;
@@ -117,10 +116,18 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="key">Number to search for.</param>
     /// <returns>Data object stored under key.</returns>
-    public (int key, T value)? Search(int key)
+    public T? Search(int key)
     {
       _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
-      return _Root.SearchKey(key);
+      (int key, T content)? result = _Root.SearchKey(key);
+      if(result == null)
+      {
+        return default;
+      }
+      else
+      {
+        return result.Value.content;
+      }
     }
 
     /// <summary>
@@ -130,7 +137,7 @@ namespace BTreeVisualization
     /// <param name="key">Lower bound inclusive.</param>
     /// <param name="endKey">Upper bound exclusive.</param>
     /// <returns>A list of key-value pairs from the matching range in order of found.</returns>
-    public List<(int key, T value)> Search(int key, int endKey)
+    public List<(int key, T content)> Search(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
       List<(int key, T value)> result = _Root.SearchKey(key, endKey);

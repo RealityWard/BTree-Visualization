@@ -135,6 +135,11 @@ namespace ThreadCommunication{
     /// </summary>
     Search,
     /// <summary>
+    /// Search for all keys and content
+    /// within the tree that match the given range.
+    /// </summary>
+    SearchRange,
+    /// <summary>
     /// Console output the tree traversal.
     /// </summary>
     Traverse,

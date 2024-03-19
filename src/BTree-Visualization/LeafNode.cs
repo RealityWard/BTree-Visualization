@@ -73,7 +73,7 @@ namespace BTreeVisualization
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
     /// <returns>If found returns the index and this node else returns -1 and
     /// this node.</returns>
-    public override (int key, T value)? SearchKey(int key)
+    public override (int key, T content)? SearchKey(int key)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       int result = Search(this, key);
@@ -96,10 +96,10 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="key">Lower bound inclusive.</param>
     /// <param name="endKey">Upper bound exclusive.</param>
-    /// <returns>A list of key-value pairs from the matching range in order of found.</returns>
-    /// <exception cref="NullContentReferenceException">In the case that one of the key-value
+    /// <returns>A list of key-content pairs from the matching range in order of found.</returns>
+    /// <exception cref="NullContentReferenceException">In the case that one of the key-content
     /// pairs would have a null for a value.</exception>
-    public override List<(int key, T value)> SearchKey(int key, int endKey)
+    public override List<(int key, T content)> SearchKey(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       List<(int, T)> result = [];

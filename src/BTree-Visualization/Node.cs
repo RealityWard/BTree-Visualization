@@ -45,14 +45,14 @@ namespace BTreeVisualization
     /// </summary>
     /// <param name="key">Integer to find in _Keys[].</param>
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
-    public abstract (int key, T value)? SearchKey(int key);
+    public abstract (int key, T content)? SearchKey(int key);
     /// <summary>
     /// Searches for all keys equal to or greater than key and less than endKey.
     /// </summary>
     /// <param name="key">Lower bound inclusive.</param>
     /// <param name="endKey">Upper bound exclusive.</param>
-    /// <returns>A list of key-value pairs from the matching range.</returns>
-    public abstract List<(int key, T value)> SearchKey(int key, int endKey);
+    /// <returns>A list of key-content pairs from the matching range.</returns>
+    public abstract List<(int key, T content)> SearchKey(int key, int endKey);
     /// <summary>
     /// Split this node into two.
     /// </summary>
