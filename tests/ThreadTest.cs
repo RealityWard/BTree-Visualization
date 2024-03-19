@@ -15,32 +15,8 @@ namespace ThreadTesting
   [TestFixture(3)]
   public partial class ThreadTests(int degree)
   {
-    private readonly int[][] _StatusPrecedence = [
-      [01,-1,-1,-1,06,-1,-1,-1,-1,-1,-1,-1,-1,19,-1,-1,-1,23,-1],
-      [02,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-      [-1,02,03,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,04,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,00],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,05,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,05,-1,-1,-1,-1,-1,00],
-      [-1,-1,-1,-1,-1,07,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,07,08,13,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,11,-1,09,-1,-1,-1,-1,-1,-1,00],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,10,-1,-1,-1,-1,-1,00],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,00],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,12,-1,-1,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,00],
-      [-1,-1,-1,-1,-1,-1,-1,13,14,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,-1,08,-1,-1,17,-1,15,-1,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,16,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,-1,08,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,18,-1,-1,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,-1,08,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,20,-1,-1,-1,-1],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,20,21,22,-1,-1],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,00],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,00],
-      [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,00]
-    ];
+    Dictionary<NodeStatus,int>[] _StatusPrecedence = [];
+    List<int> _AcceptStates = [];
     private BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys
       , Person?[] contents, long altID, int altNumKeys, int[] altKeys
       , Person?[] altContents)> _OutputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 20 });
@@ -51,14 +27,11 @@ namespace ThreadTesting
       , Person?[] altContents)> _OutputBufferHistory = [];
     private List<(TreeCommand action, int key, int endKey
       , Person? content)> _InputBufferHistory = [];
-    private BTree<Person>? _Tree;
     List<int> _InsertedKeys = [];
-    List<string> _TraverseHistory = [];
-    Dictionary<TreeCommand, int> _CommandCount = [];
+    // Dictionary<TreeCommand, int> _CommandCount = [];
     private readonly int _NumberOfKeys = 100000;
     private Task? _Producer;
     private Task? _Consumer;
-    private int? _LastSetupKey;
 
     /// <summary>
     /// NUnit setup for this class. 
@@ -67,33 +40,129 @@ namespace ThreadTesting
     [SetUp]
     public void Setup()
     {
+      DefineStatusPrecedence();
       _OutputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 20 });
       _InputBuffer = new(new DataflowBlockOptions { BoundedCapacity = 10 });
       _OutputBufferHistory = [];
       _InputBufferHistory = [];
-      _TraverseHistory = [];
       _InsertedKeys = [];
-      _CommandCount = [];
-      foreach (TreeCommand treeCommand in Enum.GetValues(typeof(TreeCommand)))
-      {
-        _CommandCount.Add(treeCommand, 0);
-      }
-      _Tree = new(degree, _OutputBuffer);
+      // _CommandCount = [];
+      // foreach (TreeCommand treeCommand in Enum.GetValues(typeof(TreeCommand)))
+      // {
+      //   _CommandCount.Add(treeCommand, 0);
+      // }
       _Producer = TreeProduce();
       _Consumer = GuiConsume();
-      Random random = new();
-      int key = 0;
-      for (int i = 0; i < _NumberOfKeys; i++)
-      {
-        do
-        {
-          key = random.Next(1, _NumberOfKeys * 10);
-        } while (_InsertedKeys.Contains(key));
-        _Tree.Insert(key, new Person(key.ToString()));
-        _InsertedKeys.Add(key);
+    }
+
+    /// <summary>
+    /// Defines a structure for an NFA like processing of status messages.
+    /// </summary>
+    private void DefineStatusPrecedence()
+    {
+      int numOfStates = 24;
+      _StatusPrecedence = new Dictionary<NodeStatus,int>[numOfStates];
+      for(int i = 0; i < numOfStates; i++){
+        _StatusPrecedence[i] = [];
       }
-      _LastSetupKey = key;
-      _Tree.Search(key);
+      _AcceptStates = [];
+      // Node 0, Start
+      int index = 0;
+      _StatusPrecedence[index].Add(NodeStatus.Insert,1);
+      _StatusPrecedence[index].Add(NodeStatus.Delete,6);
+      _StatusPrecedence[index].Add(NodeStatus.Search,19);
+      _StatusPrecedence[index].Add(NodeStatus.Close,23);
+      // Node 1, Insert
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.ISearching,2);
+      // Node 2, ISearching
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.ISearching,2);
+      _StatusPrecedence[index].Add(NodeStatus.Inserted,3);
+      // Node 3, Inserted, Accept
+      index++;
+      _AcceptStates.Add(index);
+      _StatusPrecedence[index].Add(NodeStatus.Split,4);
+      // Node 4, Split
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.Inserted,3);
+      _StatusPrecedence[index].Add(NodeStatus.Shift,5);
+      // Node 5, Shift, Accept
+      index++;
+      _AcceptStates.Add(index);
+      _StatusPrecedence[index].Add(NodeStatus.Shift,5);
+      _StatusPrecedence[index].Add(NodeStatus.Inserted,3);
+      // Node 6, Delete
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.DSearching,7);
+      // Node 7, DSearching
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.DSearching,7);
+      _StatusPrecedence[index].Add(NodeStatus.Deleted,8);
+      _StatusPrecedence[index].Add(NodeStatus.FSearching,9);
+      // Node 8, Deleted, Accept
+      index++;
+      _AcceptStates.Add(index);
+      _StatusPrecedence[index].Add(NodeStatus.UnderFlow,10);
+      _StatusPrecedence[index].Add(NodeStatus.Merge,11);
+      // Node 9, FSearching
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.FSearching,9);
+      _StatusPrecedence[index].Add(NodeStatus.Forfeit,12);
+      // Node 10, Deleted -> UnderFlow, Accept
+      index++;
+      _AcceptStates.Add(index);
+      _StatusPrecedence[index].Add(NodeStatus.UnderFlow,10);
+      _StatusPrecedence[index].Add(NodeStatus.Shift,17);
+      // Node 11, Deleted -> Merge
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.MergeParent,18);
+      // Node 12, Forfeit
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.Deleted,8);
+      _StatusPrecedence[index].Add(NodeStatus.Merge,13);
+      _StatusPrecedence[index].Add(NodeStatus.UnderFlow,15);
+      // Node 13, Forfeit -> Merge
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.MergeParent,14);
+      // Node 14, Forfeit -> Merge -> MergeParent
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.Deleted,8);
+      _StatusPrecedence[index].Add(NodeStatus.Merge,13);
+      _StatusPrecedence[index].Add(NodeStatus.UnderFlow,15);
+      // Node 15, Forfeit -> UnderFlow
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.Deleted,8);
+      _StatusPrecedence[index].Add(NodeStatus.Shift,16);
+      // Node 16, Forfeit -> UnderFlow -> Shift
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.Deleted,8);
+      // Node 17, Deleted -> UnderFlow -> Shift, Accept
+      index++;
+      _AcceptStates.Add(index);
+      _StatusPrecedence[index].Add(NodeStatus.UnderFlow,10);
+      // Node 18, Deleted -> Merge -> MergeParent, Accept
+      index++;
+      _AcceptStates.Add(index);
+      _StatusPrecedence[index].Add(NodeStatus.Merge,11);
+      _StatusPrecedence[index].Add(NodeStatus.UnderFlow,10);
+      // Node 19, Search
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.SSearching,20);
+      // Node 20, SSearching
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.SSearching,20);
+      _StatusPrecedence[index].Add(NodeStatus.Found,21);
+      _StatusPrecedence[index].Add(NodeStatus.FoundRange,22);
+      // Node 21, Found, Accept
+      index++;
+      _AcceptStates.Add(index);
+      // Node 22, FoundRange, Accept
+      index++;
+      _AcceptStates.Add(index);
+      // Node 23, Close, Accept
+      index++;
+      _AcceptStates.Add(index);
     }
 
     /// <summary>
@@ -103,6 +172,20 @@ namespace ThreadTesting
     /// <returns>Task running the tree.</returns>
     private async Task TreeProduce()
     {
+      BTree<Person> _Tree = new(degree, _OutputBuffer);
+      Random random = new();
+      int key = 0;
+      for (int i = 0; i < _NumberOfKeys; i++)
+      {
+        int j = 0;
+        do
+        {
+          key = random.Next(1, _NumberOfKeys * 10);
+        } while (_InsertedKeys.Contains(key) && ++j < _NumberOfKeys);
+        _Tree.Insert(key, new Person(key.ToString()));
+        _InsertedKeys.Add(key);
+      }
+      _Tree.Search(key);
       while (await _InputBuffer.OutputAvailableAsync())
       {
         _InputBufferHistory.Add(_InputBuffer.Receive());
@@ -122,23 +205,24 @@ namespace ThreadTesting
           case TreeCommand.Search:
             _Tree.Search(_InputBufferHistory.Last().key);
             break;
+          case TreeCommand.SearchRange:
+            _Tree.Search(_InputBufferHistory.Last().key, _InputBufferHistory.Last().endKey);
+            break;
           case TreeCommand.Traverse:
             Console.Write(_Tree.Traverse());
             break;
           case TreeCommand.Close:
-            await _OutputBuffer.SendAsync((NodeStatus.Close, 0, -1, [], [], 0, -1, [], [])).ConfigureAwait(false);
             _InputBuffer.Complete();
+            _Tree.Close();
             break;
           default:// Will close buffer upon receiving a bad TreeCommand.
-            _InputBuffer.Complete();
             Console.Write("TreeCommand:{0} not recognized", _InputBufferHistory.Last().action);
             break;
         }
-        _TraverseHistory.Add(_Tree.Traverse());
 #pragma warning restore CS8604 // Possible null reference argument.
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-        if (_CommandCount.ContainsKey(_InputBufferHistory.Last().action))
-          _CommandCount[_InputBufferHistory.Last().action]++;
+        // if (_CommandCount.ContainsKey(_InputBufferHistory.Last().action))
+        //   _CommandCount[_InputBufferHistory.Last().action]++;
       }
     }
 
@@ -196,6 +280,8 @@ namespace ThreadTesting
             break;
           case NodeStatus.Found:
             break;
+          case NodeStatus.FoundRange:
+            break;
           case NodeStatus.Close:
             _OutputBuffer.Complete();
             break;
@@ -212,18 +298,17 @@ namespace ThreadTesting
     /// Simply test insertion times
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
-    [TestCase(10)]
-    [TestCase(10)]
-    [TestCase(10)]
-    [TestCase(10)]
+    [TestCase(100)]
+    [TestCase(1000)]
+    [TestCase(10000)]
     public async Task PresedenceTesting(int x)
     {
       Random random = new();
       int key;
       List<(int, int)> mixKeys = [];
-      for (int i = 0; i < _NumberOfKeys / 10; i++)
+      for (int i = 0; i < x; i++)
       {
-        key = random.Next(0, 3);
+        key = random.Next(0, 4);
         // Randomly choose insert, delete, or search
         if (key == 1)
         {
@@ -246,11 +331,8 @@ namespace ThreadTesting
         }
         else
         {
-          do
-          {
-            key = random.Next(1, _NumberOfKeys * 10);
-          } while (_InsertedKeys.Contains(key));
-          await _InputBuffer.SendAsync((TreeCommand.Search, key, key + 10
+          key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
+          await _InputBuffer.SendAsync((TreeCommand.SearchRange, key, key + 10
             , null));
         }
       }
@@ -261,26 +343,28 @@ namespace ThreadTesting
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
       Assert.That(_InputBufferHistory.Count(), Is.EqualTo(x + 1), "Not all commands are getting through.");
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-      // Console.Write(traversal);
-      int traverseIndex = 0;
-      string? treeTraverse = _TraverseHistory[traverseIndex];
       NodeStatus lastStatus = NodeStatus.Close;
       int k = -1;
       int state = 0;
       _OutputBufferHistory.ForEach((bufMessage) =>
       {
-        if (bufMessage.status == NodeStatus.Insert)
+        if (bufMessage.status == NodeStatus.FoundRange)
         {
-          treeTraverse = _TraverseHistory[++traverseIndex];
-          k = bufMessage.keys[0];
+          Console.WriteLine("Here:" + StringifyKeys(bufMessage.numKeys,bufMessage.keys));
         }
-        state = _StatusPrecedence[state][(int)bufMessage.status] != -1 ?
-          _StatusPrecedence[state][(int)bufMessage.status] : _StatusPrecedence[state][^1];
-        if (state == -1)
+        if(_StatusPrecedence[state].ContainsKey(bufMessage.status))
         {
-          Assert.Fail($"Status:{bufMessage.status}\n " +
-            $"Last Status:{lastStatus}\nTraversal " +
-            $"out of order:{treeTraverse}\nid:" +
+          state = _StatusPrecedence[state][bufMessage.status];
+        }
+        else if(_AcceptStates.Contains(state) && _StatusPrecedence[0].ContainsKey(bufMessage.status))
+        {
+          state = _StatusPrecedence[0][bufMessage.status];
+        }
+        else
+        {
+          Assert.Fail($"State:{state}\n " +
+            $"Status:{bufMessage.status}\n " +
+            $"Last Status:{lastStatus}\nid: " +
             $"{bufMessage.id}\nkey:{k}\nkeys:" +
             $"{StringifyKeys(bufMessage.numKeys, bufMessage.keys)}");
         }
@@ -302,10 +386,10 @@ namespace ThreadTesting
       return result;
     }
 
-    [TestCase(100, 1000)]
-    public void RangeSearch(int x, int y)
-    {
+    // [TestCase(100, 1000)]
+    // public void RangeSearch(int x, int y)
+    // {
 
-    }
+    // }
   }
 }

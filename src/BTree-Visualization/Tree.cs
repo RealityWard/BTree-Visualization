@@ -175,6 +175,11 @@ namespace BTreeVisualization
       _Root = new LeafNode<T>(_Degree, _BufferBlock);
     }
 
+    public void Close()
+    {
+      _BufferBlock.SendAsync((NodeStatus.Close, 0, -1, [], [], 0, -1, [], []));
+    }
+
     /// <summary>
     /// Author: Andreas Kramer
     /// Calculates the Height of the B-Tree and returns it as an integer, assuming it is correctly balanced

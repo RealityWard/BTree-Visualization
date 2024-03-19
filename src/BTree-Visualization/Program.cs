@@ -169,7 +169,7 @@ class Program
 
     var outputBuffer = new BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>();
 
-    var inputBuffer = new BufferBlock<(TreeCommand action, int key, Person? content)>();
+    var inputBuffer = new BufferBlock<(TreeCommand action, int key, int endKey, Person? content)>();
     BTree<Person> _Tree = new(3, outputBuffer);//This is only defined out here for traversing after the threads are killed to prove it is working.
     // Producer
     Task producer = Task.Run(async () =>
@@ -177,7 +177,7 @@ class Program
       Thread.CurrentThread.Name = "Producer";
       while (await inputBuffer.OutputAvailableAsync())
       {
-        (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
+        (TreeCommand action, int key, int endKey, Person? content) = inputBuffer.Receive();
         switch (action)
         {
           case TreeCommand.Tree:
@@ -194,12 +194,15 @@ class Program
           case TreeCommand.Search:
             _Tree.Search(key);
             break;
+          case TreeCommand.SearchRange:
+            _Tree.Search(key, endKey);
+            break;
           case TreeCommand.Traverse:
             Console.WriteLine(_Tree.Traverse());
             break;
           case TreeCommand.Close:
-            await outputBuffer.SendAsync((NodeStatus.Close, 0, -1, [], [], 0, -1, [], []));
             inputBuffer.Complete();
+            _Tree.Close();
             break;
           default:// Will close buffer upon receiving a bad TreeCommand.
             // Console.WriteLine("TreeCommand:{0} not recognized", action);
@@ -233,6 +236,9 @@ class Program
         history.Add(outputBuffer.Receive());
         switch (history.Last().status)
         {
+          case NodeStatus.FoundRange:
+            // Console.WriteLine(StringifyKeys(history.Last().numKeys,history.Last().keys));
+            break;
           case NodeStatus.Close:
             outputBuffer.Complete();
             break;
@@ -252,33 +258,40 @@ class Program
         {
           key = random.Next(1, _NumberOfKeys * 10);
         } while (_InsertedKeys.Contains(key));
-        await inputBuffer.SendAsync((TreeCommand.Insert, key
+        await inputBuffer.SendAsync((TreeCommand.Insert, key, -1
           , new Person(key.ToString())));
         _InsertedKeys.Add(key);
       }
       for (int i = 0; i < _NumberOfKeys / 10; i++)
       {
-        if(random.Next(0,2) == 1)
+        key = random.Next(0,3);
+        if(key == 1)
         {
           do
           {
             key = random.Next(1, _NumberOfKeys * 10);
           } while (_InsertedKeys.Contains(key));
-          await inputBuffer.SendAsync((TreeCommand.Insert, key
+          await inputBuffer.SendAsync((TreeCommand.Insert, key, -1
             , new Person(key.ToString())));
           _InsertedKeys.Add(key);
           _MixKeys.Add((1,key));
         }
-        else
+        else if(key == 2)
         {
           key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
-          await inputBuffer.SendAsync((TreeCommand.Delete, key
+          await inputBuffer.SendAsync((TreeCommand.Delete, key, -1
             , null));
           _InsertedKeys.Remove(key);
           _MixKeys.Add((0,key));
         }
+        else
+        {
+          key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
+          await inputBuffer.SendAsync((TreeCommand.SearchRange, key, key + 10
+            , null));
+        }
       }
-      await inputBuffer.SendAsync((TreeCommand.Close, -1, new Person((-1).ToString())));
+      await inputBuffer.SendAsync((TreeCommand.Close, -1, -1, new Person((-1).ToString())));
     });
     Console.WriteLine("Which is first?");
     producer.Wait();
@@ -290,4 +303,17 @@ class Program
     Console.WriteLine(minHeight + " " + maxHeight);
   }
 
+    /// <summary>
+    /// Read out just the portion of the keys[] currently in use.
+    /// </summary>
+    /// <param name="numKeys">Index to stop at.</param>
+    /// <param name="keys">Array of ints</param>
+    /// <returns>String of the keys seperated by a ','</returns>
+    private static string StringifyKeys(int numKeys, int[] keys)
+    {
+      string result = "";
+      for (int i = 0; i < numKeys; i++)
+        result += keys[i] + (i + 1 == numKeys ? "" : ",");
+      return result;
+    }
 }

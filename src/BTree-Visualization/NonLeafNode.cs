@@ -121,16 +121,17 @@ namespace BTreeVisualization
       List<(int, T)> result = [];
       for (int i = 0; i < _NumKeys; i++)
       {
-        if (_Keys[i] >= key && _Keys[i] < endKey)
+        if (_Keys[i] >= key)
         {
           result.AddRange((_Children[i]
             ?? throw new NullChildReferenceException(
               $"Child at index:{i} within node:{ID}")).SearchKey(key, endKey));
-          result.Add((Keys[i], Contents[i] ?? throw new NullContentReferenceException(
-            $"Content at index:{i} within node:{ID}")));
+          if(_Keys[i] < endKey)
+            result.Add((Keys[i], Contents[i] ?? throw new NullContentReferenceException(
+              $"Content at index:{i} within node:{ID}")));
         }
       }
-      if(_Keys[_NumKeys - 1] >= key && _Keys[_NumKeys - 1] < endKey)
+      if(_Keys[_NumKeys - 1] < endKey)
         result.AddRange((_Children[_NumKeys]
           ?? throw new NullChildReferenceException(
             $"Child at index:{NumKeys} within node:{ID}")).SearchKey(key, endKey));
