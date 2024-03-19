@@ -209,7 +209,10 @@ namespace BTreeVisualization
         _Contents[_NumKeys] = default;
         _BufferBlock.SendAsync((NodeStatus.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
       }
-      _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
+      else
+      {
+        _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
+      }
     }
 
     /// <summary>
@@ -221,6 +224,7 @@ namespace BTreeVisualization
     /// <returns>Tuple of Key and corresponding content.</returns>
     public override (int, T) ForfeitKey()
     {
+      _BufferBlock.SendAsync((NodeStatus.FSearching, ID, -1, [], [], 0, -1, [], []));
       _NumKeys--;
       (int, T) keyToBeLost = (_Keys[_NumKeys], _Contents[_NumKeys]
         ?? throw new NullContentReferenceException(
