@@ -60,7 +60,7 @@ namespace ThreadTesting
     /// </summary>
     private void DefineStatusPrecedence()
     {
-      int numOfStates = 24;
+      int numOfStates = 25;
       _StatusPrecedence = new Dictionary<NodeStatus,int>[numOfStates];
       for(int i = 0; i < numOfStates; i++){
         _StatusPrecedence[i] = [];
@@ -71,6 +71,7 @@ namespace ThreadTesting
       _StatusPrecedence[index].Add(NodeStatus.Insert,1);
       _StatusPrecedence[index].Add(NodeStatus.Delete,6);
       _StatusPrecedence[index].Add(NodeStatus.Search,19);
+      _StatusPrecedence[index].Add(NodeStatus.SearchRange,24);
       _StatusPrecedence[index].Add(NodeStatus.Close,23);
       // Node 1, Insert
       index++;
@@ -163,6 +164,9 @@ namespace ThreadTesting
       // Node 23, Close, Accept
       index++;
       _AcceptStates.Add(index);
+      // Node 24, Search
+      index++;
+      _StatusPrecedence[index].Add(NodeStatus.SearchRange,20);
     }
 
     /// <summary>
@@ -385,11 +389,5 @@ namespace ThreadTesting
         result += keys[i] + (i + 1 == numKeys ? "" : ",");
       return result;
     }
-
-    // [TestCase(100, 1000)]
-    // public void RangeSearch(int x, int y)
-    // {
-
-    // }
   }
 }

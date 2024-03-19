@@ -84,6 +84,10 @@ namespace ThreadCommunication{
     /// </summary>
     Search,
     /// <summary>
+    /// Initial response to SearchRange TreeCommand. Nothing else sent.
+    /// </summary>
+    SearchRange,
+    /// <summary>
     /// Sent everytime SearchKey is called on a node. Only ID sent.
     /// </summary>
     SSearching,
