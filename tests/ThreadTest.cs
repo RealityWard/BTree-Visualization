@@ -348,10 +348,10 @@ namespace ThreadTesting
       int state = 0;
       _OutputBufferHistory.ForEach((bufMessage) =>
       {
-        if (bufMessage.status == NodeStatus.FoundRange)
-        {
-          Console.WriteLine("Here:" + StringifyKeys(bufMessage.numKeys,bufMessage.keys));
-        }
+        // if (bufMessage.status == NodeStatus.FoundRange)
+        // {
+        //   Console.WriteLine("Here:" + StringifyKeys(bufMessage.numKeys,bufMessage.keys));
+        // }
         if(_StatusPrecedence[state].ContainsKey(bufMessage.status))
         {
           state = _StatusPrecedence[state][bufMessage.status];
