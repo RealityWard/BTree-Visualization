@@ -324,9 +324,17 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Checks the child at index for underflow. If so it then checks for _Degree 
-    /// number of children in the right child of the key. _Degree or greater means 
-    /// either overflow or split. 
+    /// Checks the child at index for underflow. If so it then checks for _Degree
+    /// number of children in the right child of the key. _Degree or greater means
+    /// merging the two will result in an overflow or a split. If less than _Degree
+    /// then the merge will not be a full node needing to be split immediately.
+    /// This is meant to reduce the number of times elements are moved back and forth.
+    /// Underflow is _NumKeys <= _Degree - 2.
+    /// Full is _NumKeys == 2 * _Degree - 1.
+    /// Don't forget the dividing key adds 1
+    /// Sum of the two nodes in minimal bad scenario:
+    /// (_Degree - 2) + _Degree + 1 == 2 * _Degree - 1
+    /// Results in Full at least.
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
