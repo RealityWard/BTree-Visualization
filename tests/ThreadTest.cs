@@ -301,7 +301,7 @@ namespace ThreadTesting
     /// <summary>
     /// Simply test insertion times
     /// </summary>
-    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <remarks>Author: Tristan Anderson</remarks> 
     [TestCase(100)]
     [TestCase(1000)]
     [TestCase(10000)]
