@@ -34,6 +34,11 @@ namespace BTreeVisualization
     {
       _Root = new NonLeafNode<T>(_Degree, [rNode.Item1.Item1], [rNode.Item1.Item2]
         , [_Root, rNode.Item2], bufferBlock);
+      bufferBlock.SendAsync((Status.Inserted, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
+      bufferBlock.SendAsync((Status.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[0]
+        ?? throw new NullChildReferenceException($"Child of new root node at index:0")).ID, -1, [], []));
+      bufferBlock.SendAsync((Status.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[1]
+        ?? throw new NullChildReferenceException($"Child of new root node at index:1")).ID, -1, [], []));
     }
 
     /// <summary>
@@ -88,7 +93,7 @@ namespace BTreeVisualization
       {
         _Root = ((NonLeafNode<T>)_Root).Children[0]
           ?? throw new NullChildReferenceException(
-            $"Child of child on root node");;
+            $"Child of child on root node"); ;
       }
     }
 
@@ -123,9 +128,10 @@ namespace BTreeVisualization
     {
       return _Root.Traverse("Root");
     }
-    
-    public void Clear(){
-      _Root = new LeafNode<T>(_Degree,bufferBlock);
+
+    public void Clear()
+    {
+      _Root = new LeafNode<T>(_Degree, bufferBlock);
     }
 
     /// <summary>
@@ -134,20 +140,22 @@ namespace BTreeVisualization
     /// </summary>
     /// <returns></returns>
 
-    public int GetTreeHeight(){
-      if(_Root == null){
+    public int GetTreeHeight()
+    {
+      if (_Root == null)
+      {
         return 0;
       }
       int height = 1;
       BTreeNode<T> currentNode = _Root;
-      while(currentNode is NonLeafNode<T> nonLeafNode && nonLeafNode.Children.Length > 0)
+      while (currentNode is NonLeafNode<T> nonLeafNode && nonLeafNode.Children.Length > 0)
       {
         currentNode = nonLeafNode.Children[0] ?? throw new NullChildReferenceException(
           $"Child at index:0 within node:{nonLeafNode.ID}");
         height++;
       }
       return height;
-    }  
+    }
 
     /// <summary>
     /// Author: Andreas Kramer
@@ -155,24 +163,31 @@ namespace BTreeVisualization
     /// </summary>
     /// <returns> minimum height of the B-tree as an integer
     /// 
-    public int GetMinHeight(){
-      return GetMinHeight(_Root,0);
+    public int GetMinHeight()
+    {
+      return GetMinHeight(_Root, 0);
     }
-    static private int GetMinHeight(BTreeNode<T> node, int currentLevel){
-      if(node == null || node is LeafNode<T>){
+    static private int GetMinHeight(BTreeNode<T> node, int currentLevel)
+    {
+      if (node == null || node is LeafNode<T>)
+      {
         return currentLevel + 1;
       }
-      if(node is NonLeafNode<T> nonLeafNode){
+      if (node is NonLeafNode<T> nonLeafNode)
+      {
         int minHeight = int.MaxValue;
-        foreach(var child in nonLeafNode.Children){
-          if(child != null){
+        foreach (var child in nonLeafNode.Children)
+        {
+          if (child != null)
+          {
             int childHeight = GetMinHeight(child, currentLevel + 1);
-            if(childHeight < minHeight){
+            if (childHeight < minHeight)
+            {
               minHeight = childHeight;
             }
           }
         }
-      return minHeight;     
+        return minHeight;
       }
       return currentLevel;
     }
@@ -183,24 +198,31 @@ namespace BTreeVisualization
     /// </summary>
     /// <returns></returns>
     /// 
-    public int GetMaxHeight(){
-      return GetMaxHeight(_Root,0);
+    public int GetMaxHeight()
+    {
+      return GetMaxHeight(_Root, 0);
     }
-    private int GetMaxHeight(BTreeNode<T> node, int currentLevel){
-      if(node == null || node is LeafNode<T>){
+    private int GetMaxHeight(BTreeNode<T> node, int currentLevel)
+    {
+      if (node == null || node is LeafNode<T>)
+      {
         return currentLevel + 1;
       }
-      if(node is NonLeafNode<T> nonLeafNode){
+      if (node is NonLeafNode<T> nonLeafNode)
+      {
         int maxHeight = currentLevel;
-        foreach(var child in nonLeafNode.Children){
-          if(child != null){
+        foreach (var child in nonLeafNode.Children)
+        {
+          if (child != null)
+          {
             int childHeight = GetMinHeight(child, currentLevel + 1);
-            if(childHeight > maxHeight){
+            if (childHeight > maxHeight)
+            {
               maxHeight = childHeight;
             }
-          }          
+          }
         }
-      return maxHeight;     
+        return maxHeight;
       }
       return currentLevel;
     }
@@ -212,31 +234,39 @@ namespace BTreeVisualization
     /// </summary>
     /// <returns></returns>
 
-    public bool IsBalanced() {
-        if (_Root == null) {
-            return true; 
-        }
-        int leafLevel = -1; 
-        return CheckNodeBalance(_Root, 0, ref leafLevel);
+    public bool IsBalanced()
+    {
+      if (_Root == null)
+      {
+        return true;
+      }
+      int leafLevel = -1;
+      return CheckNodeBalance(_Root, 0, ref leafLevel);
     }
 
-    static private bool CheckNodeBalance(BTreeNode<T> node, int currentLevel, ref int leafLevel) {
-        if (node is LeafNode<T>) {
-            if (leafLevel == -1) {
-                leafLevel = currentLevel;
-                return true;
-            }
-            return currentLevel == leafLevel;
+    static private bool CheckNodeBalance(BTreeNode<T> node, int currentLevel, ref int leafLevel)
+    {
+      if (node is LeafNode<T>)
+      {
+        if (leafLevel == -1)
+        {
+          leafLevel = currentLevel;
+          return true;
         }
+        return currentLevel == leafLevel;
+      }
 
-        if (node is NonLeafNode<T> nonLeafNode) {
-            foreach (var child in nonLeafNode.Children) {
-                if (child != null && !CheckNodeBalance(child, currentLevel + 1, ref leafLevel)) {
-                    return false;
-                }
-            }
+      if (node is NonLeafNode<T> nonLeafNode)
+      {
+        foreach (var child in nonLeafNode.Children)
+        {
+          if (child != null && !CheckNodeBalance(child, currentLevel + 1, ref leafLevel))
+          {
+            return false;
+          }
         }
-        return true;
+      }
+      return true;
     }
   }
 }
