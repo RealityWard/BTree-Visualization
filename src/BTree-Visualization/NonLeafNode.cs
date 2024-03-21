@@ -288,15 +288,13 @@ namespace BTreeVisualization
         int endI = Search(this, endKey);
         if (i == -1)
         {
-          (_Children[_NumKeys]
-            ?? throw new NullChildReferenceException(
+          (_Children[_NumKeys]?? throw new NullChildReferenceException(
               $"Child at index:{_NumKeys} within node:{ID}")).DeleteKeys(key, endKey);
           MergeAt(_NumKeys);
         }
         else if (i == endI)
         {
-          (_Children[i]
-            ?? throw new NullChildReferenceException(
+          (_Children[i]?? throw new NullChildReferenceException(
               $"Child at index:{i} within node:{ID}")).DeleteKeys(key, endKey);
           MergeAt(i);
         }
