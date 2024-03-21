@@ -20,14 +20,14 @@ namespace B_TreeVisualizationGUI
         public int Depth { get; set; }
 
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-    public GUINode(int[] keys, bool isLeaf, bool IsRoot, int Depth, GUINode[] children = null)
+    public GUINode(int[] keys, bool isLeaf, bool IsRoot, int Depth, int NumKeys, GUINode[] children = null)
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
     {
             Keys = keys;
             Children = children;
             IsLeaf = isLeaf;
             this.IsRoot = IsRoot;
-            NumKeys = keys.Length;
+            this.NumKeys = NumKeys;
             this.Depth = Depth;
 
             // Calculate node width based on keys

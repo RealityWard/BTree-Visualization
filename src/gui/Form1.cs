@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Threading.Tasks.Dataflow;
 using BTreeVisualization;
 using ThreadCommunication;
@@ -14,6 +15,7 @@ namespace B_TreeVisualizationGUI
         Dictionary<long, GUINode> nodeDictionary = new Dictionary<long, GUINode>();
         private System.Windows.Forms.Timer scrollTimer;
         private bool isFirstNodeEncountered = false;
+        int split = 0;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public Form1()
@@ -40,7 +42,7 @@ namespace B_TreeVisualizationGUI
         {
             // EXAMPLE
             int[] rootKeys = { 0 }; // Placeholder
-            GUINode rootNode = new GUINode(rootKeys, true, true, 0, new GUINode[0]);
+            GUINode rootNode = new GUINode(rootKeys, true, true, 0, 0, new GUINode[0]);
             _tree = new GUITree(rootNode, panel1);
             panel1.Invalidate();
         }
@@ -75,47 +77,111 @@ namespace B_TreeVisualizationGUI
             });
         }
 
+        private void ShowNodesMessageBox()
+        {
+            StringBuilder message = new StringBuilder();
+            message.AppendLine("Node Dictionary Contents:");
+            foreach (var nodePair in nodeDictionary)
+            {
+                var node = nodePair.Value;
+                // Keys of the current node
+                string keysString = string.Join(", ", node.Keys);
+                // IDs of children
+                string childrenIds = node.Children != null ? string.Join(", ", node.Children.Select(child => child.GetHashCode().ToString())) : "None";
+
+                message.AppendLine($"ID: {nodePair.Key}, Keys: [{keysString}], IsLeaf: {node.IsLeaf}, IsRoot: {node.IsRoot}, Children: [{childrenIds}]");
+                message.AppendLine(); // Add a new line between each printed node for easier reading
+            }
+
+            MessageBox.Show(message.ToString(), "Node Dictionary", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
 
         private void ProcessFeedback((NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) feedback)
         {
             Debug.WriteLine($"Feedback received: Status={feedback.status}, ID={feedback.id}, Keys={String.Join(", ", feedback.keys)}");
+            if (feedback.status == NodeStatus.Split)
+            {
+                split = 2;
+            }
 
             // Check for Node Splits
-            if (feedback.status == NodeStatus.Split)
+            if (feedback.status == NodeStatus.Split || split > 0)
             {
                 Debug.WriteLine($"A split has occurred. Split node ID={feedback.id}. Preparing to handle new nodes.");
 
-                long[] newIds = { feedback.altID }; // Example: assuming altID represents a new node
-                foreach (long newId in newIds)
+                /*// Update the existing (old) node with the keys and children provided in feedback
+                if (nodeDictionary.TryGetValue(feedback.id, out GUINode oldNode))
                 {
-                    if (!nodeDictionary.ContainsKey(newId))
-                    {
-                        // Create a new GUINode for the split node
-                        GUINode newNode = new GUINode(feedback.altKeys, /*isLeaf*/ true, /*isRoot*/ false, /*depth*/ 1, new GUINode[0]);
-                        nodeDictionary[newId] = newNode;
-                        Debug.WriteLine($"New node created for split. ID={newId}, Keys={String.Join(", ", newNode.Keys)}");
-
-                        // Update old node's keys by removing keys that belong to the new node
-                        GUINode oldNode = nodeDictionary[feedback.id];
-                        List<int> remainingKeys = new List<int>(oldNode.Keys);
-                        foreach (int key in feedback.altKeys)
-                        {
-                            remainingKeys.Remove(key);
-                        }
-                        oldNode.Keys = remainingKeys.ToArray();
-
-                        // Add new node to the array of children in the parent node
-                        GUINode parent = nodeDictionary[feedback.id];
-                        GUINode[] oldChildren = parent.Children;
-                        GUINode[] newChildren = new GUINode[oldChildren.Length + 1];
-                        for (int i = 0; i < oldChildren.Length; i++)
-                        {
-                            newChildren[i] = oldChildren[i];
-                        }
-                        newChildren[newChildren.Length - 1] = newNode;
-                        parent.Children = newChildren; // Assign the updated array of children back to the parent node
-                    }
+                    oldNode.Keys = feedback.keys;
+                    oldNode.NumKeys = feedback.numKeys;
+                    // If feedback provides info about children, update them as well:
+                    //oldNode.Children = feedback.Children;
+                    //oldNode.IsLeaf = feedback should determine if the node is now a leaf
                 }
+
+                // Create the new (split) node and add it to the dictionary
+                if (!nodeDictionary.ContainsKey(feedback.altID))
+                {
+                    bool isLeaf = oldNode.IsLeaf; // Assuming the new node has the same leaf status as the old node.
+                    int depth = oldNode.IsRoot ? oldNode.Depth + 1 : oldNode.Depth; // If the old node was the root, increment depth, otherwise keep the same.
+
+                    GUINode newNode = new GUINode(feedback.altKeys, isLeaf, false, depth, feedback.altNumKeys);
+                    nodeDictionary[feedback.altID] = newNode;
+                    nodeDictionary[feedback.id].IsLeaf = false;
+                    int size;
+                    if (nodeDictionary[feedback.id].Children == null)
+                    {
+                        size = 1;
+                    }
+                    else
+                    {
+                        size = nodeDictionary[feedback.id].Children.Length + 1;
+                    }
+                    nodeDictionary[feedback.id].Children = new GUINode[size];
+                    nodeDictionary[feedback.id].Children[size - 1] = newNode;
+                    Debug.WriteLine($"New node created for split. ID={feedback.altID}, Keys={String.Join(", ", newNode.Keys)}");
+                    split--;
+                }*/
+
+                // Update the existing (old) node with the keys and children provided in feedback
+                if (nodeDictionary.TryGetValue(feedback.id, out GUINode oldNode))
+                {
+                    oldNode.Keys = feedback.keys;
+                    oldNode.NumKeys = feedback.numKeys;
+                    // If feedback provides info about children, update them as well:
+                    //oldNode.Children = feedback.Children;
+                    //oldNode.IsLeaf = feedback should determine if the node is now a leaf
+                }
+
+                // Create the new (split) node and add it to the dictionary
+                if (!nodeDictionary.ContainsKey(feedback.altID))
+                {
+                    bool isLeaf = false;
+                    GUINode[] children = new GUINode[2];
+                    int depth = oldNode.IsRoot ? oldNode.Depth + 1 : oldNode.Depth; // If the old node was the root, increment depth, otherwise keep the same.
+
+                    GUINode newNode = new GUINode(feedback.altKeys, isLeaf, false, depth, feedback.altNumKeys);
+                    nodeDictionary[feedback.altID] = newNode;
+                    nodeDictionary[feedback.id].IsLeaf = false;
+                    int size;
+                    if (nodeDictionary[feedback.id].Children == null)
+                    {
+                        size = 1;
+                    }
+                    else
+                    {
+                        size = nodeDictionary[feedback.id].Children.Length + 1;
+                    }
+                    nodeDictionary[feedback.id].Children = new GUINode[size];
+                    nodeDictionary[feedback.id].Children[size - 1] = newNode;
+                    Debug.WriteLine($"New node created for split. ID={feedback.altID}, Keys={String.Join(", ", newNode.Keys)}");
+                    split--;
+
+                    // Update the GUI tree structure, which might include finding and updating the parent node
+                    UpdateGUITreeFromNodes();
+                }
+
+                ShowNodesMessageBox();
             }
             else if (feedback.status == NodeStatus.ISearching)
             {
@@ -125,16 +191,11 @@ namespace B_TreeVisualizationGUI
             }
             else
             {
+                // Handle other feedback statuses (Insert, Inserted, Delete, Deleted, etc.)
                 // Create or update GUINode based on feedback
                 CreateOrUpdateGUINode(feedback);
+                ShowNodesMessageBox();
             }
-        }
-
-        private void FindRootAndUpdateTree()
-        {
-            GUINode rootNode = DetermineRootNode();
-            _tree = new GUITree(rootNode, panel1);
-            panel1.Invalidate();
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -296,7 +357,7 @@ namespace B_TreeVisualizationGUI
 
         /* ----------------- BELOW THIS IS ALL IN TESTING ----------------- */
 
-        private void CreateOrUpdateGUINode((NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) feedback)
+        /*private void CreateOrUpdateGUINode((NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) feedback)
         {
             Debug.WriteLine($"Creating or updating GUINode. ID={feedback.id}, Keys={String.Join(", ", feedback.keys)}");
             bool isLeaf = feedback.altID == 0;
@@ -329,6 +390,33 @@ namespace B_TreeVisualizationGUI
                 node = new GUINode(feedback.keys, isLeaf, isRoot, depth, children);
                 nodeDictionary[feedback.id] = node;
             }
+            UpdateGUITreeFromNodes();
+        }*/
+
+        private void CreateOrUpdateGUINode((NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) feedback)
+        {
+            Debug.WriteLine($"Creating or updating GUINode. ID={feedback.id}, Keys={String.Join(", ", feedback.keys)}");
+            bool isLeaf = feedback.altID == 0;
+            bool isRoot = nodeDictionary.Count == 0; // Simplification, might need more accurate check
+            int depth = 0; // Simplification, should determine actual depth
+
+            if (nodeDictionary.TryGetValue(feedback.id, out GUINode node))
+            {
+                Debug.WriteLine($"Node found. Updating ID={feedback.id}");
+                // Directly use feedback keys to update the node
+                node.Keys = feedback.keys;
+                node.NumKeys++;
+                node.NodeWidth = 40 * node.NumKeys;
+            }
+            else
+            {
+                Debug.WriteLine($"Node not found. Creating new node. ID={feedback.id}");
+                // Create new node with feedback keys
+                node = new GUINode(feedback.keys, isLeaf, isRoot, depth, 1);
+                nodeDictionary[feedback.id] = node;
+            }
+
+            // Assuming you have logic here to update GUI or tree visualization
             UpdateGUITreeFromNodes();
         }
 
