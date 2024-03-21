@@ -1,5 +1,3 @@
-using static B_TreeVisualizationGUI.GUITree;
-
 namespace B_TreeVisualizationGUI
 {
     internal static class Program
