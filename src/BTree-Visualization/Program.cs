@@ -119,6 +119,13 @@ namespace ThreadCommunication{
     /// </summary>
     FoundRange,
     /// <summary>
+    /// Sent if the node had nothing left
+    /// during a delete over a range of keys.
+    /// Just the ID of the one being deleted.
+    /// ID,-1,[],[]
+    /// </summary>
+    NodeDeleted,
+    /// <summary>
     /// Sent to close/complete the buffer and as a result
     /// terminate the thread using this buffer.
     /// </summary>

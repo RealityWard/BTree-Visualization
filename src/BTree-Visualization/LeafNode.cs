@@ -196,7 +196,7 @@ namespace BTreeVisualization
       }
     }
 
-    public override void DeleteKeys(int key, int endKey)
+    public override NodeCondition? DeleteKeys(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
       if (_Keys[0] < endKey)
@@ -237,6 +237,12 @@ namespace BTreeVisualization
       {
         _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
       }
+      if(_NumKeys == 1)
+        return NodeCondition.KeyAndNone;
+      else if(_NumKeys == 0)
+        return NodeCondition.None;
+      else
+        return NodeCondition.Mergeable;
     }
 
     /// <summary>
@@ -274,6 +280,17 @@ namespace BTreeVisualization
       _Keys[_NumKeys] = dividerKey;
       _Contents[_NumKeys] = dividerData;
       _NumKeys++;
+      for (int i = 0; i < sibiling.NumKeys; i++)
+      {
+        _Keys[_NumKeys + i] = sibiling.Keys[i];
+        _Contents[_NumKeys + i] = sibiling.Contents[i];
+      }
+      _NumKeys += sibiling.NumKeys;
+      _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
+    }
+    
+    public override void Merge(BTreeNode<T> sibiling)
+    {
       for (int i = 0; i < sibiling.NumKeys; i++)
       {
         _Keys[_NumKeys + i] = sibiling.Keys[i];
