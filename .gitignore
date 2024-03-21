@@ -1,11 +1,8 @@
-BTreeTreeVisualization.csproj
-tests.csproj
-tests.sln
-BTree-Visualization.sln
+**.sln
 **/bin/
 **/obj/
 **/build/
+a.out
 .vs
 .vscode
-.gitignore
 .fake

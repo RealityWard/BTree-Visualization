@@ -17,12 +17,12 @@ namespace BTreeVisualization
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class Node<N, T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+  public abstract class Node<N, T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Output Buffer for Status updates to be externally viewed.
     /// </summary>
-    protected BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock = bufferBlock;
+    protected BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock = bufferBlock;
     /// <summary>
     /// Determines the number of keys and children per node.
     /// </summary>
@@ -45,7 +45,14 @@ namespace BTreeVisualization
     /// </summary>
     /// <param name="key">Integer to find in _Keys[].</param>
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
-    public abstract (int, N) SearchKey(int key);
+    public abstract (int key, T content)? SearchKey(int key);
+    /// <summary>
+    /// Searches for all keys equal to or greater than key and less than endKey.
+    /// </summary>
+    /// <param name="key">Lower bound inclusive.</param>
+    /// <param name="endKey">Upper bound exclusive.</param>
+    /// <returns>A list of key-content pairs from the matching range.</returns>
+    public abstract List<(int key, T content)> SearchKey(int key, int endKey);
     /// <summary>
     /// Split this node into two.
     /// </summary>
@@ -204,10 +211,11 @@ namespace BTreeVisualization
   /// <param name="degree">Same as parent node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class BTreeNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<BTreeNode<T>, T>(degree, bufferBlock)
+  public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<BTreeNode<T>, T>(degree, bufferBlock)
   {
     /// <summary>
-    /// Holds children for this node.
+    /// Generic typed array parallel to the keys array.
+    /// It holds the values associated with the corresponding key.
     /// </summary>
     protected T?[] _Contents = new T[2 * degree - 1];
 

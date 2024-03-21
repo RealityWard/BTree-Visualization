@@ -2,7 +2,7 @@
 Primary Author: Tristan Anderson
 Secondary Author: Andreas Kramer (for tree height methods)
 Date: 2024-02-03
-Desc: Maintains the entry point of the BTree data 
+Desc: Maintains the entry point of the BTree data
 structure and initializes root and new node creation in the beginning.
 */
 using System.Threading.Tasks.Dataflow;
@@ -10,20 +10,30 @@ using ThreadCommunication;
 
 namespace BTreeVisualization
 {
-  public class BTree<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+  public class BTree<T>
   {
     /// <summary>
     /// Entry point of the tree.
     /// </summary>
-    private BTreeNode<T> _Root = new LeafNode<T>(degree, bufferBlock);
+    private BTreeNode<T> _Root;
     /// <summary>
     /// Determines the number of keys and children per node.
     /// </summary>
-    private readonly int _Degree = degree;
+    public readonly int _Degree;
     /// <summary>
     /// Tracks whether a key of zero is in use in the tree.
     /// </summary>
-    private bool zeroKeyUsed = false;
+    private bool zeroKeyUsed;
+    private BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock;
+
+    public BTree(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+    {
+      _Degree = degree;
+      _Root = new LeafNode<T>(degree, bufferBlock);
+      zeroKeyUsed = false;
+      _BufferBlock = bufferBlock;
+      _BufferBlock.SendAsync((NodeStatus.Inserted, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
+    }
 
     /// <summary>
     /// Takes a node and the key and data to place into root.
@@ -33,17 +43,17 @@ namespace BTreeVisualization
     private void Split(((int, T), BTreeNode<T>) rNode)
     {
       _Root = new NonLeafNode<T>(_Degree, [rNode.Item1.Item1], [rNode.Item1.Item2]
-        , [_Root, rNode.Item2], bufferBlock);
-      bufferBlock.SendAsync((Status.Inserted, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
-      bufferBlock.SendAsync((Status.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[0]
+        , [_Root, rNode.Item2], _BufferBlock);
+      _BufferBlock.SendAsync((NodeStatus.Inserted, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[0]
         ?? throw new NullChildReferenceException($"Child of new root node at index:0")).ID, -1, [], []));
-      bufferBlock.SendAsync((Status.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[1]
+      _BufferBlock.SendAsync((NodeStatus.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[1]
         ?? throw new NullChildReferenceException($"Child of new root node at index:1")).ID, -1, [], []));
     }
 
     /// <summary>
-    /// Inserts data at root node and set root to a new 
-    /// leaf node if root isn't yet created. It also 
+    /// Inserts data at root node and set root to a new
+    /// leaf node if root isn't yet created. It also
     /// checks for a split afterwards.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
@@ -58,7 +68,7 @@ namespace BTreeVisualization
           allow a zero key insertion*/
         if (key == 0)
           zeroKeyUsed = true;
-        bufferBlock.Post((Status.Insert, 0, -1, [], [], 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [key], [data], 0, -1, [], []));
         ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data);
         if (result.Item2 != null && result.Item1.Item2 != null)
         {
@@ -69,15 +79,15 @@ namespace BTreeVisualization
       }
       else
       {
-        bufferBlock.Post((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
     }
 
     /// <summary>
-    /// Invokes a delete through out the tree to find 
-    /// an entry matching key and deletes it. If there 
-    /// are duplicates only the first encountered is deleted. 
-    /// If after the delete the root is reduced too 
+    /// Invokes a delete through out the tree to find
+    /// an entry matching key and deletes it. If there
+    /// are duplicates only the first encountered is deleted.
+    /// If after the delete the root is reduced too
     /// much it will grab its remaining child and make that the root.
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
@@ -85,20 +95,22 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public void Delete(int key)
     {
-      bufferBlock.Post((Status.Delete, 0, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
       _Root.DeleteKey(key);
       if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
+        long temp = _Root.ID;
         _Root = ((NonLeafNode<T>)_Root).Children[0]
           ?? throw new NullChildReferenceException(
-            $"Child of child on root node"); ;
+            $"Child of child on root node");
+        _BufferBlock.SendAsync((NodeStatus.Merge, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
       }
     }
 
     /// <summary>
-    /// Using searchKey on the nodes to return the data 
+    /// Using searchKey on the nodes to return the data
     /// correlated to the key.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
@@ -106,20 +118,49 @@ namespace BTreeVisualization
     /// <returns>Data object stored under key.</returns>
     public T? Search(int key)
     {
-      bufferBlock.Post((Status.Search, 0, -1, [], [], 0, -1, [], []));
-      (int, BTreeNode<T>?) result = _Root.SearchKey(key);
-      if (result.Item1 == -1 || result.Item2 == null)
+      _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
+      (int key, T content)? result = _Root.SearchKey(key);
+      if(result == null)
       {
         return default;
       }
       else
       {
-        return result.Item2.Contents[result.Item1];
+        return result.Value.content;
       }
     }
 
     /// <summary>
-    /// Invokes Traverse recursively through out the 
+    /// Invokes the SearchKey overload 1 on the root node.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Lower bound inclusive.</param>
+    /// <param name="endKey">Upper bound exclusive.</param>
+    /// <returns>A list of key-value pairs from the matching range in order of found.</returns>
+    public List<(int key, T content)> Search(int key, int endKey)
+    {
+      _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
+      List<(int key, T value)> result = _Root.SearchKey(key, endKey);
+      if (result.Count > 0)
+      {
+        int[] keys = new int[result.Count];
+        T[] contents = new T[result.Count];
+        for (int i = 0; i < result.Count; i++)
+        {
+          keys[i] = result[i].key;
+          contents[i] = result[i].value;
+        }
+        _BufferBlock.SendAsync((NodeStatus.FoundRange, _Root.ID, result.Count, keys, contents, 0, -1, [], []));
+      }
+      else
+      {
+        _BufferBlock.SendAsync((NodeStatus.FoundRange, _Root.ID, -1, [], [], 0, -1, [], []));
+      }
+      return result;
+    }
+
+    /// <summary>
+    /// Invokes Traverse recursively through out the
     /// tree to return a json print out of all nodes.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
@@ -131,7 +172,12 @@ namespace BTreeVisualization
 
     public void Clear()
     {
-      _Root = new LeafNode<T>(_Degree, bufferBlock);
+      _Root = new LeafNode<T>(_Degree, _BufferBlock);
+    }
+
+    public void Close()
+    {
+      _BufferBlock.SendAsync((NodeStatus.Close, 0, -1, [], [], 0, -1, [], []));
     }
 
     /// <summary>
@@ -267,6 +313,30 @@ namespace BTreeVisualization
         }
       }
       return true;
+    }
+
+    /// <summary>
+    /// Gets the total number of keys in this tree.
+    /// </summary>
+    /// <returns>Count of all keys.</returns>
+    public long KeyCount()
+    {
+      if (_Root as NonLeafNode<T> != null)
+        return NonLeafNode<T>.KeyCount((NonLeafNode<T>)_Root);
+      else
+        return _Root.NumKeys;
+    }
+
+    /// <summary>
+    /// Gets the total number of nodes in this tree.
+    /// </summary>
+    /// <returns>Count of all keys.</returns>
+    public int NodeCount()
+    {
+      if (_Root as NonLeafNode<T> != null)
+        return NonLeafNode<T>.NodeCount((NonLeafNode<T>)_Root);
+      else
+        return 1;
     }
   }
 }

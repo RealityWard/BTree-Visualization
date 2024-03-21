@@ -9,7 +9,7 @@ namespace ThreadCommunication{
   /// being communicated to the display thread.
   /// </summary>
   /// <remarks>Author: Tristan Anderson</remarks>
-  public enum Status
+  public enum NodeStatus
   {
     /// <summary>
     /// Initial response to Insert TreeCommand. Nothing else sent.
@@ -84,6 +84,10 @@ namespace ThreadCommunication{
     /// </summary>
     Search,
     /// <summary>
+    /// Initial response to SearchRange TreeCommand. Nothing else sent.
+    /// </summary>
+    SearchRange,
+    /// <summary>
     /// Sent everytime SearchKey is called on a node. Only ID sent.
     /// </summary>
     SSearching,
@@ -96,6 +100,14 @@ namespace ThreadCommunication{
     /// ID,-1,[],[] in the case of not found.
     /// </summary>
     Found,
+    /// <summary>
+    /// Sent once at end of search over a range. In case of found the 
+    /// Keys will contain the matching keys in the range and the
+    /// Contents will contain the corresponding contents in the range.
+    /// Root.ID,Keys.Length,Keys,Contents
+    /// Root.ID,-1,[],[] in the case of not found.
+    /// </summary>
+    FoundRange,
     /// <summary>
     /// Sent to close/complete the buffer and as a result
     /// terminate the thread using this buffer.
@@ -127,6 +139,11 @@ namespace ThreadCommunication{
     /// </summary>
     Search,
     /// <summary>
+    /// Search for all keys and content
+    /// within the tree that match the given range.
+    /// </summary>
+    SearchRange,
+    /// <summary>
     /// Console output the tree traversal.
     /// </summary>
     Traverse,
@@ -150,24 +167,13 @@ class Program
     }
     */
     Thread.CurrentThread.Name = "Main";
+    List<int> _InsertedKeys = [];
+    List<(int, int)> _MixKeys = [];
+    int _NumberOfKeys = 1000000;
 
-    var outputBuffer = new BufferBlock<(
-      Status status,
-      long id,
-      int numKeys,
-      int[] keys,
-      Person?[] contents,
-      long altID,
-      int altNumKeys,
-      int[] altKeys,
-      Person?[] altContents
-      )>();
+    var outputBuffer = new BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>();
 
-    var inputBuffer = new BufferBlock<(
-      TreeCommand action,
-      int key,
-      Person? content
-      )>();
+    var inputBuffer = new BufferBlock<(TreeCommand action, int key, int endKey, Person? content)>();
     BTree<Person> _Tree = new(3, outputBuffer);//This is only defined out here for traversing after the threads are killed to prove it is working.
     // Producer
     Task producer = Task.Run(async () =>
@@ -175,7 +181,7 @@ class Program
       Thread.CurrentThread.Name = "Producer";
       while (await inputBuffer.OutputAvailableAsync())
       {
-        (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
+        (TreeCommand action, int key, int endKey, Person? content) = inputBuffer.Receive();
         switch (action)
         {
           case TreeCommand.Tree:
@@ -192,15 +198,18 @@ class Program
           case TreeCommand.Search:
             _Tree.Search(key);
             break;
+          case TreeCommand.SearchRange:
+            _Tree.Search(key, endKey);
+            break;
           case TreeCommand.Traverse:
             Console.WriteLine(_Tree.Traverse());
             break;
           case TreeCommand.Close:
             inputBuffer.Complete();
+            _Tree.Close();
             break;
           default:// Will close buffer upon receiving a bad TreeCommand.
-            inputBuffer.Complete();
-            Console.WriteLine("TreeCommand:{0} not recognized", action);
+            // Console.WriteLine("TreeCommand:{0} not recognized", action);
             break;
         }
       }
@@ -209,15 +218,15 @@ class Program
     Task consumer = Task.Run(async () =>
     {
       Console.WriteLine("Consumer");
-      int[] uniqueKeys = [0, 237, 321, 778, 709, 683, 250, 525, 352, 300, 980, 191, 40, 721, 281, 532, 747, 58, 767, 196, 831, 884, 393, 83, 84, 652, 807, 306, 287, 936, 634, 305, 540, 185, 152, 489, 108, 120, 394, 791, 19, 562, 537, 201, 186, 131, 527, 837, 769, 252, 344, 204, 709, 582, 166, 765, 463, 665, 112, 363, 986, 705, 950, 371, 924, 483, 580, 188, 643, 423, 387, 293, 93, 918, 85, 660, 135, 990, 768, 753, 894, 332, 902, 800, 195, 374, 18, 282, 369, 296, 76, 40, 940, 852, 983, 362, 941, 7, 725, 732, 647];
-      int[] uniqueKeys1 = [0, 237, 321, 778, 709, 683, 250, 525, 352, 300, 980, 40, 721, 281, 532, 747, 58, 767, 196, 831, 884, 393, 83, 84];
-      foreach (int key in uniqueKeys1)
-      {
-        inputBuffer.Post((TreeCommand.Insert, key, new Person(key.ToString())));
-      }
-      inputBuffer.Post((TreeCommand.Traverse, -1, new Person((-1).ToString())));
-      inputBuffer.Post((TreeCommand.Close, -1, new Person((-1).ToString())));
-      List<(Status status,
+      // int[] uniqueKeys = [0, 237, 321, 778, 709, 683, 250, 525, 352, 300, 980, 191, 40, 721, 281, 532, 747, 58, 767, 196, 831, 884, 393, 83, 84, 652, 807, 306, 287, 936, 634, 305, 540, 185, 152, 489, 108, 120, 394, 791, 19, 562, 537, 201, 186, 131, 527, 837, 769, 252, 344, 204, 709, 582, 166, 765, 463, 665, 112, 363, 986, 705, 950, 371, 924, 483, 580, 188, 643, 423, 387, 293, 93, 918, 85, 660, 135, 990, 768, 753, 894, 332, 902, 800, 195, 374, 18, 282, 369, 296, 76, 40, 940, 852, 983, 362, 941, 7, 725, 732, 647];
+      // int[] uniqueKeys1 = [0, 237, 321, 778, 709, 683, 250, 525, 352, 300, 980, 40, 721, 281, 532, 747, 58, 767, 196, 831, 884, 393, 83, 84];
+      // foreach (int uniqueKey in uniqueKeys)
+      // {
+      //   inputBuffer.Post((TreeCommand.Insert, uniqueKey, new Person(uniqueKey.ToString())));
+      // }
+      // inputBuffer.Post((TreeCommand.Traverse, -1, new Person((-1).ToString())));
+      // inputBuffer.Post((TreeCommand.Close, -1, new Person((-1).ToString())));
+      List<(NodeStatus status,
         long id,
         int numKeys,
         int[] keys,
@@ -231,66 +240,84 @@ class Program
         history.Add(outputBuffer.Receive());
         switch (history.Last().status)
         {
-          case Status.Close:
-            inputBuffer.Post((TreeCommand.Close, -1, null));
+          case NodeStatus.FoundRange:
+            // Console.WriteLine(StringifyKeys(history.Last().numKeys,history.Last().keys));
+            break;
+          case NodeStatus.Close:
             outputBuffer.Complete();
             break;
           default:// Will close threads upon receiving a bad TreeCommand.
-            inputBuffer.Post((TreeCommand.Close, -1, null));
-            outputBuffer.Complete();
-            Console.WriteLine("TreeCommand:{0} not recognized", history.Last().status);
+            // Console.WriteLine("TreeCommand:{0} not recognized", history.Last().status);
             break;
         }
       }
+    });
+    Task sideTask = Task.Run(async () =>
+    {
+      Random random = new();
+      int key;
+      for (int i = 0; i < _NumberOfKeys / 10 + 10; i++)
+      {
+        do
+        {
+          key = random.Next(1, _NumberOfKeys * 10);
+        } while (_InsertedKeys.Contains(key));
+        await inputBuffer.SendAsync((TreeCommand.Insert, key, -1
+          , new Person(key.ToString())));
+        _InsertedKeys.Add(key);
+      }
+      for (int i = 0; i < _NumberOfKeys / 10; i++)
+      {
+        key = random.Next(0,3);
+        if(key == 1)
+        {
+          do
+          {
+            key = random.Next(1, _NumberOfKeys * 10);
+          } while (_InsertedKeys.Contains(key));
+          await inputBuffer.SendAsync((TreeCommand.Insert, key, -1
+            , new Person(key.ToString())));
+          _InsertedKeys.Add(key);
+          _MixKeys.Add((1,key));
+        }
+        else if(key == 2)
+        {
+          key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
+          await inputBuffer.SendAsync((TreeCommand.Delete, key, -1
+            , null));
+          _InsertedKeys.Remove(key);
+          _MixKeys.Add((0,key));
+        }
+        else
+        {
+          key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
+          await inputBuffer.SendAsync((TreeCommand.SearchRange, key, key + 10
+            , null));
+        }
+      }
+      await inputBuffer.SendAsync((TreeCommand.Close, -1, -1, new Person((-1).ToString())));
     });
     Console.WriteLine("Which is first?");
     producer.Wait();
     consumer.Wait();
     Console.WriteLine("Done");
-    Console.WriteLine(_Tree.Traverse());
+    // Console.WriteLine(_Tree.Traverse());
     int minHeight = _Tree.GetMinHeight();
     int maxHeight = _Tree.GetMaxHeight();
     Console.WriteLine(minHeight + " " + maxHeight);
-
-    /* Deletion Testing
-    int[] uniqueKeys = [237, 321, 778, 709, 683, 250, 525, 352, 300, 980, 191, 40, 721, 281, 532, 747, 58, 767, 196, 831, 884, 393, 83, 84, 652, 807, 306, 287, 936, 634, 305, 540, 185, 152, 489, 108, 120, 394, 791, 19, 562, 537, 201, 186, 131, 527, 837, 769, 252, 344, 204, 709, 582, 166, 765, 463, 665, 112, 363, 986, 705, 950, 371, 924, 483, 580, 188, 643, 423, 387, 293, 93, 918, 85, 660, 135, 990, 768, 753, 894, 332, 902, 800, 195, 374, 18, 282, 369, 296, 76, 40, 940, 852, 983, 362, 941, 7, 725, 732, 647];
-    foreach (int key in uniqueKeys)
-    {
-      _Tree.Insert(key, new Person(key.ToString()));
-    }
-
-    int[] deleteKeys = [709, 769, 562, 532, 791, 195, 387, 527, 643, 18, 582, 540, 362, 305, 709, 747, 778, 332, 924, 201, 463, 990, 665, 652, 135, 250, 58, 831, 837, 344, 363, 321, 108, 732, 525, 120, 894, 852, 306, 807, 186, 252, 300, 634, 660, 237, 281, 983, 483, 980, 84, 918, 950, 282, 93, 936, 287, 941, 768, 188, 131, 293, 767, 166, 683, 83, 371, 705, 369, 765, 489, 721, 725, 374, 191, 352, 580, 152, 76, 112, 296, 40, 884, 85, 40, 940, 19, 394, 204, 647, 537, 196, 902, 7, 800, 185, 423, 986, 393, 753];
-    for (int i = 0; i < deleteKeys.Length; i++)
-    {
-      // string before = key + "here---------------------------------------------------------------------------------------------------------------"
-      //    + "\n" +_Tree.Traverse();
-      string checkDup = _Tree.Traverse();
-      _Tree.Delete(deleteKeys[i]);
-      for (int j = 0; j <= i; j++)
-      {
-        if (_Tree.Search(deleteKeys[j]) != null)
-        {
-          Console.WriteLine(_Tree.Search(deleteKeys[j]));
-        }
-      }
-      // string after = "\n" +_Tree.Traverse();
-      // if(_Tree.Search(key) != null){
-      //   Console.WriteLine(before + after);
-      // }
-      if (Regex.Count(checkDup, "\"" + deleteKeys[i] + "\"") > 1)
-      {
-        // Console.WriteLine(checkDup);
-      }
-      foreach (int keyCheck in uniqueKeys)
-      {
-        checkDup = _Tree.Traverse();
-        if (Regex.Count(checkDup, "\"" + keyCheck + "\"") > 1)
-        {
-          Console.WriteLine(checkDup);
-        }
-      }
-    }
-     */
   }
 
+    /// <summary>
+    /// Read out just the portion of the keys[] currently in use.
+    /// </summary>
+    /// <param name="numKeys">Index to stop at.</param>
+    /// <param name="keys">Array of ints</param>
+    /// <returns>String of the keys seperated by a ','</returns>
+    private static string StringifyKeys(int numKeys, int[] keys)
+    {
+      string result = "";
+      for (int i = 0; i < numKeys; i++)
+        result += keys[i] + (i + 1 == numKeys ? "" : ",");
+      return result;
+    }
 }

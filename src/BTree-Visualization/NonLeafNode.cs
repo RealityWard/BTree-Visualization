@@ -1,4 +1,4 @@
-﻿/*
+/*
 Author: Emily Elzinga and Tristan Anderson
 Date: 2/07/2024
 Desc: Describes functionality for non-leaf nodes on the BTree. Recursive function iteration due to children nodes.
@@ -16,7 +16,7 @@ namespace BTreeVisualization
   /// <typeparam name="T">Data type of the content to be stored under key.</typeparam>
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to be externally viewed.</param>
-  public class NonLeafNode<T>(int degree, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : BTreeNode<T>(degree, bufferBlock)
+  public class NonLeafNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : BTreeNode<T>(degree, bufferBlock)
   {
     /// <summary>
     /// Array to track child nodes of this node. These can be either Leaf or Non-Leaf.
@@ -40,7 +40,7 @@ namespace BTreeVisualization
     /// <param name="data">Values to initialize in _Contents[]</param>
     /// <param name="children">Child nodes to initialize in _Children[]</param>
     /// <param name="bufferBlock">Output Buffer for Status updates to be externally viewed.</param>
-    public NonLeafNode(int degree, int[] keys, T[] data, BTreeNode<T>[] children, BufferBlock<(Status status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : this(degree, bufferBlock)
+    public NonLeafNode(int degree, int[] keys, T[] data, BTreeNode<T>[] children, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : this(degree, bufferBlock)
     {
       _NumKeys = keys.Length;
       for (int i = 0; i < keys.Length; i++)
@@ -80,9 +80,9 @@ namespace BTreeVisualization
     /// LeafNode.SearchKey()</remarks>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
-    public override (int, BTreeNode<T>) SearchKey(int key)
+    public override (int key, T content)? SearchKey(int key)
     {
-      _BufferBlock.Post((Status.SSearching, ID, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       int result = Search(key);
       if (result == -1)
       {
@@ -92,8 +92,9 @@ namespace BTreeVisualization
       }
       else if (_Keys[result] == key)
       {
-        _BufferBlock.Post((Status.Found, ID, result, [key], [Contents[result]], 0, -1, [], []));
-        return (result, this);
+        _BufferBlock.SendAsync((NodeStatus.Found, ID, result, [key], [Contents[result]], 0, -1, [], []));
+        return (Keys[result], Contents[result] ?? throw new NullContentReferenceException(
+            $"Content at index:{result} within node:{ID}"));
       }
       else
       {
@@ -101,6 +102,40 @@ namespace BTreeVisualization
           ?? throw new NullChildReferenceException(
             $"Child at index:{result} within node:{ID}")).SearchKey(key);
       }
+    }
+
+    /// <summary>
+    /// Recursively searches for all keys, wihtin this node and children nodes, (equal to or greater than key) and less than endKey.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Lower bound inclusive.</param>
+    /// <param name="endKey">Upper bound exclusive.</param>
+    /// <returns>A list of key-content pairs from the matching range in order of found.</returns>
+    /// <exception cref="NullChildReferenceException">In the case that one of the children
+    /// nodes in the range is null.</exception>
+    /// <exception cref="NullContentReferenceException">In the case that one of the key-content
+    /// pairs would have a null for a value.</exception>
+    public override List<(int key, T content)> SearchKey(int key, int endKey)
+    {
+      _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
+      List<(int, T)> result = [];
+      for (int i = 0; i < _NumKeys; i++)
+      {
+        if (_Keys[i] >= key)
+        {
+          result.AddRange((_Children[i]
+            ?? throw new NullChildReferenceException(
+              $"Child at index:{i} within node:{ID}")).SearchKey(key, endKey));
+          if(_Keys[i] < endKey)
+            result.Add((Keys[i], Contents[i] ?? throw new NullContentReferenceException(
+              $"Content at index:{i} within node:{ID}")));
+        }
+      }
+      if(_Keys[_NumKeys - 1] < endKey)
+        result.AddRange((_Children[_NumKeys]
+          ?? throw new NullChildReferenceException(
+            $"Child at index:{NumKeys} within node:{ID}")).SearchKey(key, endKey));
+      return result;
     }
 
     /// <summary>
@@ -120,7 +155,7 @@ namespace BTreeVisualization
     /// Otherwise it returns ((-1, null), null).</returns>
     public override ((int, T?), BTreeNode<T>?) InsertKey(int key, T data)
     {
-      _BufferBlock.Post((Status.ISearching, ID, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.ISearching, ID, -1, [key], [data], 0, -1, [], []));
       ((int, T?), BTreeNode<T>?) result;
       int i = 0;
       while (i < _NumKeys && key > _Keys[i])
@@ -144,7 +179,7 @@ namespace BTreeVisualization
           _Contents[i] = result.Item1.Item2;
           _Children[i + 1] = result.Item2;
           _NumKeys++;
-          _BufferBlock.Post((Status.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          _BufferBlock.SendAsync((NodeStatus.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
           if (IsFull())
           {
             return Split();
@@ -153,7 +188,7 @@ namespace BTreeVisualization
       }
       else
       {
-        _BufferBlock.Post((Status.Inserted, 0, -1, [], [], 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
       return ((-1, default(T)), null);
     }
@@ -181,9 +216,9 @@ namespace BTreeVisualization
         newChildren[i] = _Children[i + _Degree]
           ?? throw new NullChildReferenceException(
             $"Child at index:{i + _Degree} within node:{ID}");
+        _Keys[i + _Degree] = default;
         _Contents[i + _Degree] = default;
         _Children[i + _Degree] = default;
-        _BufferBlock.Post((Status.Shift, newChildren[i].ID, -1, [], [], ID, -1, [], []));
       }
       newChildren[i] = _Children[i + _Degree]
         ?? throw new NullChildReferenceException(
@@ -197,8 +232,13 @@ namespace BTreeVisualization
           $"Content at index:{_NumKeys} within node:{ID}"));
       _Keys[_NumKeys] = default;
       _Contents[_NumKeys] = default;
-      _BufferBlock.Post((Status.Split, ID, NumKeys, Keys, Contents,
+      _BufferBlock.SendAsync((NodeStatus.Split, ID, NumKeys, Keys, Contents,
         newNode.ID, newNode.NumKeys, newNode.Keys, newNode.Contents));
+      for(int j = 0; j <= newNode.NumKeys; j++)
+      {
+        _BufferBlock.SendAsync((NodeStatus.Shift, newNode.ID, -1, [], [], (newNode.Children[j]
+          ?? throw new NullChildReferenceException($"Child at index:{j} within node:{newNode.ID}")).ID, -1, [], []));
+      }
       return (dividerEntry, newNode);
     }
 
@@ -213,7 +253,7 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
 		public override void DeleteKey(int key)
     {
-      _BufferBlock.Post((Status.DSearching, ID, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
       int result = Search(key);
       if (result == -1)
       {
@@ -228,7 +268,7 @@ namespace BTreeVisualization
         (_Keys[result], _Contents[result]) = (_Children[result]
           ?? throw new NullChildReferenceException(
             $"Child at index:{result} within node:{ID}")).ForfeitKey();
-        _BufferBlock.Post((Status.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
         MergeAt(result);
       }
       else
@@ -249,7 +289,7 @@ namespace BTreeVisualization
     /// most leaf node below this node.</returns>
     public override (int, T) ForfeitKey()
     {
-      _BufferBlock.Post((Status.FSearching, ID, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.FSearching, ID, -1, [], [], 0, -1, [], []));
       (int, T) result =
         (_Children[_NumKeys] ?? throw new NullChildReferenceException(
           $"Child at index:{_NumKeys} within node:{ID}")).ForfeitKey();
@@ -281,13 +321,21 @@ namespace BTreeVisualization
       }
       _Children[_NumKeys + sibiling.NumKeys] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
       _NumKeys += sibiling.NumKeys;
-      _BufferBlock.Post((Status.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
     }
 
     /// <summary>
-    /// Checks the child at index for underflow. If so it then checks for _Degree 
-    /// number of children in the right child of the key. _Degree or greater means 
-    /// either overflow or split. 
+    /// Checks the child at index for underflow. If so it then checks for _Degree
+    /// number of children in the right child of the key. _Degree or greater means
+    /// merging the two will result in an overflow or a split. If less than _Degree
+    /// then the merge will not be a full node needing to be split immediately.
+    /// This is meant to reduce the number of times elements are moved back and forth.
+    /// Underflow is _NumKeys <= _Degree - 2.
+    /// Full is _NumKeys == 2 * _Degree - 1.
+    /// Don't forget the dividing key adds 1
+    /// Sum of the two nodes in minimal bad scenario:
+    /// (_Degree - 2) + _Degree + 1 == 2 * _Degree - 1
+    /// Results in Full at least.
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
@@ -324,13 +372,13 @@ namespace BTreeVisualization
             _Keys[index] = _Children[index + 1].Keys[0];
             _Contents[index] = _Children[index + 1].Contents[0];
             _Children[index + 1].LosesToLeft();
-            _BufferBlock.Post((Status.UnderFlow, Children[index].ID, Children[index].NumKeys,
+            _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, Children[index].NumKeys,
               Children[index].Keys, Children[index].Contents, Children[index + 1].ID,
               Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents));
             if (_Children[index] as NonLeafNode<T> != null)
             {
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-              _BufferBlock.Post((Status.Shift, (((NonLeafNode<T>)Children[index])
+              _BufferBlock.SendAsync((NodeStatus.Shift, (((NonLeafNode<T>)Children[index])
                 .Children[Children[index].NumKeys]
                   ?? throw new NullChildReferenceException(
                     $"Child at index:{Children[index].NumKeys} within node:{ID}")
@@ -346,13 +394,13 @@ namespace BTreeVisualization
             _Keys[index] = _Children[index].Keys[_Children[index].NumKeys - 1];
             _Contents[index] = _Children[index].Contents[_Children[index].NumKeys - 1];
             _Children[index].LosesToRight();
-            _BufferBlock.Post((Status.UnderFlow, Children[index + 1].ID,
+            _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index + 1].ID,
               Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents,
               Children[index].ID, Children[index].NumKeys,
               Children[index].Keys, Children[index].Contents));
             if (_Children[index] as NonLeafNode<T> != null)
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-              _BufferBlock.Post((Status.Shift, ((NonLeafNode<T>)Children[index + 1])
+              _BufferBlock.SendAsync((NodeStatus.Shift, ((NonLeafNode<T>)Children[index + 1])
                 .Children[0].ID, -1, [], [], _Children[index + 1].ID, -1, [], []));
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
           }
@@ -372,7 +420,7 @@ namespace BTreeVisualization
             _Contents[index] = default;
             _Children[index + 1] = default;
             _NumKeys--;
-            _BufferBlock.Post((Status.MergeParent, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+            _BufferBlock.SendAsync((NodeStatus.MergeParent, ID, NumKeys, Keys, Contents, 0, -1, [], []));
           }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
@@ -467,8 +515,9 @@ namespace BTreeVisualization
 		public override string Traverse(string x)
     {
       string output = Spacer(x) + "{\n";
-      output += Spacer(x) + "  \"node\":\"" + x + "\",\n"
-        + Spacer(x) + "\"  ID\":" + _ID + ",\n" + Spacer(x) + "  \"keys\":[";
+      output += Spacer(x) + "  \"type\":\"node\",\n"
+        + Spacer(x) + "  \"node\":\"" + x + "\",\n"
+        + Spacer(x) + "  \"ID\":" + _ID + ",\n" + Spacer(x) + "  \"keys\":[";
       for (int i = 0; i < _NumKeys; i++)
       {
         output += _Keys[i] + (i + 1 < _NumKeys ? "," : "");
@@ -488,6 +537,55 @@ namespace BTreeVisualization
           + (i + 1 <= _NumKeys ? "," : "") + "\n";
       }
       return output + Spacer(x) + "  ]\n" + Spacer(x) + "}";
+    }
+
+    /// <summary>
+    /// Gets the total number keys in all children of this node and itself.
+    /// </summary>
+    /// <returns>Count of keys.</returns>
+    /// <exception cref="NullChildReferenceException"></exception>
+    static public long KeyCount(NonLeafNode<T> node)
+    {
+      long count = 0;
+      if (node.Children[0] as NonLeafNode<T> != null)
+        for (int i = 0; i <= node.NumKeys && node.Children[i] != null; i++)
+        {
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+          count += KeyCount((NonLeafNode<T>)node.Children[i] ?? throw new NullChildReferenceException(
+            $"Child at index:{i} within node:{node.ID}"));
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+        }
+      else
+        for (int i = 0; i <= node.NumKeys && node.Children[i] != null; i++)
+        {
+          count += (node.Children[i] ?? throw new NullChildReferenceException(
+            $"Child at index:{i} within node:{node.ID}")).NumKeys;
+        }
+      return count + node.NumKeys;
+    }
+
+    /// <summary>
+    /// Gets the total number of nodes from this node down plus itself.
+    /// </summary>
+    /// <returns>Count of nodes.</returns>
+    /// <exception cref="NullChildReferenceException"></exception>
+    static public int NodeCount(NonLeafNode<T> node)
+    {
+      int count = 0;
+      if (node.Children[0] as NonLeafNode<T> != null)
+        for (int i = 0; i <= node.NumKeys && node.Children[i] != null; i++)
+        {
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+          count += NodeCount((NonLeafNode<T>)node.Children[i] ?? throw new NullChildReferenceException(
+            $"Child at index:{i} within node:{node.ID}"));
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+        }
+      else
+        for (int i = 0; i <= node.NumKeys && node.Children[i] != null; i++)
+        {
+          count++;
+        }
+      return count + 1;
     }
   }
 }
