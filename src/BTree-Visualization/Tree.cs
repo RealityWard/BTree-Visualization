@@ -140,7 +140,7 @@ namespace BTreeVisualization
     public List<(int key, T content)> Search(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
-      List<(int key, T value)> result = _Root.SearchKey(key, endKey);
+      List<(int key, T value)> result = _Root.SearchKeys(key, endKey);
       if (result.Count > 0)
       {
         int[] keys = new int[result.Count];

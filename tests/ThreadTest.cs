@@ -60,7 +60,7 @@ namespace ThreadTesting
     /// </summary>
     private void DefineStatusPrecedence()
     {
-      int numOfStates = 25;
+      int numOfStates = 27;
       _StatusPrecedence = new Dictionary<NodeStatus,int>[numOfStates];
       for(int i = 0; i < numOfStates; i++){
         _StatusPrecedence[i] = [];
@@ -70,6 +70,7 @@ namespace ThreadTesting
       int index = 0;
       _StatusPrecedence[index].Add(NodeStatus.Insert,1);
       _StatusPrecedence[index].Add(NodeStatus.Delete,6);
+      _StatusPrecedence[index].Add(NodeStatus.DeleteRange,25);
       _StatusPrecedence[index].Add(NodeStatus.Search,19);
       _StatusPrecedence[index].Add(NodeStatus.SearchRange,24);
       _StatusPrecedence[index].Add(NodeStatus.Close,23);

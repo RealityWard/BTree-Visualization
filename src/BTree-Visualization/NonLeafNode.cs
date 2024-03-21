@@ -83,7 +83,7 @@ namespace BTreeVisualization
     public override (int key, T content)? SearchKey(int key)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
-      int result = Search(key);
+      int result = Search(this, key);
       if (result == -1)
       {
         return (_Children[_NumKeys]
@@ -115,7 +115,7 @@ namespace BTreeVisualization
     /// nodes in the range is null.</exception>
     /// <exception cref="NullContentReferenceException">In the case that one of the key-content
     /// pairs would have a null for a value.</exception>
-    public override List<(int key, T content)> SearchKey(int key, int endKey)
+    public override List<(int key, T content)> SearchKeys(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       List<(int, T)> result = [];
@@ -125,16 +125,16 @@ namespace BTreeVisualization
         {
           result.AddRange((_Children[i]
             ?? throw new NullChildReferenceException(
-              $"Child at index:{i} within node:{ID}")).SearchKey(key, endKey));
-          if(_Keys[i] < endKey)
+              $"Child at index:{i} within node:{ID}")).SearchKeys(key, endKey));
+          if (_Keys[i] < endKey)
             result.Add((Keys[i], Contents[i] ?? throw new NullContentReferenceException(
               $"Content at index:{i} within node:{ID}")));
         }
       }
-      if(_Keys[_NumKeys - 1] < endKey)
+      if (_Keys[_NumKeys - 1] < endKey)
         result.AddRange((_Children[_NumKeys]
           ?? throw new NullChildReferenceException(
-            $"Child at index:{NumKeys} within node:{ID}")).SearchKey(key, endKey));
+            $"Child at index:{NumKeys} within node:{ID}")).SearchKeys(key, endKey));
       return result;
     }
 
@@ -234,7 +234,7 @@ namespace BTreeVisualization
       _Contents[_NumKeys] = default;
       _BufferBlock.SendAsync((NodeStatus.Split, ID, NumKeys, Keys, Contents,
         newNode.ID, newNode.NumKeys, newNode.Keys, newNode.Contents));
-      for(int j = 0; j <= newNode.NumKeys; j++)
+      for (int j = 0; j <= newNode.NumKeys; j++)
       {
         _BufferBlock.SendAsync((NodeStatus.Shift, newNode.ID, -1, [], [], (newNode.Children[j]
           ?? throw new NullChildReferenceException($"Child at index:{j} within node:{newNode.ID}")).ID, -1, [], []));
@@ -254,7 +254,7 @@ namespace BTreeVisualization
 		public override void DeleteKey(int key)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
-      int result = Search(key);
+      int result = Search(this, key);
       if (result == -1)
       {
         // Search only goes through keys and thus if it did not 
@@ -276,6 +276,68 @@ namespace BTreeVisualization
         (_Children[result] ?? throw new NullChildReferenceException(
           $"Child at index:{result} within node:{ID}")).DeleteKey(key);
         MergeAt(result);
+      }
+    }
+
+    public override void DeleteKeys(int key, int endKey)
+    {
+      _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
+      if (_Keys[0] < endKey)
+      {
+        int i = Search(this, key);
+        int endI = Search(this, endKey);
+        if (i == -1)
+        {
+          (_Children[_NumKeys]
+            ?? throw new NullChildReferenceException(
+              $"Child at index:{_NumKeys} within node:{ID}")).DeleteKeys(key, endKey);
+          MergeAt(_NumKeys);
+        }
+        else if (i == endI)
+        {
+          (_Children[i]
+            ?? throw new NullChildReferenceException(
+              $"Child at index:{i} within node:{ID}")).DeleteKeys(key, endKey);
+          MergeAt(i);
+        }
+        else
+        {
+          int k, newNumKeys;//Saved for later use
+          if (endI == -1)
+          {
+            k = _NumKeys - 1;//Maintain max index to _Keys[]
+            (_Children[_NumKeys] ?? throw new NullChildReferenceException(
+                $"Child at index:{_NumKeys} within node:{ID}")).DeleteKeys(key, endKey);
+            newNumKeys = _NumKeys - (_NumKeys - i);//Last key will be deleted
+          }
+          else
+          {
+            k = endI;//Maintain max index to _Keys[]
+            (_Children[endI] ?? throw new NullChildReferenceException(
+                $"Child at index:{endI} within node:{ID}")).DeleteKeys(key, endKey);
+            newNumKeys = _NumKeys - (endI - i);//Last key wont be deleted
+          }
+          (_Children[i] ?? throw new NullChildReferenceException(
+            $"Child at index:{i} within node:{ID}")).DeleteKeys(key, endKey);
+          for (int j = i + 1; k < _NumKeys; j++, k++)
+          {
+            _Keys[j] = _Keys[k];
+            _Contents[j] = _Contents[k];
+          }
+          _Children[i + 1] = _Children[endI];
+          MergeAt(i);
+          for (; i < _NumKeys; i++)
+          {
+            _Keys[i] = default;
+            _Contents[i] = default;
+          }
+          _NumKeys = newNumKeys;
+          _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+        }
+      }
+      else
+      {
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
       }
     }
 
@@ -345,13 +407,19 @@ namespace BTreeVisualization
       if ((_Children[index] ?? throw new NullChildReferenceException(
           $"Child at index:{index} within node:{ID}")).IsUnderflow())
       {
-        if (index == _NumKeys) { index--; }
-        if (_Children[index] == null)
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+        bool emptyNode = _Children[index].NumKeys == 0;
+        if (index == _NumKeys)
         {
-          throw new NullChildReferenceException(
-                    $"Child at index:{index} within node:{ID}");
+          index--;
+          if (_Children[index] == null)
+          {
+            throw new NullChildReferenceException(
+                      $"Child at index:{index} within node:{ID}");
+          }
         }
-        else if (_Children[index + 1] == null)
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        if (_Children[index + 1] == null)
         {
           throw new NullChildReferenceException(
                     $"Child at index:{index + 1} within node:{ID}");
@@ -364,7 +432,7 @@ namespace BTreeVisualization
         else
         {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-          if (_Children[index + 1].NumKeys >= _Degree)
+          if (_Children[index + 1].NumKeys >= _Degree && !emptyNode)
           {
 #pragma warning disable CS8604 // Possible null reference argument.
             _Children[index].GainsFromRight(_Keys[index], _Contents[index], _Children[index + 1]);
@@ -386,7 +454,7 @@ namespace BTreeVisualization
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
             }
           }
-          else if (_Children[index].NumKeys >= _Degree)
+          else if (_Children[index].NumKeys >= _Degree && !emptyNode)
           {
 #pragma warning disable CS8604 // Possible null reference argument.
             _Children[index + 1].GainsFromLeft(_Keys[index], _Contents[index], _Children[index]);
@@ -407,7 +475,16 @@ namespace BTreeVisualization
           else
           {
 #pragma warning disable CS8604 // Possible null reference argument.
-            _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
+            if (_Children[index].NumKeys == 0)
+              if (index == 0)
+              {
+                _Children[index + 1].GainsFromLeft(_Keys[index], _Contents[index], _Children[index]);
+                _Children[index] = _Children[index + 1];
+              }
+              else
+                _Children[index - 1].GainsFromRight(_Keys[index], _Contents[index], _Children[index]);
+            else
+              _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
 #pragma warning restore CS8604 // Possible null reference argument.
             for (; index < _NumKeys - 1;)
             {
@@ -425,6 +502,10 @@ namespace BTreeVisualization
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
       }
+    }
+
+    private void MergeHandling(int index)
+    {
     }
 
     /// <summary>

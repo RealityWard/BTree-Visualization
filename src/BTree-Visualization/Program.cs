@@ -36,6 +36,10 @@ namespace ThreadCommunication{
     /// </summary>
     Delete,
     /// <summary>
+    /// Initial response to DeleteRange TreeCommand. Nothing else sent.
+    /// </summary>
+    DeleteRange,
+    /// <summary>
     /// Sent everytime DeleteKey is called on a node. Only ID sent.
     /// </summary>
     DSearching,
@@ -45,6 +49,12 @@ namespace ThreadCommunication{
     /// ID,-1,[],[] in the case of not found.
     /// </summary>
     Deleted,
+    /// <summary>
+    /// Sent each time "TBD"
+    /// ID,NumKeys,Keys,Contents of altered node sent.
+    /// ID,-1,[],[] in the case of not found.
+    /// </summary>
+    DeletedRange,
     /// <summary>
     /// Sent everytime ForfeitKey is called on a node. Only ID sent.
     /// </summary>
@@ -134,6 +144,11 @@ namespace ThreadCommunication{
     /// within the tree.
     /// </summary>
     Delete,
+    /// <summary>
+    /// Delete a range of keys and the corresponding content
+    /// within the tree.
+    /// </summary>
+    DeleteRange,
     /// <summary>
     /// Search for key within the tree.
     /// </summary>

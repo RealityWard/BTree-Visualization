@@ -47,25 +47,6 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Iterates over the _Keys array to find key. If found returns the index else returns -1.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson</remarks>
-    /// <param name="key">Integer to find in _Keys[] of this node.</param>
-    /// <returns>If found returns the index else returns -1.</returns>
-    static private int Search(LeafNode<T> node, int key)
-    {
-      for (int i = 0; i < node.NumKeys; i++)
-      {
-        if (node.Keys[i] == key)
-        {
-          return i;
-        }
-      }
-      return -1;
-    }
-
-    /// <summary>
     /// Iterates over the _Keys array to find key. If found returns the
     /// index and this else returns -1 and this.
     /// </summary>
@@ -77,7 +58,7 @@ namespace BTreeVisualization
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       int result = Search(this, key);
-      if (result != -1)
+      if (result != -1 && _Keys[result] == key)
       {
         _BufferBlock.SendAsync((NodeStatus.Found, ID, result, [key], [Contents[result]], 0, -1, [], []));
         return (result, Contents[result] ?? throw new NullContentReferenceException(
@@ -99,7 +80,7 @@ namespace BTreeVisualization
     /// <returns>A list of key-content pairs from the matching range in order of found.</returns>
     /// <exception cref="NullContentReferenceException">In the case that one of the key-content
     /// pairs would have a null for a value.</exception>
-    public override List<(int key, T content)> SearchKey(int key, int endKey)
+    public override List<(int key, T content)> SearchKeys(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       List<(int, T)> result = [];
@@ -197,7 +178,7 @@ namespace BTreeVisualization
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
       int i = Search(this, key);
-      if (i != -1)
+      if (i != -1 && _Keys[i] == key)
       {
         for (; i < _NumKeys; i++)
         {
@@ -212,6 +193,49 @@ namespace BTreeVisualization
       else
       {
         _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
+      }
+    }
+
+    public override void DeleteKeys(int key, int endKey)
+    {
+      _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
+      if (_Keys[0] < endKey)
+      {
+        int i = Search(this, key);
+        int endI = Search(this, endKey);
+        if (i != endI && i != -1)
+        {
+          int newNumKeys = _NumKeys - (endI - i);
+          if (newNumKeys > 0)
+          {
+            if (0 < endI)
+              for (; endI < _NumKeys; i++, endI++)
+              {
+                _Keys[i] = _Keys[endI];
+                _Contents[i] = _Contents[endI];
+              }
+            for (; i < _NumKeys; i++)
+            {
+              _Keys[i] = default;
+              _Contents[i] = default;
+            }
+            _NumKeys = newNumKeys;
+            _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          }
+          else
+          {
+            _NumKeys = 0;
+            _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          }
+        }
+        else
+        {
+          _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
+        }
+      }
+      else
+      {
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
       }
     }
 

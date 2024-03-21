@@ -17,7 +17,7 @@ namespace BTreeVisualization
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class Node<N, T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+  public abstract class Node<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Output Buffer for Status updates to be externally viewed.
@@ -40,56 +40,6 @@ namespace BTreeVisualization
     /// </summary>
     protected int[] _Keys = new int[2 * degree - 1];
 
-    /// <summary>
-    /// Find a key in this node or in its children.
-    /// </summary>
-    /// <param name="key">Integer to find in _Keys[].</param>
-    /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
-    public abstract (int key, T content)? SearchKey(int key);
-    /// <summary>
-    /// Searches for all keys equal to or greater than key and less than endKey.
-    /// </summary>
-    /// <param name="key">Lower bound inclusive.</param>
-    /// <param name="endKey">Upper bound exclusive.</param>
-    /// <returns>A list of key-content pairs from the matching range.</returns>
-    public abstract List<(int key, T content)> SearchKey(int key, int endKey);
-    /// <summary>
-    /// Split this node into two.
-    /// </summary>
-    /// <returns>The new node created from the split and the dividing key with
-    /// corresponding content as ((dividing Key, Content), new Node).</returns>
-    public abstract ((int, T), N) Split();
-    /// <summary>
-    /// Append the entry between this node and its sibiling.
-    /// Then append all the entries from the sibiling to this node.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
-    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
-    /// <param name="sibiling">Sibiling to right. (Sibiling's Keys should be
-    /// greater than all the keys in the called node.)</param>
-    public abstract void Merge(int dividerKey, T dividerData, N sibiling);
-    /// <summary>
-    /// This node appends its sibiling's left most entry to its own entries.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
-    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
-    /// <param name="sibiling">Sibiling to right. (Sibiling's Keys
-    /// should be greater than all the keys in the called node.)</param>
-    public abstract void GainsFromRight(int dividerKey, T dividerData, N sibiling);
-    /// <summary>
-    /// This node prepends its sibiling's left most entry to its own entries.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-22</remarks>
-    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
-    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
-    /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
-    /// smaller than all the keys in the called node.)</param>
-    public abstract void GainsFromLeft(int dividerKey, T dividerData, N sibiling);
     /// <summary>
     /// Removes the beginning entry of this node.
     /// </summary>
@@ -118,18 +68,6 @@ namespace BTreeVisualization
     {
       return _NumKeys < _Degree - 1;
     }
-    /// <summary>
-    /// Insert new entry to this node or one of its children.
-    /// Then recognize if a child split and adjust accordingly.
-    /// </summary>
-    /// <param name="key">Integer to be placed into _Keys[].</param>
-    /// <param name="data">Coresponding data to be stored in _Contents[]
-    /// at the same index as key in _Keys[].</param>
-    /// <returns>If this node reaches capacity it calls split and returns
-    /// the new node created from the split and the dividing key with
-    /// corresponding content as ((dividing Key, Content), new Node).
-    /// Otherwise it returns ((-1, null), null).</returns>
-    public abstract ((int, T?), N?) InsertKey(int key, T data);
 
     /// <summary>
     /// Delete an entry matching key from this node or child node.
@@ -137,15 +75,7 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
     public abstract void DeleteKey(int key);
-
-    /// <summary>
-    /// Retreive the right most entry of the right most leaf node of this node.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-23</remarks>
-    /// <returns>The key and corresponding content from the right
-    /// most leaf node below this node.</returns>
-    public abstract (int, T) ForfeitKey();
+    public abstract void DeleteKeys(int key, int endKey);
     /// <summary>
     /// Prints out this node and its children.
     /// </summary>
@@ -211,7 +141,7 @@ namespace BTreeVisualization
   /// <param name="degree">Same as parent node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<BTreeNode<T>, T>(degree, bufferBlock)
+  public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<T>(degree, bufferBlock)
   {
     /// <summary>
     /// Generic typed array parallel to the keys array.
@@ -225,6 +155,104 @@ namespace BTreeVisualization
     public T?[] Contents
     {
       get { return _Contents; }
+    }
+    /// <summary>
+    /// Split this node into two.
+    /// </summary>
+    /// <returns>The new node created from the split and the dividing key with
+    /// corresponding content as ((dividing Key, Content), new Node).</returns>
+    public abstract ((int, T), BTreeNode<T>) Split();
+    /// <summary>
+    /// Append the entry between this node and its sibiling.
+    /// Then append all the entries from the sibiling to this node.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-18</remarks>
+    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
+    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
+    /// <param name="sibiling">Sibiling to right. (Sibiling's Keys should be
+    /// greater than all the keys in the called node.)</param>
+    public abstract void Merge(int dividerKey, T dividerData, BTreeNode<T> sibiling);
+    /// <summary>
+    /// This node appends its sibiling's left most entry to its own entries.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-18</remarks>
+    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
+    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
+    /// <param name="sibiling">Sibiling to right. (Sibiling's Keys
+    /// should be greater than all the keys in the called node.)</param>
+    public abstract void GainsFromRight(int dividerKey, T dividerData, BTreeNode<T> sibiling);
+    /// <summary>
+    /// This node prepends its sibiling's left most entry to its own entries.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-22</remarks>
+    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
+    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
+    /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
+    /// smaller than all the keys in the called node.)</param>
+    public abstract void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling);
+    /// <summary>
+    /// Insert new entry to this node or one of its children.
+    /// Then recognize if a child split and adjust accordingly.
+    /// </summary>
+    /// <param name="key">Integer to be placed into _Keys[].</param>
+    /// <param name="data">Coresponding data to be stored in _Contents[]
+    /// at the same index as key in _Keys[].</param>
+    /// <returns>If this node reaches capacity it calls split and returns
+    /// the new node created from the split and the dividing key with
+    /// corresponding content as ((dividing Key, Content), new Node).
+    /// Otherwise it returns ((-1, null), null).</returns>
+    public abstract ((int, T?), BTreeNode<T>?) InsertKey(int key, T data);
+    /// <summary>
+    /// Retreive the right most entry of the right most leaf node of this node.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-23</remarks>
+    /// <returns>The key and corresponding content from the right
+    /// most leaf node below this node.</returns>
+    public abstract (int, T) ForfeitKey();
+    /// <summary>
+    /// Find a key in this node or in its children.
+    /// </summary>
+    /// <param name="key">Integer to find in _Keys[].</param>
+    /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
+    public abstract (int key, T content)? SearchKey(int key);
+    /// <summary>
+    /// Searches for all keys equal to or greater than key and less than endKey.
+    /// </summary>
+    /// <param name="key">Lower bound inclusive.</param>
+    /// <param name="endKey">Upper bound exclusive.</param>
+    /// <returns>A list of key-content pairs from the matching range.</returns>
+    public abstract List<(int key, T content)> SearchKeys(int key, int endKey);
+
+    /// <summary>
+    /// Iterates over the _Keys array to find key. If found returns the index else returns -1.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Integer to find in _Keys[] of this node.</param>
+    /// <returns>If found returns the index else returns -1.</returns>
+    static protected int Search(BTreeNode<T> node, int key)
+    {
+      if (node.NumKeys == 0)
+        return -1;
+      int firstIndex = 0;
+      int lastIndex = node.NumKeys - 1;
+      int midIndex = lastIndex / 2;
+      while (!((midIndex == 0 || node.Keys[midIndex - 1] < key) && node.Keys[midIndex] >= key) && firstIndex <= lastIndex)
+      {
+        midIndex = (firstIndex + lastIndex) / 2;
+        if (node.Keys[midIndex] < key)
+        {
+          firstIndex = midIndex + 1;
+        }
+        else
+        {
+          lastIndex = midIndex - 1;
+        }
+      }
+      return node.Keys[midIndex] >= key ? midIndex : -1;
     }
   }
 

@@ -113,8 +113,8 @@ namespace tests{
         /// </summary>
         /// <param name="insertions"></param>
         /// <param name="deletions"></param>
-        /// <param name="x"></param>
-        /// <param name="reversed"></param>
+        /// <param name="x">Overwrites the deletions array with auto filled in sequential order from 0 to x</param>
+        /// <param name="reversed">If x is greater than 0, reverses the array to x to 0.</param>
         #pragma warning disable CA1861 // Avoid constant arrays as arguments
         [TestCase(1,new int[] {1,0},0,false)]
         [TestCase(2,new int[] {1,3},0,false)]
@@ -155,7 +155,7 @@ namespace tests{
     /// Date: 2024-02-18
     /// Fills an array with a sequence from 0 to x or x to 0 if reversed.
     /// </summary>
-    /// <param name="x"></param>
+    /// <param name="x">Determines the length of array</param>
     /// <param name="reversed"></param>
     /// <returns></returns>
     private static int[] CreateInOrderArrayFilled(int x, bool reversed){

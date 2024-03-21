@@ -100,7 +100,7 @@ namespace BPlusTreeVisualization
     /// <returns>A list of key-content pairs from the matching range in order of found.</returns>
     /// <exception cref="NullContentReferenceException">In the case that one of the key-content
     /// pairs would have a null for a value.</exception>
-    public override List<(int key, T content)> SearchKey(int key, int endKey)
+    public override List<(int key, T content)> SearchKeys(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       List<(int, T)> result = [];
