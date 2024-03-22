@@ -264,6 +264,8 @@ namespace BTreeVisualization
       }
       return node.Keys[midIndex] >= key ? midIndex : -1;
     }
+
+    public abstract void ForfeitRange(int v, bool v1);
   }
 
   /// <summary>

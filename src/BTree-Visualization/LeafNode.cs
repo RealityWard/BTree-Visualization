@@ -237,12 +237,47 @@ namespace BTreeVisualization
       {
         _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
       }
-      if(_NumKeys == 1)
+      if (_NumKeys == 1)
         return NodeCondition.KeyAndNone;
-      else if(_NumKeys == 0)
+      else if (_NumKeys == 0)
         return NodeCondition.None;
       else
         return NodeCondition.Mergeable;
+    }
+
+    private (int?, T?, BTreeNode<T>?) MergeAndSplit(BTreeNode<T> sibiling)
+    {
+      if (_NumKeys + sibiling.NumKeys > 2 * _Degree - 2)
+      {
+        int midKeyIndex = (_NumKeys + sibiling.NumKeys - 1) / 2;
+        int diff = midKeyIndex + 1 - _NumKeys;
+        if (diff > 0)
+          sibiling.ForfeitRange(diff, true);
+        else if (diff < 0)
+          sibiling.AcceptRange(diff);
+        return (Keys[midKeyIndex], Contents[midKeyIndex], sibiling);
+      }
+      else
+      {
+        if (_NumKeys == 0)
+        {
+          return (null, default, sibiling);
+        }
+        else if (sibiling.NumKeys == 0)
+        {
+          return (null, default, null);
+        }
+        else
+        {
+          Merge(sibiling);
+          return (null, default, null);
+        }
+      }
+    }
+
+    public override void ForfeitRange(int diff, bool fromRight)
+    {
+      
     }
 
     /// <summary>
@@ -288,7 +323,7 @@ namespace BTreeVisualization
       _NumKeys += sibiling.NumKeys;
       _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
     }
-    
+
     public override void Merge(BTreeNode<T> sibiling)
     {
       for (int i = 0; i < sibiling.NumKeys; i++)
