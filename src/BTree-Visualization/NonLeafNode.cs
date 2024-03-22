@@ -396,6 +396,9 @@ namespace BTreeVisualization
         else
         {
           Merge(sibiling);
+          _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, NumKeys, Keys, Contents
+            , sibiling.ID, sibiling.NumKeys, sibiling.Keys, sibiling.Contents));
+          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, sibiling.ID, -1, [], [], 0, -1, [], []));
           return (null, default, null);
         }
       }
@@ -478,7 +481,6 @@ namespace BTreeVisualization
       }
       _Children[_NumKeys + sibiling.NumKeys] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
       _NumKeys += sibiling.NumKeys;
-      _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
     }
 
     /// <summary>

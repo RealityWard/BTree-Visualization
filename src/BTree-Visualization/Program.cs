@@ -25,6 +25,8 @@ namespace ThreadCommunication{
     /// In the case of duplicate key ID,-1,[],[].
     /// </summary>
     Inserted,
+    SplitInsert,
+    NewRoot,
     /// <summary>
     /// Sent once from the node split was called on. Alt refers to new sibiling node.
     /// ID,NumKeys,Keys,Contents,AltID,AltNumKeys,AltKeys,AltContents

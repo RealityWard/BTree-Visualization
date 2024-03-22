@@ -197,7 +197,7 @@ namespace BPlusTreeVisualization
       }
     }
 
-    public override NodeCondition? DeleteKeys(int key, int endKey)
+    public override bool DeleteKeys(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
       if (_Keys[_NumKeys - 1] > key && _Keys[0] < endKey && key <= endKey)
@@ -225,18 +225,13 @@ namespace BPlusTreeVisualization
           _NumKeys = 0;
           _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
         }
+        return true;
       }
       else
       {
         _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
-        return null;
+        return false;
       }
-      if (_NumKeys == 1)
-        return NodeCondition.KeyAndNone;
-      else if (_NumKeys == 0)
-        return NodeCondition.None;
-      else
-        return NodeCondition.Mergeable;
     }
 
     /// <summary>
