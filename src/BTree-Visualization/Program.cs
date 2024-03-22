@@ -56,6 +56,10 @@ namespace ThreadCommunication{
     /// </summary>
     DeletedRange,
     /// <summary>
+    /// Sent during DeleteRange when tail children of the range are rebalanced.
+    /// </summary>
+    Rebalanced,
+    /// <summary>
     /// Sent everytime ForfeitKey is called on a node. Only ID sent.
     /// </summary>
     FSearching,

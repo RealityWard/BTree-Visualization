@@ -325,12 +325,26 @@ namespace BTreeVisualization
         (int?, T?, BTreeNode<T>?) merged = ((NonLeafNode<T>)_Children[firstKeyIndex]).MergeAndSplit(_Children[lastIndex]);
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning restore CS8604 // Possible null reference argument.
-        _Children[firstKeyIndex] = merged.Item3;
         if (merged.Item1 != null)
         {
           _Keys[firstKeyIndex] = (int)merged.Item1;
           _Contents[firstKeyIndex] = merged.Item2;
+          _Children[lastIndex] = merged.Item3;
+          asdf(firstKeyIndex + 1, lastIndex);
         }
+        else if (merged.Item3 != null)
+        {
+          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, _Children[firstKeyIndex].ID, -1, [], [], 0, -1, [], []));
+          _Children[lastIndex] = merged.Item3;
+          asdf(firstKeyIndex, lastIndex);
+        }
+        else
+        {
+          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, _Children[lastIndex].ID, -1, [], [], 0, -1, [], []));
+          _Children[lastIndex] = _Children[firstKeyIndex];
+          asdf(firstKeyIndex, lastIndex);
+        }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
         throw new NotImplementedException();
       }
       else
@@ -363,8 +377,10 @@ namespace BTreeVisualization
             _Contents[i] = default;
           }
         }
-        _NumKeys += diff;
-        return (Keys[_NumKeys], Contents[_NumKeys--], sibiling);
+        _NumKeys += diff - 1;
+        _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, NumKeys, Keys, Contents
+          , sibiling.ID, sibiling.NumKeys, sibiling.Keys, sibiling.Contents));
+        return (Keys[_NumKeys+1], Contents[_NumKeys+1], sibiling);
       }
       else
       {// Not enough keys for two nodes
