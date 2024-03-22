@@ -55,6 +55,7 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
     public abstract void LosesToLeft();
+    public abstract void LosesToLeft(int diff);
     /// <summary>
     /// Removes the last entry of this node.
     /// </summary>
@@ -203,6 +204,7 @@ namespace BTreeVisualization
     /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
     /// smaller than all the keys in the called node.)</param>
     public abstract void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling);
+    public abstract void GainsFromLeft(int diff, BTreeNode<T> sibiling);
     /// <summary>
     /// Insert new entry to this node or one of its children.
     /// Then recognize if a child split and adjust accordingly.
@@ -264,8 +266,6 @@ namespace BTreeVisualization
       }
       return node.Keys[midIndex] >= key ? midIndex : -1;
     }
-
-    public abstract void ForfeitRange(int v, bool v1);
   }
 
   /// <summary>

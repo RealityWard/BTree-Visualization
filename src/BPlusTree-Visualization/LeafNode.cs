@@ -48,25 +48,6 @@ namespace BPlusTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Iterates over the _Keys array to find key. If found returns the index else returns -1.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson</remarks>
-    /// <param name="key">Integer to find in _Keys[] of this node.</param>
-    /// <returns>If found returns the index else returns -1.</returns>
-    static private int Search(LeafNode<T> node, int key)
-    {
-      for (int i = 0; i < node.NumKeys; i++)
-      {
-        if (node.Keys[i] == key)
-        {
-          return i;
-        }
-      }
-      return -1;
-    }
-
-    /// <summary>
     /// Iterates over the _Keys array to find key. If found returns the
     /// index and this else returns -1 and this.
     /// </summary>
@@ -78,7 +59,7 @@ namespace BPlusTreeVisualization
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       int result = Search(this, key);
-      if (result != -1)
+      if (result != -1 && _Keys[result] == key)
       {
         _BufferBlock.SendAsync((NodeStatus.Found, ID, result, [key], [Contents[result]], 0, -1, [], []));
         return (result, Contents[result] ?? throw new NullContentReferenceException(
@@ -198,7 +179,7 @@ namespace BPlusTreeVisualization
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
       int i = Search(this, key);
-      if (i != -1)
+      if (i != -1 && _Keys[i] == key)
       {
         for (; i < _NumKeys; i++)
         {
@@ -210,7 +191,52 @@ namespace BPlusTreeVisualization
         _Contents[_NumKeys] = default;
         _BufferBlock.SendAsync((NodeStatus.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
       }
-      _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
+      else
+      {
+        _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
+      }
+    }
+
+    public override NodeCondition? DeleteKeys(int key, int endKey)
+    {
+      _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
+      if (_Keys[_NumKeys - 1] > key && _Keys[0] < endKey && key <= endKey)
+      {
+        int firstKeyIndex = Search(this, key);
+        int lastIndex = Search(this, endKey);
+        if (lastIndex > 0)
+        {
+          for (; lastIndex < _NumKeys; firstKeyIndex++, lastIndex++)
+          {
+            _Keys[firstKeyIndex] = _Keys[lastIndex];
+            _Contents[firstKeyIndex] = _Contents[lastIndex];
+          }
+          int temp = firstKeyIndex;
+          for (; firstKeyIndex < _NumKeys; firstKeyIndex++)
+          {
+            _Keys[firstKeyIndex] = default;
+            _Contents[firstKeyIndex] = default;
+          }
+          _NumKeys = temp;
+          _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+        }
+        else
+        {
+          _NumKeys = 0;
+          _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+        }
+      }
+      else
+      {
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
+        return null;
+      }
+      if (_NumKeys == 1)
+        return NodeCondition.KeyAndNone;
+      else if (_NumKeys == 0)
+        return NodeCondition.None;
+      else
+        return NodeCondition.Mergeable;
     }
 
     /// <summary>
@@ -222,6 +248,7 @@ namespace BPlusTreeVisualization
     /// <returns>Tuple of Key and corresponding content.</returns>
     public override (int, T) ForfeitKey()
     {
+      _BufferBlock.SendAsync((NodeStatus.FSearching, ID, -1, [], [], 0, -1, [], []));
       _NumKeys--;
       (int, T) keyToBeLost = (_Keys[_NumKeys], _Contents[_NumKeys]
         ?? throw new NullContentReferenceException(
@@ -247,6 +274,17 @@ namespace BPlusTreeVisualization
       _Keys[_NumKeys] = dividerKey;
       _Contents[_NumKeys] = dividerData;
       _NumKeys++;
+      for (int i = 0; i < sibiling.NumKeys; i++)
+      {
+        _Keys[_NumKeys + i] = sibiling.Keys[i];
+        _Contents[_NumKeys + i] = sibiling.Contents[i];
+      }
+      _NumKeys += sibiling.NumKeys;
+      _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
+    }
+
+    public override void Merge(BTreeNode<T> sibiling)
+    {
       for (int i = 0; i < sibiling.NumKeys; i++)
       {
         _Keys[_NumKeys + i] = sibiling.Keys[i];
@@ -290,6 +328,22 @@ namespace BPlusTreeVisualization
       _Contents[_NumKeys] = default;
     }
 
+    public override void LosesToLeft(int diff)
+    {
+      int i = 0;
+      for (; diff < _NumKeys - 1; i++, diff++)
+      {
+        _Keys[i] = _Keys[diff];
+        _Contents[i] = _Contents[diff];
+      }
+      _NumKeys -= diff;
+      for (; i < _NumKeys - 1; i++)
+      {
+        _Keys[i] = default;
+        _Contents[i] = default;
+      }
+    }
+
     /// <summary>
     /// Inserts at the beginning of this node arrays the 
     /// given key and data.
@@ -310,6 +364,21 @@ namespace BPlusTreeVisualization
       _NumKeys++;
       _Keys[0] = dividerKey;
       _Contents[0] = dividerData;
+    }
+
+    public override void GainsFromLeft(int diff, BTreeNode<T> sibiling)
+    {
+      for (int i = _NumKeys - 1; i >= 0; i--)
+      {
+        _Keys[i + diff] = _Keys[i];
+        _Contents[i + diff] = _Contents[i];
+      }
+      _NumKeys += diff;
+      for (int j = sibiling.NumKeys - 1, i = 0; i < diff; i++, j++)
+      {
+        _Keys[i] = sibiling.Keys[j];
+        _Contents[i] = sibiling.Contents[j];
+      }
     }
 
     /// <summary>
