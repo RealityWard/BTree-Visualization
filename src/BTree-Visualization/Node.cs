@@ -85,7 +85,7 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
     public abstract void DeleteKey(int key);
-    public abstract NodeCondition? DeleteKeys(int key, int endKey);
+    public abstract bool DeleteKeys(int key, int endKey);
     /// <summary>
     /// Prints out this node and its children.
     /// </summary>
