@@ -46,9 +46,9 @@
             btnInsert.BorderSize = 0;
             btnInsert.FlatAppearance.BorderSize = 0;
             btnInsert.FlatStyle = FlatStyle.Flat;
-            btnInsert.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            btnInsert.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnInsert.ForeColor = Color.White;
-            btnInsert.Location = new Point(130, 901);
+            btnInsert.Location = new Point(719, 896);
             btnInsert.Name = "btnInsert";
             btnInsert.Size = new Size(150, 40);
             btnInsert.TabIndex = 0;
@@ -66,9 +66,9 @@
             btnDelete.BorderSize = 0;
             btnDelete.FlatAppearance.BorderSize = 0;
             btnDelete.FlatStyle = FlatStyle.Flat;
-            btnDelete.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            btnDelete.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnDelete.ForeColor = Color.White;
-            btnDelete.Location = new Point(286, 901);
+            btnDelete.Location = new Point(875, 896);
             btnDelete.Name = "btnDelete";
             btnDelete.Size = new Size(150, 40);
             btnDelete.TabIndex = 1;
@@ -86,9 +86,9 @@
             btnSearch.BorderSize = 0;
             btnSearch.FlatAppearance.BorderSize = 0;
             btnSearch.FlatStyle = FlatStyle.Flat;
-            btnSearch.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            btnSearch.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnSearch.ForeColor = Color.White;
-            btnSearch.Location = new Point(442, 901);
+            btnSearch.Location = new Point(1031, 896);
             btnSearch.Name = "btnSearch";
             btnSearch.Size = new Size(150, 40);
             btnSearch.TabIndex = 2;
@@ -106,9 +106,9 @@
             btnclear.BorderSize = 0;
             btnclear.FlatAppearance.BorderSize = 0;
             btnclear.FlatStyle = FlatStyle.Flat;
-            btnclear.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            btnclear.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnclear.ForeColor = Color.White;
-            btnclear.Location = new Point(598, 901);
+            btnclear.Location = new Point(1187, 896);
             btnclear.Name = "btnclear";
             btnclear.Size = new Size(150, 40);
             btnclear.TabIndex = 3;
@@ -120,31 +120,33 @@
             // cmbxMaxDegree
             // 
             cmbxMaxDegree.BackColor = Color.MediumSlateBlue;
-            cmbxMaxDegree.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            cmbxMaxDegree.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             cmbxMaxDegree.ForeColor = SystemColors.Window;
             cmbxMaxDegree.FormattingEnabled = true;
             cmbxMaxDegree.Items.AddRange(new object[] { "3", "4", "5", "6", "7" });
-            cmbxMaxDegree.Location = new Point(754, 907);
+            cmbxMaxDegree.Location = new Point(1343, 902);
             cmbxMaxDegree.Name = "cmbxMaxDegree";
             cmbxMaxDegree.Size = new Size(130, 30);
             cmbxMaxDegree.TabIndex = 4;
             cmbxMaxDegree.Text = "max degree";
-            cmbxMaxDegree.SelectedIndexChanged += cmbxMaxDegree_SelectedIndexChanged;
             // 
             // txtInputData
             // 
-            txtInputData.Location = new Point(12, 912);
+            txtInputData.Location = new Point(506, 907);
             txtInputData.Name = "txtInputData";
-            txtInputData.Size = new Size(100, 23);
+            txtInputData.Size = new Size(195, 23);
             txtInputData.TabIndex = 5;
-            txtInputData.Text = "Insert data here";
+            txtInputData.Text = "Insert Data Here...";
+            txtInputData.Enter += txt_txtInputData_Enter;
+            txtInputData.Leave += txt_txtInputData_Leave;
             // 
             // panel1
             // 
             panel1.AutoScroll = true;
+            panel1.BackColor = SystemColors.ControlDarkDark;
             panel1.Location = new Point(12, 12);
             panel1.Name = "panel1";
-            panel1.Size = new Size(1015, 883);
+            panel1.Size = new Size(2063, 883);
             panel1.TabIndex = 6;
             panel1.Paint += panel1_Paint;
             // 
@@ -152,7 +154,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1039, 947);
+            ClientSize = new Size(2087, 947);
             Controls.Add(panel1);
             Controls.Add(txtInputData);
             Controls.Add(cmbxMaxDegree);

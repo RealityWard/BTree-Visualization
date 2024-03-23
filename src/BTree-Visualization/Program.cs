@@ -20,21 +20,42 @@ namespace ThreadCommunication{
     /// </summary>
     ISearching,
     /// <summary>
-    /// Sent once an insert to node occurs thus incrementing the NumKeys attribute. 
+    /// Sent once on an insert to a leaf node occurs thus incrementing the NumKeys attribute. 
     /// ID,NumKeys,Keys,Contents of altered node sent.
     /// In the case of duplicate key ID,-1,[],[].
     /// </summary>
     Inserted,
     /// <summary>
-    /// Sent once from the node split was called on. Alt refers to new sibiling node.
-    /// ID,NumKeys,Keys,Contents,AltID,AltNumKeys,AltKeys,AltContents
-    /// All values will be sent to update existing node and create sibiling node.
+    /// Sent once on an insert to a non-leaf node occurs thus incrementing the NumKeys attribute. 
+    /// ID,NumKeys,Keys,Contents of altered node sent.
+    /// In the case of duplicate key ID,-1,[],[].
+    /// </summary>
+    SplitInsert,
+    /// <summary>
+    /// Sent once the root node splits, indicating a new root node. 
+    /// ID,NumKeys,Keys,Contents of root sent.
+    /// Followed by two shifts for both children.
+    /// </summary>
+    NewRoot,
+    /// <summary>
+    /// Sent once from the node split was called on. Just an ID to know what node is splitting.
+    /// ID,-1,[],[]
     /// </summary>
     Split,
+    /// <summary>
+    /// Sent twice. Once for the node being split and once for the node created.
+    /// Alt refers to the parent node.
+    /// ID,NumKeys,Keys,Contents,AltID
+    /// </summary>
+    SplitResult,
     /// <summary>
     /// Initial response to Delete TreeCommand. Nothing else sent.
     /// </summary>
     Delete,
+    /// <summary>
+    /// Initial response to DeleteRange TreeCommand. Nothing else sent.
+    /// </summary>
+    DeleteRange,
     /// <summary>
     /// Sent everytime DeleteKey is called on a node. Only ID sent.
     /// </summary>
@@ -45,6 +66,16 @@ namespace ThreadCommunication{
     /// ID,-1,[],[] in the case of not found.
     /// </summary>
     Deleted,
+    /// <summary>
+    /// Sent each time "TBD"
+    /// ID,NumKeys,Keys,Contents of altered node sent.
+    /// ID,-1,[],[] in the case of not found.
+    /// </summary>
+    DeletedRange,
+    /// <summary>
+    /// Sent during DeleteRange when tail children of the range are rebalanced.
+    /// </summary>
+    Rebalanced,
     /// <summary>
     /// Sent everytime ForfeitKey is called on a node. Only ID sent.
     /// </summary>
@@ -109,6 +140,13 @@ namespace ThreadCommunication{
     /// </summary>
     FoundRange,
     /// <summary>
+    /// Sent if the node had nothing left
+    /// during a delete over a range of keys.
+    /// Just the ID of the one being deleted.
+    /// ID,-1,[],[]
+    /// </summary>
+    NodeDeleted,
+    /// <summary>
     /// Sent to close/complete the buffer and as a result
     /// terminate the thread using this buffer.
     /// </summary>
@@ -134,6 +172,11 @@ namespace ThreadCommunication{
     /// within the tree.
     /// </summary>
     Delete,
+    /// <summary>
+    /// Delete a range of keys and the corresponding content
+    /// within the tree.
+    /// </summary>
+    DeleteRange,
     /// <summary>
     /// Search for key within the tree.
     /// </summary>

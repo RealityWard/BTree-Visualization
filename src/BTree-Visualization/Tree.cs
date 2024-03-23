@@ -44,7 +44,7 @@ namespace BTreeVisualization
     {
       _Root = new NonLeafNode<T>(_Degree, [rNode.Item1.Item1], [rNode.Item1.Item2]
         , [_Root, rNode.Item2], _BufferBlock);
-      _BufferBlock.SendAsync((NodeStatus.Inserted, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.NewRoot, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
       _BufferBlock.SendAsync((NodeStatus.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[0]
         ?? throw new NullChildReferenceException($"Child of new root node at index:0")).ID, -1, [], []));
       _BufferBlock.SendAsync((NodeStatus.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[1]
@@ -69,7 +69,7 @@ namespace BTreeVisualization
         if (key == 0)
           zeroKeyUsed = true;
         _BufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [key], [data], 0, -1, [], []));
-        ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data);
+        ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data, 0);
         if (result.Item2 != null && result.Item1.Item2 != null)
         {
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
@@ -140,7 +140,7 @@ namespace BTreeVisualization
     public List<(int key, T content)> Search(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
-      List<(int key, T value)> result = _Root.SearchKey(key, endKey);
+      List<(int key, T value)> result = _Root.SearchKeys(key, endKey);
       if (result.Count > 0)
       {
         int[] keys = new int[result.Count];
