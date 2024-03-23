@@ -20,11 +20,16 @@ namespace ThreadCommunication{
     /// </summary>
     ISearching,
     /// <summary>
-    /// Sent once an insert to node occurs thus incrementing the NumKeys attribute. 
+    /// Sent once on an insert to a leaf node occurs thus incrementing the NumKeys attribute. 
     /// ID,NumKeys,Keys,Contents of altered node sent.
     /// In the case of duplicate key ID,-1,[],[].
     /// </summary>
     Inserted,
+    /// <summary>
+    /// Sent once on an insert to a non-leaf node occurs thus incrementing the NumKeys attribute. 
+    /// ID,NumKeys,Keys,Contents of altered node sent.
+    /// In the case of duplicate key ID,-1,[],[].
+    /// </summary>
     SplitInsert,
     /// <summary>
     /// Sent once the root node splits, indicating a new root node. 
@@ -33,11 +38,15 @@ namespace ThreadCommunication{
     /// </summary>
     NewRoot,
     /// <summary>
-    /// Sent once from the node split was called on. Alt refers to new sibiling node.
-    /// ID,NumKeys,Keys,Contents,AltID,AltNumKeys,AltKeys,AltContents
-    /// All values will be sent to update existing node and create sibiling node.
+    /// Sent once from the node split was called on. Just an ID to know what node is splitting.
+    /// ID,-1,[],[]
     /// </summary>
     Split,
+    /// <summary>
+    /// Sent twice. Once for the node being split and once for the node created.
+    /// Alt refers to the parent node.
+    /// ID,NumKeys,Keys,Contents,AltID
+    /// </summary>
     SplitResult,
     /// <summary>
     /// Initial response to Delete TreeCommand. Nothing else sent.
