@@ -52,13 +52,13 @@ namespace BTreeVisualization
     /// <param name="key">Lower bound inclusive.</param>
     /// <param name="endKey">Upper bound exclusive.</param>
     /// <returns>A list of key-content pairs from the matching range.</returns>
-    public abstract List<(int key, T content)> SearchKey(int key, int endKey);
+    public abstract List<(int key, T content)> SearchKeys(int key, int endKey);
     /// <summary>
     /// Split this node into two.
     /// </summary>
     /// <returns>The new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).</returns>
-    public abstract ((int, T), N) Split();
+    public abstract ((int, T), N) Split(long parentID);
     /// <summary>
     /// Append the entry between this node and its sibiling.
     /// Then append all the entries from the sibiling to this node.
@@ -129,7 +129,7 @@ namespace BTreeVisualization
     /// the new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).
     /// Otherwise it returns ((-1, null), null).</returns>
-    public abstract ((int, T?), N?) InsertKey(int key, T data);
+    public abstract ((int, T?), N?) InsertKey(int key, T data, long parentID);
 
     /// <summary>
     /// Delete an entry matching key from this node or child node.

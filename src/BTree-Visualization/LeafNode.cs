@@ -99,7 +99,7 @@ namespace BTreeVisualization
     /// <returns>A list of key-content pairs from the matching range in order of found.</returns>
     /// <exception cref="NullContentReferenceException">In the case that one of the key-content
     /// pairs would have a null for a value.</exception>
-    public override List<(int key, T content)> SearchKey(int key, int endKey)
+    public override List<(int key, T content)> SearchKeys(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       List<(int, T)> result = [];
@@ -121,8 +121,9 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <returns>The new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).</returns>
-    public override ((int, T), BTreeNode<T>) Split()
+    public override ((int, T), BTreeNode<T>) Split(long parentID)
     {
+      _BufferBlock.SendAsync((NodeStatus.Split, ID, -1, [], [], 0, -1, [], []));
       int[] newKeys = new int[_Degree - 1];
       T[] newContent = new T[_Degree - 1];
       for (int i = 0; i < _Degree - 1; i++)
@@ -136,13 +137,15 @@ namespace BTreeVisualization
       }
       _NumKeys = _Degree - 1;
       LeafNode<T> newNode = new(_Degree, newKeys, newContent, _BufferBlock);
-      _BufferBlock.SendAsync((NodeStatus.Split, ID, NumKeys, Keys, Contents, newNode.ID,
-                          newNode.NumKeys, newNode.Keys, newNode.Contents));
       (int, T) dividerEntry = (_Keys[_NumKeys], _Contents[_NumKeys]
         ?? throw new NullContentReferenceException(
           $"Content at index:{NumKeys} within node:{ID}"));
       _Keys[_NumKeys] = default;
       _Contents[_NumKeys] = default;
+      _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, NumKeys, Keys, Contents,
+        parentID, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID, newNode.NumKeys,
+        newNode.Keys, newNode.Contents, parentID, -1, [], []));
       return (dividerEntry, newNode);
     }
 
@@ -158,7 +161,7 @@ namespace BTreeVisualization
     /// the new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).
     /// Otherwise it returns ((-1, null), null).</returns>
-    public override ((int, T?), BTreeNode<T>?) InsertKey(int key, T data)
+    public override ((int, T?), BTreeNode<T>?) InsertKey(int key, T data, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.ISearching, ID, -1, [], [], 0, -1, [], []));
       int i = 0;
@@ -177,7 +180,7 @@ namespace BTreeVisualization
         _BufferBlock.SendAsync((NodeStatus.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
         if (IsFull())
         {
-          return Split();
+          return Split(parentID);
         }
       }
       else
