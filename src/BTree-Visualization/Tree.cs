@@ -139,7 +139,7 @@ namespace BTreeVisualization
     /// <returns>A list of key-value pairs from the matching range in order of found.</returns>
     public List<(int key, T content)> Search(int key, int endKey)
     {
-      _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.SearchRange, 0, -1, [], [], 0, -1, [], []));
       List<(int key, T value)> result = _Root.SearchKeys(key, endKey);
       if (result.Count > 0)
       {
