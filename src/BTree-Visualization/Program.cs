@@ -25,8 +25,6 @@ namespace ThreadCommunication{
     /// In the case of duplicate key ID,-1,[],[].
     /// </summary>
     Inserted,
-    SplitInsert,
-    NewRoot,
     /// <summary>
     /// Sent once on an insert to a non-leaf node occurs thus incrementing the NumKeys attribute. 
     /// ID,NumKeys,Keys,Contents of altered node sent.
