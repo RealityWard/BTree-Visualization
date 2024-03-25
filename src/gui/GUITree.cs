@@ -14,10 +14,10 @@ namespace B_TreeVisualizationGUI
     internal class GUITree
     {
         public GUINode root;
-        public float centerx, centery;
+        public float centerx = 0, centery = 0;
         private Panel displayPanel;
         private float nodeSpacing = 10;
-        private List<float> leafStart; // Useful for figuring out the position of leaves
+        private List<float> leafStart = new List<float>(); // Useful for figuring out the position of leaves
 
         public GUITree(GUINode root, Panel displayPanel)
         {
@@ -32,47 +32,47 @@ namespace B_TreeVisualizationGUI
         }
 
         // Displays the tree on Panel1
-        public void DrawTree(Graphics graphics, GUINode currentNode, float centerX, float x, float y, float subtreeWidth, Dictionary<int, int> depthNodesDrawn, int depth = 0)
+        public void DrawTree(Graphics graphics, GUINode currentNode, float centerX, float x, float y, float subtreeWidth, Dictionary<int, int> heightNodesDrawn, int height)
         {
             if (currentNode == null) return; // Null check
 
             var pen = new Pen(Color.MediumSlateBlue, 2); // Pen for drawing
 
-            // Ensures current depth is initialized in the dictionary 
-            if (!depthNodesDrawn.ContainsKey(depth))
+            // Ensures current height is initialized in the dictionary 
+            if (!heightNodesDrawn.ContainsKey(height))
             {
-                depthNodesDrawn.Add(depth, 0);
+                heightNodesDrawn.Add(height, 0);
             }
 
             currentNode.DisplayNode(graphics, x, y); // Draw the current node
 
-            depthNodesDrawn[depth]++; // Increases the number of nodes drawn at the current depth
+            heightNodesDrawn[height]++; // Increases the number of nodes drawn at the current height
 
             // Recursively draw child nodes if this is not a leaf
             if (currentNode.Children != null && currentNode.NumKeys > 0)
             {
-                depth++; // Increase depth since we are going deeper into the tree
+                height--; // Decrease height since we are going deeper into the tree
 
-                // Initialize new depth
-                if (!depthNodesDrawn.ContainsKey(depth))
+                // Initialize new height
+                if (!heightNodesDrawn.ContainsKey(height))
                 {
-                    depthNodesDrawn.Add(depth, 0);
+                    heightNodesDrawn.Add(height, 0);
                 }
                 float leftX = centerX - subtreeWidth / 2; // Calculate left x-coordinate of the tree
 
                 float nodeSlot; // Initialize nodeSlot aka, the space that a node is going to be centered in
 
-                for (int i = 0; i < currentNode.Children.Length; i++)
+                for (int i = 0; i < currentNode.Children.Count; i++)
                 {
-                    GUINode childNode = i < currentNode.Children.Length ? currentNode.Children[i] : null; // FIX LATER
+                    GUINode? childNode = i < currentNode.Children.Count ? currentNode.Children[i] : null; // null fixed?
 
                     float childX = 0; // Initialize horizontal spacing, aka center of the node's slot
 
                     // If node is a leaf, calculates custom node slot, if not, divides subtreeWdith in equal parts
-                    if (childNode.IsLeaf || childNode.Children == null)
+                    if (childNode?.IsLeaf == true || childNode?.Children == null) //null fixed?
                     {
                         //nodeSlot = childNode.NodeWidth + nodeSpacing;
-                        if (leafStart.Count > 0)
+                        if (leafStart.Count > 0 && childNode != null)
                         {
                             childX = leftX + leafStart[0] + (childNode.NodeWidth / 2) + 5;
                             leafStart.RemoveAt(0);
@@ -80,15 +80,15 @@ namespace B_TreeVisualizationGUI
                     }
                     else
                     {
-                        nodeSlot = (subtreeWidth / GetNodesAtDepth(currentNode.Depth + 1).Count);
-                        childX = leftX + (depthNodesDrawn[depth] * nodeSlot) + nodeSlot / 2;
+                        nodeSlot = (subtreeWidth / GetNodesAtHeight(currentNode.height + 1).Count);
+                        childX = leftX + (heightNodesDrawn[height] * nodeSlot) + nodeSlot / 2;
                     }
 
                     float childY = y + currentNode.NodeHeight + 50; // Vertical spacing: FIX LATER
 
                     if (childNode != null)
                     {
-                        DrawTree(graphics, childNode, centerX, childX, childY, subtreeWidth, depthNodesDrawn, depth); // Draw the child subtree
+                        DrawTree(graphics, childNode, centerX, childX, childY, subtreeWidth, heightNodesDrawn, height); // Draw the child subtree
                         graphics.DrawLine(pen, x, y + currentNode.NodeHeight, childX, childY); // Draw line from parent to child
                     }
                 }
@@ -100,7 +100,7 @@ namespace B_TreeVisualizationGUI
         {
             List<float> leafStart = new List<float>(); // Initialized the leafStart List
             float start = 0; // Adds the first float, since the leftmost leaf's slot will start at 0
-            List<GUINode> leafList = GetNodesAtDepth(root.FindDepthOfFirstLeaf());
+            List<GUINode> leafList = GetNodesAtHeight(0);
             leafStart.Add(0);
             for (int i = 0; i < leafList.Count; i++)
             {
@@ -122,7 +122,7 @@ namespace B_TreeVisualizationGUI
             float width = 0;
 
             // Loop through each child node
-            for (int i = 0; i < node.Children.Length; i++)
+            for (int i = 0; i < node.Children.Count; i++)
             {
                 if (node.Children[i] != null)
                 {
@@ -132,38 +132,40 @@ namespace B_TreeVisualizationGUI
             }
 
             // Add the total width of children to the width of the node
-            width += (node.Children.Length - 1) * nodeSpacing; // Add spacing between child nodes
+            width += (node.Children.Count - 1) * nodeSpacing; // Add spacing between child nodes
 
             // Ensures that the width is at least as wide as the node itself to maintain the tree structure
             return Math.Max(width, node.NodeWidth);
         }
 
-        // Calculates the nodes at a certain depth
-        public List<GUINode> GetNodesAtDepth(int targetDepth)
+        // Calculates the nodes at a certain height
+        public List<GUINode> GetNodesAtHeight(int targetHeight)
         {
-            List<GUINode> nodesAtDepth = new List<GUINode>();
-            Traverse(root, 0, targetDepth, nodesAtDepth);
-            return nodesAtDepth;
+            List<GUINode> nodesAtHeight = new List<GUINode>();
+            Traverse(root, root.height, targetHeight, nodesAtHeight);
+            return nodesAtHeight;
         }
 
         // Traverses through the tree
-        private void Traverse(GUINode node, int currentDepth, int targetDepth, List<GUINode> nodesAtDepth)
+        private void Traverse(GUINode node, int currentHeight, int targetHeight, List<GUINode> nodesAtHeight)
         {
             if (node == null)
             {
                 return;
             }
 
-            if (currentDepth == targetDepth)
+            if (currentHeight == targetHeight)
             {
-                nodesAtDepth.Add(node);
+                nodesAtHeight.Add(node);
                 return;
             }
-
-            // Increment depth and traverse child nodes
-            for (int i = 0; i < node.Children.Count(); i++)
+            if (node.Children != null) 
             {
-                Traverse(node.Children[i], currentDepth + 1, targetDepth, nodesAtDepth);
+                // Decrement height and traverse child nodes
+                for (int i = 0; i < node.Children.Count(); i++)
+                {
+                    Traverse(node.Children[i], currentHeight - 1, targetHeight, nodesAtHeight);
+                }
             }
         }
     }

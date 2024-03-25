@@ -35,6 +35,7 @@
             cmbxMaxDegree = new ComboBox();
             txtInputData = new TextBox();
             panel1 = new Panel();
+            chkDebugMode = new CheckBox();
             SuspendLayout();
             // 
             // btnInsert
@@ -150,11 +151,22 @@
             panel1.TabIndex = 6;
             panel1.Paint += panel1_Paint;
             // 
+            // chkDebugMode
+            // 
+            chkDebugMode.AutoSize = true;
+            chkDebugMode.Location = new Point(1492, 909);
+            chkDebugMode.Name = "chkDebugMode";
+            chkDebugMode.Size = new Size(95, 19);
+            chkDebugMode.TabIndex = 7;
+            chkDebugMode.Text = "Debug Mode";
+            chkDebugMode.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(2087, 947);
+            Controls.Add(chkDebugMode);
             Controls.Add(panel1);
             Controls.Add(txtInputData);
             Controls.Add(cmbxMaxDegree);
@@ -178,5 +190,6 @@
         private ComboBox cmbxMaxDegree;
         private TextBox txtInputData;
         private Panel panel1;
+        private CheckBox chkDebugMode;
     }
 }

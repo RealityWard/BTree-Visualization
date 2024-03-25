@@ -12,15 +12,15 @@ namespace B_TreeVisualizationGUI
     internal class GUINode
     {
         public int[] Keys { get; set; }
-        public GUINode[] Children { get; set; }
+        public List<GUINode> Children { get; set; }
         public bool IsLeaf { get; set; }
         public bool IsRoot { get; set; }
         public int NumKeys { get; set; }
         public float NodeWidth, NodeHeight;
-        public int Depth { get; set; }
+        public int height { get; set; }
 
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-    public GUINode(int[] keys, bool isLeaf, bool IsRoot, int Depth, int NumKeys, GUINode[] children = null)
+    public GUINode(int[] keys, bool isLeaf, bool IsRoot, int height, int NumKeys, List<GUINode> children = null)
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
     {
             Keys = keys;
@@ -28,7 +28,7 @@ namespace B_TreeVisualizationGUI
             IsLeaf = isLeaf;
             this.IsRoot = IsRoot;
             this.NumKeys = NumKeys;
-            this.Depth = Depth;
+            this.height = height;
 
             // Calculate node width based on keys
             NodeWidth = 40 * NumKeys;
@@ -53,7 +53,7 @@ namespace B_TreeVisualizationGUI
         }
 
         // Finds the depth of the first leaf node it finds starting from the root
-        public int FindDepthOfFirstLeaf()
+        /*public int FindDepthOfFirstLeaf()
         {
             return FindDepthOfFirstLeafHelper(this);
         }
@@ -63,7 +63,7 @@ namespace B_TreeVisualizationGUI
         {
             if (node.IsLeaf)
             {
-                return node.Depth;
+                return node.height;
             }
 
             if (node.Children != null)
@@ -77,12 +77,16 @@ namespace B_TreeVisualizationGUI
             }
 
             return -1; // Leaf not found in this subtree
-        }
+        }*/
 
         public void DisplayNode(Graphics graphics, float x, float y)
         {
             // Brushes
             var pen = new Pen(Color.MediumSlateBlue, 2);
+            if (IsLeaf)
+            {
+                pen = new Pen(Color.Green, 2);
+            }
             var brush = new SolidBrush(Color.LightGray);
             var textBrush = new SolidBrush(Color.Black);
             var font = new Font("Consolas", 8);
@@ -104,6 +108,13 @@ namespace B_TreeVisualizationGUI
                 float textY = y + (NodeHeight - textSize.Height) / 2; // Center text vertically within the node
                 graphics.DrawString(keyString, font, textBrush, textX, textY);
             }
+        }
+
+        // Added by Dakota, allows the delete method to resize the nodes since node width is generated
+        // when the node is initialized.
+        public void UpdateNodeWidth()
+        {
+            NodeWidth = 40 * NumKeys; // Adjust this formula as needed
         }
     }
 }
