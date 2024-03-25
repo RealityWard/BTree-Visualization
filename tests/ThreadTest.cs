@@ -190,6 +190,9 @@ namespace ThreadTesting
           case TreeCommand.Delete:
             _Tree.Delete(_InputBufferHistory.Last().key);
             break;
+          case TreeCommand.DeleteRange:
+            _Tree.DeleteRange(_InputBufferHistory.Last().key, _InputBufferHistory.Last().endKey);
+            break;
           case TreeCommand.Search:
             _Tree.Search(_InputBufferHistory.Last().key);
             break;
@@ -298,18 +301,21 @@ namespace ThreadTesting
       {
         key = random.Next(0, 4);
         // Randomly choose insert, delete, or search
-        if (key == 1)
+        if (key == 0)
         {
-          do
+          for (int j = 0; j < 10; j++)
           {
-            key = random.Next(1, _NumberOfKeys * 10);
-          } while (_InsertedKeys.Contains(key));
-          await _InputBuffer.SendAsync((TreeCommand.Insert, key, -1
-            , new Person(key.ToString())));
-          _InsertedKeys.Add(key);
-          mixKeys.Add((1, key));
+            do
+            {
+              key = random.Next(1, _NumberOfKeys * 10);
+            } while (_InsertedKeys.Contains(key));
+            await _InputBuffer.SendAsync((TreeCommand.Insert, key, -1
+              , new Person(key.ToString())));
+            _InsertedKeys.Add(key);
+            mixKeys.Add((1, key));
+          }
         }
-        else if (key == 2)
+        else if (key == 1)
         {
           key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
           await _InputBuffer.SendAsync((TreeCommand.Delete, key, -1
@@ -317,11 +323,22 @@ namespace ThreadTesting
           _InsertedKeys.Remove(key);
           mixKeys.Add((0, key));
         }
-        else
+        else if (key == 2)
         {
           key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
           await _InputBuffer.SendAsync((TreeCommand.SearchRange, key, key + 10
             , null));
+        }
+        else
+        {
+          key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
+          await _InputBuffer.SendAsync((TreeCommand.DeleteRange, key, key + 10
+            , null));
+          for (int l = 0; l < 10; l++)
+          {
+            _InsertedKeys.Remove(key);
+            mixKeys.Add((0, key++));
+          }
         }
       }
       await _InputBuffer.SendAsync((TreeCommand.Close, 0, -1, null));
@@ -329,8 +346,7 @@ namespace ThreadTesting
       _Producer.Wait();
       _Consumer.Wait();
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-      Assert.That(_InputBufferHistory.Count(), Is.EqualTo(x + 1), "Not all commands are getting through.");
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
+      Assert.That(_InputBufferHistory, Has.Count.EqualTo(x + 1), "Not all commands are getting through.");
       NodeStatus lastStatus = NodeStatus.Close;
       int k = -1;
       int state = 0;
