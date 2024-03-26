@@ -199,16 +199,16 @@ namespace BTreeVisualization
       }
     }
 
-    public override bool DeleteKeys(int key, int endKey)
+    public override int DeleteKeys(int key, int endKey, bool? leftFork)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
       if (_Keys[_NumKeys - 1] > key && _Keys[0] < endKey && key <= endKey)
       {
         int firstKeyIndex = Search(this, key);
         int lastIndex = Search(this, endKey);
-        if (lastIndex > 0)
+        if (lastIndex >= 0)
         {
-          for (; lastIndex < _NumKeys; firstKeyIndex++, lastIndex++)
+          for (; firstKeyIndex < lastIndex; firstKeyIndex++, lastIndex++)
           {
             _Keys[firstKeyIndex] = _Keys[lastIndex];
             _Contents[firstKeyIndex] = _Contents[lastIndex];
@@ -221,19 +221,75 @@ namespace BTreeVisualization
           }
           _NumKeys = temp;
           _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          return 0;
         }
         else
         {
           _NumKeys = 0;
           _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          return 0;
         }
       }
       else
       {
         _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
-        return false;
+        return 0;
       }
-      return true;
+    }
+
+    public override (int?, T?, BTreeNode<T>?)? RebalanceNodes(BTreeNode<T> sibiling)
+    {
+      if (_NumKeys + sibiling.NumKeys >= 2 * _Degree - 2 && _NumKeys != 0 && sibiling.NumKeys != 0)
+      {// Must balance keys between nodes
+        int diff = ((_NumKeys + sibiling.NumKeys - 1) / 2) + 1 - _NumKeys;
+        if (diff > 0)
+        {// Not enough keys in this node
+          for (int j = _NumKeys, i = 0; i < diff; i++, j++)
+          {
+            _Keys[j] = sibiling.Keys[i];
+            _Contents[j] = sibiling.Contents[i];
+          }
+          sibiling.LosesToLeft(diff);
+        }
+        else if (diff < 0)
+        {// Not enough keys in sibiling
+          sibiling.GainsFromLeft(-diff, this);
+          for (int i = _NumKeys + diff; i < _NumKeys; i++)
+          {
+            _Keys[i] = default;
+            _Contents[i] = default;
+          }
+        }
+        _NumKeys += diff - 1;
+        _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, NumKeys, Keys, Contents
+          , sibiling.ID, sibiling.NumKeys, sibiling.Keys, sibiling.Contents));
+        return (Keys[_NumKeys + 1], Contents[_NumKeys + 1], sibiling);
+      }
+      else
+      {// Not enough keys for two nodes
+        if(_NumKeys == 0 && sibiling.NumKeys == 0)
+        {
+          return null;
+        }
+        else if (sibiling.NumKeys == 0)
+        {
+          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, sibiling.ID, -1, [], [], 0, -1, [], []));
+          return (null, default, null);
+        }
+        else if (_NumKeys == 0)
+        {
+          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, ID, -1, [], [], 0, -1, [], []));
+          return (null, default, sibiling);
+        }
+        else
+        {
+          Merge(sibiling);
+          _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, NumKeys, Keys, Contents
+            , sibiling.ID, sibiling.NumKeys, sibiling.Keys, sibiling.Contents));
+          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, sibiling.ID, -1, [], [], 0, -1, [], []));
+          return (null, default, null);
+        }
+      }
     }
 
     /// <summary>

@@ -11,10 +11,10 @@ namespace BTreeVisualization
   public enum NodeCondition
   {
     Mergeable,
-    KeyAndTwoNodes,
     KeyAndOneNode,
     KeyAndNone,
-    None
+    None,
+    NothingChanged
   }
 
   /// <summary>
@@ -83,7 +83,7 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
     public abstract void DeleteKey(int key);
-    public abstract bool DeleteKeys(int key, int endKey);
+    public abstract int DeleteKeys(int key, int endKey, bool? leftFork);
     /// <summary>
     /// Prints out this node and its children.
     /// </summary>
@@ -203,6 +203,7 @@ namespace BTreeVisualization
     /// smaller than all the keys in the called node.)</param>
     public abstract void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling);
     public abstract void GainsFromLeft(int diff, BTreeNode<T> sibiling);
+    public abstract (int?, T?, BTreeNode<T>?)? RebalanceNodes(BTreeNode<T> sibiling);
     /// <summary>
     /// Insert new entry to this node or one of its children.
     /// Then recognize if a child split and adjust accordingly.

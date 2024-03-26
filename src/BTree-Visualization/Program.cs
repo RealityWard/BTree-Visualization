@@ -57,6 +57,10 @@ namespace ThreadCommunication{
     /// </summary>
     DeleteRange,
     /// <summary>
+    /// Initial response to DeleteKeys calling DeleteKeys on two children. Only ID sent.
+    /// </summary>
+    DeleteRangeSplit,
+    /// <summary>
     /// Sent everytime DeleteKey is called on a node. Only ID sent.
     /// </summary>
     DSearching,

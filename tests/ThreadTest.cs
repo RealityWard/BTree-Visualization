@@ -60,7 +60,7 @@ namespace ThreadTesting
     /// </summary>
     private void DefineStatusPrecedence()
     {
-      int numOfStates = 53;
+      int numOfStates = 70;
       _StatusPrecedence = new Dictionary<NodeStatus, int>[numOfStates];
       for (int i = 0; i < numOfStates; i++)
       {
@@ -71,8 +71,8 @@ namespace ThreadTesting
       _StatusPrecedence[0].Add(NodeStatus.Search, 29);
       _StatusPrecedence[0].Add(NodeStatus.SearchRange, 32);
       _StatusPrecedence[0].Add(NodeStatus.DeleteRange, 35);
-      _AcceptStates = [0, 53, 3, 7, 14, 17, 18, 19, 21, 31, 34, 37, 39, 44, 52];
-      _StatusPrecedence[0].Add(NodeStatus.Close, 53);
+      _AcceptStates = [0, 70, 3, 7, 14, 17, 18, 19, 21, 31, 34, 37, 38, 40, 69, 56, 61, 59, 63, 67, 65, 66];
+      _StatusPrecedence[0].Add(NodeStatus.Close, 70);
       _StatusPrecedence[1].Add(NodeStatus.ISearching, 2);
       _StatusPrecedence[2].Add(NodeStatus.ISearching, 2);
       _StatusPrecedence[2].Add(NodeStatus.Inserted, 3);
@@ -120,37 +120,75 @@ namespace ThreadTesting
       _StatusPrecedence[35].Add(NodeStatus.DSearching, 36);
       _StatusPrecedence[36].Add(NodeStatus.DSearching, 36);
       _StatusPrecedence[36].Add(NodeStatus.DeletedRange, 37);
-      _StatusPrecedence[37].Add(NodeStatus.Merge, 38);
-      _StatusPrecedence[38].Add(NodeStatus.MergeParent, 39);
-      _StatusPrecedence[37].Add(NodeStatus.UnderFlow, 40);
-      _StatusPrecedence[37].Add(NodeStatus.DSearching, 41);
-      _StatusPrecedence[39].Add(NodeStatus.Merge, 38);
-      _StatusPrecedence[39].Add(NodeStatus.UnderFlow, 40);
-      _StatusPrecedence[40].Add(NodeStatus.Shift, 37);
-      _StatusPrecedence[40].Add(NodeStatus.DSearching, 41);
-      _StatusPrecedence[41].Add(NodeStatus.DSearching, 41);
-      _StatusPrecedence[41].Add(NodeStatus.DeletedRange, 42);
-      _StatusPrecedence[42].Add(NodeStatus.Merge, 43);
-      _StatusPrecedence[42].Add(NodeStatus.UnderFlow, 45);
-      _StatusPrecedence[42].Add(NodeStatus.Rebalanced, 46);
-      _StatusPrecedence[42].Add(NodeStatus.NodeDeleted, 47);
-      _StatusPrecedence[43].Add(NodeStatus.MergeParent, 44);
-      _StatusPrecedence[44].Add(NodeStatus.Merge, 43);
+      _StatusPrecedence[36].Add(NodeStatus.DeleteRangeSplit, 42);
+      _StatusPrecedence[37].Add(NodeStatus.UnderFlow, 38);
+      _StatusPrecedence[37].Add(NodeStatus.NodeDeleted, 39);
+      _StatusPrecedence[37].Add(NodeStatus.Merge, 39);
+      _StatusPrecedence[39].Add(NodeStatus.MergeParent, 40);
+      _StatusPrecedence[40].Add(NodeStatus.Merge, 39);
+      _StatusPrecedence[40].Add(NodeStatus.UnderFlow, 41);
+      _StatusPrecedence[41].Add(NodeStatus.Shift, 38);
+      _StatusPrecedence[42].Add(NodeStatus.DSearching, 43);
+      _StatusPrecedence[43].Add(NodeStatus.DeleteRangeSplit, 42);
+      _StatusPrecedence[43].Add(NodeStatus.DSearching, 43);
+      _StatusPrecedence[43].Add(NodeStatus.DeletedRange, 44);
       _StatusPrecedence[44].Add(NodeStatus.UnderFlow, 45);
-      _StatusPrecedence[45].Add(NodeStatus.Shift, 42);
-      _StatusPrecedence[45].Add(NodeStatus.Rebalanced, 46);
-      _StatusPrecedence[45].Add(NodeStatus.NodeDeleted, 47);
-      _StatusPrecedence[46].Add(NodeStatus.NodeDeleted, 47);
-      _StatusPrecedence[46].Add(NodeStatus.DeletedRange, 48);
-      _StatusPrecedence[47].Add(NodeStatus.DeletedRange, 48);
-      _StatusPrecedence[48].Add(NodeStatus.Merge, 49);
-      _StatusPrecedence[48].Add(NodeStatus.UnderFlow, 51);
-      _StatusPrecedence[49].Add(NodeStatus.MergeParent, 50);
-      _StatusPrecedence[50].Add(NodeStatus.Merge, 49);
+      _StatusPrecedence[44].Add(NodeStatus.NodeDeleted, 46);
+      _StatusPrecedence[44].Add(NodeStatus.Merge, 46);
+      _StatusPrecedence[46].Add(NodeStatus.MergeParent, 47);
+      _StatusPrecedence[47].Add(NodeStatus.Merge, 46);
+      _StatusPrecedence[47].Add(NodeStatus.UnderFlow, 48);
+      _StatusPrecedence[48].Add(NodeStatus.Shift, 45);
+      _StatusPrecedence[44].Add(NodeStatus.DSearching, 49);
+      _StatusPrecedence[45].Add(NodeStatus.DSearching, 49);
+      _StatusPrecedence[47].Add(NodeStatus.DSearching, 49);
+      _StatusPrecedence[49].Add(NodeStatus.DeleteRangeSplit, 42);
+      _StatusPrecedence[49].Add(NodeStatus.DSearching, 49);
+      _StatusPrecedence[49].Add(NodeStatus.DeletedRange, 50);
       _StatusPrecedence[50].Add(NodeStatus.UnderFlow, 51);
-      _StatusPrecedence[51].Add(NodeStatus.Shift, 48);
-      _StatusPrecedence[51].Add(NodeStatus.DeletedRange, 52);
-      _StatusPrecedence[52].Add(NodeStatus.DSearching, 41);
+      _StatusPrecedence[50].Add(NodeStatus.NodeDeleted, 52);
+      _StatusPrecedence[50].Add(NodeStatus.Merge, 52);
+      _StatusPrecedence[52].Add(NodeStatus.MergeParent, 53);
+      _StatusPrecedence[53].Add(NodeStatus.Merge, 52);
+      _StatusPrecedence[53].Add(NodeStatus.UnderFlow, 54);
+      _StatusPrecedence[54].Add(NodeStatus.Shift, 51);
+      _StatusPrecedence[50].Add(NodeStatus.Rebalanced, 55);
+      _StatusPrecedence[50].Add(NodeStatus.DeletedRange, 69);
+      _StatusPrecedence[51].Add(NodeStatus.Rebalanced, 55);
+      _StatusPrecedence[51].Add(NodeStatus.NodeDeleted, 55);
+      _StatusPrecedence[51].Add(NodeStatus.DeletedRange, 69);
+      _StatusPrecedence[53].Add(NodeStatus.Rebalanced, 55);
+      _StatusPrecedence[53].Add(NodeStatus.NodeDeleted, 55);
+      _StatusPrecedence[53].Add(NodeStatus.DeletedRange, 69);
+      _StatusPrecedence[55].Add(NodeStatus.UnderFlow, 56);
+      _StatusPrecedence[55].Add(NodeStatus.NodeDeleted, 57);
+      _StatusPrecedence[55].Add(NodeStatus.Merge, 58);
+      _StatusPrecedence[56].Add(NodeStatus.UnderFlow, 61);
+      _StatusPrecedence[56].Add(NodeStatus.Merge, 62);
+      _StatusPrecedence[56].Add(NodeStatus.NodeDeleted, 62);
+      _StatusPrecedence[56].Add(NodeStatus.DeletedRange, 69);
+      _StatusPrecedence[57].Add(NodeStatus.NodeDeleted, 57);
+      _StatusPrecedence[57].Add(NodeStatus.MergeParent, 59);
+      _StatusPrecedence[58].Add(NodeStatus.MergeParent, 59);
+      _StatusPrecedence[59].Add(NodeStatus.NodeDeleted, 62);
+      _StatusPrecedence[59].Add(NodeStatus.UnderFlow, 63);
+      _StatusPrecedence[59].Add(NodeStatus.Merge, 64);
+      _StatusPrecedence[59].Add(NodeStatus.DeletedRange, 69);
+      _StatusPrecedence[61].Add(NodeStatus.DeletedRange, 69);
+      _StatusPrecedence[62].Add(NodeStatus.MergeParent, 67);
+      _StatusPrecedence[63].Add(NodeStatus.Shift, 56);
+      _StatusPrecedence[63].Add(NodeStatus.DeletedRange, 69);
+      _StatusPrecedence[64].Add(NodeStatus.MergeParent, 65);
+      _StatusPrecedence[65].Add(NodeStatus.Merge, 64);
+      _StatusPrecedence[65].Add(NodeStatus.UnderFlow, 66);
+      _StatusPrecedence[65].Add(NodeStatus.DeletedRange, 69);
+      _StatusPrecedence[66].Add(NodeStatus.Shift, 56);
+      _StatusPrecedence[66].Add(NodeStatus.DeletedRange, 69);
+      _StatusPrecedence[67].Add(NodeStatus.Merge, 62);
+      _StatusPrecedence[67].Add(NodeStatus.UnderFlow, 68);
+      _StatusPrecedence[67].Add(NodeStatus.DeletedRange, 69);
+      _StatusPrecedence[68].Add(NodeStatus.Shift, 61);
+      _StatusPrecedence[69].Add(NodeStatus.DeletedRange, 50);
     }
 
     /// <summary>
@@ -296,6 +334,7 @@ namespace ThreadTesting
     {
       Random random = new();
       int key;
+      int inputBufferCount = 0;
       List<(int, int)> mixKeys = [];
       for (int i = 0; i < x; i++)
       {
@@ -314,6 +353,7 @@ namespace ThreadTesting
             _InsertedKeys.Add(key);
             mixKeys.Add((1, key));
           }
+          inputBufferCount += 9;
         }
         else if (key == 1)
         {
@@ -334,34 +374,39 @@ namespace ThreadTesting
           key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
           await _InputBuffer.SendAsync((TreeCommand.DeleteRange, key, key + 10
             , null));
-          for (int l = 0; l < 10; l++)
+          for (int l = 0; l < 9; l++)
           {
             _InsertedKeys.Remove(key);
             mixKeys.Add((0, key++));
           }
         }
+        inputBufferCount++;
       }
       await _InputBuffer.SendAsync((TreeCommand.Close, 0, -1, null));
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
       _Producer.Wait();
       _Consumer.Wait();
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-      Assert.That(_InputBufferHistory, Has.Count.EqualTo(x + 1), "Not all commands are getting through.");
+      Assert.That(_InputBufferHistory, Has.Count.EqualTo(inputBufferCount + 1), "Not all commands are getting through.");
       NodeStatus lastStatus = NodeStatus.Close;
       int k = -1;
       int state = 0;
+      string acceptingDfaStates = "";
+      int countOfAccepts = 0;
       _OutputBufferHistory.ForEach((bufMessage) =>
       {
         // if (bufMessage.status == NodeStatus.FoundRange)
         // {
         //   Console.WriteLine("Here:" + StringifyKeys(bufMessage.numKeys,bufMessage.keys));
         // }
+        acceptingDfaStates += $"{countOfAccepts}, {state}, {bufMessage.status}\n";
         if (_StatusPrecedence[state].ContainsKey(bufMessage.status))
         {
           state = _StatusPrecedence[state][bufMessage.status];
         }
         else if (_AcceptStates.Contains(state) && _StatusPrecedence[0].ContainsKey(bufMessage.status))
         {
+          countOfAccepts++;
           state = _StatusPrecedence[0][bufMessage.status];
         }
         else
@@ -370,7 +415,8 @@ namespace ThreadTesting
             $"Status:{bufMessage.status}\n " +
             $"Last Status:{lastStatus}\nid: " +
             $"{bufMessage.id}\nkey:{k}\nkeys:" +
-            $"{StringifyKeys(bufMessage.numKeys, bufMessage.keys)}");
+            $"{StringifyKeys(bufMessage.numKeys, bufMessage.keys)}\n" +
+            $"History:{acceptingDfaStates}");
         }
         lastStatus = bufMessage.status;
       });
