@@ -3,7 +3,8 @@ using NodeData;
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
 
-namespace ThreadCommunication{
+namespace ThreadCommunication
+{
   /// <summary>
   /// Used to indicate the various message types
   /// being communicated to the display thread.
@@ -235,7 +236,7 @@ class Program
             _Tree = new(key, outputBuffer);
             break;
           case TreeCommand.Insert:
-            _Tree.Insert(key, content 
+            _Tree.Insert(key, content
               ?? throw new NullContentReferenceException(
                 "Insert on tree with null content."));
             break;
@@ -315,8 +316,8 @@ class Program
       }
       for (int i = 0; i < _NumberOfKeys / 10; i++)
       {
-        key = random.Next(0,3);
-        if(key == 1)
+        key = random.Next(0, 3);
+        if (key == 1)
         {
           do
           {
@@ -325,15 +326,15 @@ class Program
           await inputBuffer.SendAsync((TreeCommand.Insert, key, -1
             , new Person(key.ToString())));
           _InsertedKeys.Add(key);
-          _MixKeys.Add((1,key));
+          _MixKeys.Add((1, key));
         }
-        else if(key == 2)
+        else if (key == 2)
         {
           key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
           await inputBuffer.SendAsync((TreeCommand.Delete, key, -1
             , null));
           _InsertedKeys.Remove(key);
-          _MixKeys.Add((0,key));
+          _MixKeys.Add((0, key));
         }
         else
         {
@@ -354,17 +355,17 @@ class Program
     Console.WriteLine(minHeight + " " + maxHeight);
   }
 
-    /// <summary>
-    /// Read out just the portion of the keys[] currently in use.
-    /// </summary>
-    /// <param name="numKeys">Index to stop at.</param>
-    /// <param name="keys">Array of ints</param>
-    /// <returns>String of the keys seperated by a ','</returns>
-    private static string StringifyKeys(int numKeys, int[] keys)
-    {
-      string result = "";
-      for (int i = 0; i < numKeys; i++)
-        result += keys[i] + (i + 1 == numKeys ? "" : ",");
-      return result;
-    }
+  /// <summary>
+  /// Read out just the portion of the keys[] currently in use.
+  /// </summary>
+  /// <param name="numKeys">Index to stop at.</param>
+  /// <param name="keys">Array of ints</param>
+  /// <returns>String of the keys seperated by a ','</returns>
+  private static string StringifyKeys(int numKeys, int[] keys)
+  {
+    string result = "";
+    for (int i = 0; i < numKeys; i++)
+      result += keys[i] + (i + 1 == numKeys ? "" : ",");
+    return result;
+  }
 }
