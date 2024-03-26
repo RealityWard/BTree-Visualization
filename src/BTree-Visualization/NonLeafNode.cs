@@ -294,6 +294,8 @@ namespace BTreeVisualization
           int temp = (_Children[_NumKeys] ?? throw new NullChildReferenceException(
               $"Child at index:{_NumKeys} within node:{ID}")).DeleteKeys(key, endKey, null);
           MergeAt(_NumKeys);
+          if(temp > 0)
+            return temp++;
           return temp;
         }
         // if -1 it is last child index
@@ -303,6 +305,8 @@ namespace BTreeVisualization
           int temp = (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
               $"Child at index:{firstKeyIndex} within node:{ID}")).DeleteKeys(key, endKey, null);
           MergeAt(firstKeyIndex);
+          if(temp > 0)
+            return temp++;
           return temp;
         }
         // After this point means changes to this node 
@@ -317,6 +321,8 @@ namespace BTreeVisualization
         if (lastIndex == -1)
           lastIndex = _NumKeys;
         int stack1 = -1, stack2 = -1;
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
         if (leftFork == null)
         {
           stack1 = _Children[firstKeyIndex].DeleteKeys(key, endKey, true);
@@ -331,6 +337,8 @@ namespace BTreeVisualization
           stack2 = _Children[lastIndex].DeleteKeys(key, endKey, false);
         }
         (int?, T?, BTreeNode<T>?)? merged = _Children[firstKeyIndex].RebalanceNodes(_Children[lastIndex]);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8604 // Possible null reference argument.
         if (merged == null)
         {
           asdf(firstKeyIndex, lastIndex);
@@ -339,7 +347,9 @@ namespace BTreeVisualization
         {
           if (merged?.Item1 != null)
           {// Rebalanced nodes and valid key 
+#pragma warning disable CS8629 // Nullable value type may be null.
             _Keys[firstKeyIndex] = (int)merged?.Item1;
+#pragma warning restore CS8629 // Nullable value type may be null.
             _Contents[firstKeyIndex] = (merged ?? default).Item2;
             _Children[lastIndex] = merged?.Item3;
             asdf(firstKeyIndex + 1, lastIndex);
@@ -350,11 +360,13 @@ namespace BTreeVisualization
             asdf(firstKeyIndex, lastIndex);
           }
           else
-          {// Last node was empty or merged
+          {// Last node was empty or merged or has a child that isn't empty
             _Children[lastIndex] = _Children[firstKeyIndex];
             asdf(firstKeyIndex, lastIndex);
           }
         }
+        // Todo: Finish Implementing
+        throw new NotImplementedException();
       }
       else
       {
@@ -397,47 +409,61 @@ namespace BTreeVisualization
       }
       else
       {// Not enough keys for two nodes
-        if (_NumKeys == 0 && _Children[0].NumKeys != 0)
-        {
-        }
+        if (_Children[0] == null)
+          throw new NullChildReferenceException($"Child at index:0 within node:{ID}");
+        if (((NonLeafNode<T>)rightSibiling).Children[0] == null)
+          throw new NullChildReferenceException($"Child at index:0 within node:{rightSibiling.ID}");
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
         if (_NumKeys == 0 && rightSibiling.NumKeys == 0)
         {
           if (_Children[0].NumKeys == 0 && ((NonLeafNode<T>)rightSibiling).Children[0].NumKeys == 0)
+          {
             return null;
+          }
           else if (_Children[0].NumKeys != 0 && ((NonLeafNode<T>)rightSibiling).Children[0].NumKeys != 0)
           {
             (_Keys[0], _Contents[0]) = _Children[0].ForfeitKey();
             _NumKeys++;
             _Children[1] = ((NonLeafNode<T>)rightSibiling).Children[0];
+            ((NonLeafNode<T>)rightSibiling).Children[0].ZeroOutNumKeys();
             MergeAt(0);
           }
-          else if (_Children[0].NumKeys != 0)
-          {
-            return (null, default, null);
-          }
-          else
+          else if (_Children[0].NumKeys == 0)
           {
             _Children[0] = ((NonLeafNode<T>)rightSibiling).Children[0];
-            ((NonLeafNode<T>)((NonLeafNode<T>)rightSibiling).Children[0]).ZeroOut();
-            return (null, default, null);
+            ((NonLeafNode<T>)rightSibiling).Children[0].ZeroOutNumKeys();
           }
+          return (null, default, null);
         }
         else if (rightSibiling.NumKeys == 0)
         {
-          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, rightSibiling.ID, -1, [], [], 0, -1, [], []));
+          if (((NonLeafNode<T>)rightSibiling).Children[0].NumKeys != 0)
+          {
+            (_Keys[_NumKeys], _Contents[_NumKeys]) = _Children[_NumKeys].ForfeitKey();
+            _NumKeys++;
+            _Children[_NumKeys] = ((NonLeafNode<T>)rightSibiling).Children[0];
+            ((NonLeafNode<T>)rightSibiling).Children[0].ZeroOutNumKeys();
+            MergeAt(_NumKeys);
+          }
           return (null, default, null);
         }
         else if (_NumKeys == 0)
         {
-          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, ID, -1, [], [], 0, -1, [], []));
+          if (_Children[0].NumKeys != 0)
+          {
+            (_Keys[0], _Contents[0]) = _Children[0].ForfeitKey();
+            _NumKeys++;
+            rightSibiling.GainsFromLeft(1, this);
+            ((NonLeafNode<T>)rightSibiling).MergeAt(0);
+          }
           return (null, default, rightSibiling);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
         else
         {
-          Merge(rightSibiling);
+          Merge(rightSibiling);// Not a normal merge; does not include a status update.
           _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, NumKeys, Keys, Contents
             , rightSibiling.ID, rightSibiling.NumKeys, rightSibiling.Keys, rightSibiling.Contents));
-          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, rightSibiling.ID, -1, [], [], 0, -1, [], []));
           return (null, default, null);
         }
       }
@@ -538,7 +564,7 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
     /// <param name="index">Index of affected child node.</param>
-    private void MergeAt(int index)
+    public void MergeAt(int index)
     {
       bool emptyNode = (_Children[index] ?? throw new NullChildReferenceException(
           $"Child at index:{index} within node:{ID}")).NumKeys == 0
@@ -695,11 +721,6 @@ namespace BTreeVisualization
         _Contents[i] = default;
         _Contents[++i] = default;
       }
-    }
-
-    public void ZeroOut()
-    {
-      _NumKeys = 0;
     }
 
     /// <summary>

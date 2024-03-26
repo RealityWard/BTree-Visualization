@@ -113,6 +113,12 @@ namespace BTreeVisualization
       get { return _NumKeys; }
     }
 
+    
+    public void ZeroOutNumKeys()
+    {
+      _NumKeys = 0;
+    }
+
     /// <summary>
     /// Author: Tristan Anderson
     /// Creates a string made up of a number of spaces equal to the length of input minus four.
