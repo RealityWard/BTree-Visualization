@@ -236,11 +236,8 @@ namespace BPlusTreeVisualization
         if((_Children[index]?? throw new NullChildReferenceException(
           $"Child at index:{index} within node:{ID}")) is BPlusLeafNode<T> leaf){
 
-            if(leaf.IsUnderflow()){
-
-            }
           }
-        
+        //updateValues, etc...
 
 
 
@@ -249,6 +246,10 @@ namespace BPlusTreeVisualization
 
       
 
+    }
+
+    public int FindChildIndex(int key){
+      return Search(key);
     }
 
     /// <summary>

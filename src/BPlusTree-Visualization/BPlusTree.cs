@@ -85,7 +85,7 @@ namespace BPlusTreeVisualization
       bufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
-      Stack<BPlusNonLeafNode<T>> pathStack = new Stack<BPlusNonLeafNode<T>>();
+      Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack = new Stack<Tuple<BPlusNonLeafNode<T>,int>>();
       _Root.DeleteKey(key, pathStack);
       if (_Root.NumKeys == 0 && _Root as BPlusNonLeafNode<T> != null)
       {

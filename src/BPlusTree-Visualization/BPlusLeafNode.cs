@@ -4,7 +4,9 @@ Date: 03/04/2024
 Desc: Describes functionality for non-leaf nodes on the B+Tree. Recursive function iteration due to children nodes.
 */
 
+using System.Net;
 using System.Threading.Tasks.Dataflow;
+using BTreeVisualization;
 using ThreadCommunication;
 
 
@@ -163,7 +165,7 @@ namespace BPlusTreeVisualization{
 
         
         
-        public override void DeleteKey(int key, Stack<BPlusNonLeafNode<T>> pathStack){
+        public override void DeleteKey(int key, Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack){
             _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
             int i = Search(key);
             if (i != -1)
@@ -177,17 +179,80 @@ namespace BPlusTreeVisualization{
             _Keys[_NumKeys] = default;
             _Contents[_NumKeys] = default;
             _BufferBlock.SendAsync((NodeStatus.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
-
-
             
+            Tuple<BPlusNonLeafNode<T>,int> parent = pathStack.Peek();
+            BPlusNonLeafNode<T> parentNode = parent.Item1;
+            int index = parent.Item2;
+
+            BPlusLeafNode<T>? leftSibling = GetLeftSibling(index, parentNode);
+            BPlusLeafNode<T>? rightSibling = GetRightSibling(index, parentNode);
+            bool isUnderflow = IsUnderflow();
+            if(!isUnderflow){
+                // do nothing
+            }
+            else if(isUnderflow && leftSibling != null && leftSibling.CanRedistribute()){
+                //send statusupdate 
+                GainsFromLeft(leftSibling);
+                leftSibling.LosesToRight();
+  
+            }
+            else if(isUnderflow && rightSibling != null && rightSibling.CanRedistribute()){
+                //send statusupdate
+                GainsFromRight(rightSibling);
+                rightSibling.LosesToLeft();
+                
+            }
+            else{
+                if(rightSibling != null){
+                    //mergeWith rightsibling
+                    Console.WriteLine("Merging with right");
+                }
+                else if(leftSibling != null){
+                    //mergewith leftsibling
+                    Console.WriteLine("Merging with left");
+                }
+            }
             
-
-
-            BPlusNonLeafNode<T> parent = pathStack.Pop();
-            parent.PropagateChanges(pathStack);
+            parent.Item1.PropagateChanges(pathStack);
             
             }
+            //send status to say key not found
             _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
+        }
+
+        public BPlusLeafNode<T>? FindLeftSibling(int key, BPlusNonLeafNode<T> parent){
+            if(parent != null){
+                int index = parent.FindChildIndex(key);
+                if(index > 0 && parent.Children[index - 1] is BPlusLeafNode<T> leftsibling){
+                    return leftsibling;
+                }
+            }
+            return null;
+        }
+
+        public BPlusLeafNode<T>? GetLeftSibling(int index,BPlusNonLeafNode<T> parent){
+            if(parent != null){
+                if(index > 0 && parent.Children[index - 1] is BPlusLeafNode<T> leftSibling){
+                    return leftSibling;
+                }
+            }
+            return null;
+        }
+
+        public BPlusLeafNode<T>? GetRightSibling(int index,BPlusNonLeafNode<T> parent){
+            if(parent != null){
+                if(index >= 0 && index < parent.Children.Count() - 1 && parent.Children[index + 1] is BPlusLeafNode<T> rightSibling){
+                    return rightSibling;
+                }
+            }
+            return null;
+        }
+
+        public bool CanRedistribute()
+            //checks if the node has more than the minimum amount of keys/entries (can spare one)
+        {
+            int minKeys = (int)Math.Ceiling((double)_Degree / 2) - 1;
+            return _NumKeys >= minKeys + 1;
         }
         /*
 
@@ -203,8 +268,8 @@ namespace BPlusTreeVisualization{
             return keyToBeLost;
         }
 
-
-        public override void Merge(int dividerKey, T dividerData, BPlusTreeNode<T> sibiling){
+        */
+        public void Merge(int dividerKey, T dividerData, BPlusLeafNode<T> sibiling){
             _Keys[_NumKeys] = dividerKey;
             _Contents[_NumKeys] = dividerData;
             _NumKeys++;
@@ -213,17 +278,26 @@ namespace BPlusTreeVisualization{
                 _Contents[_NumKeys + i] = sibiling.Contents[i];
             }
             _NumKeys += sibiling.NumKeys;
-            _BufferBlock.SendAsync((Status.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
+            _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
         }
 
-        public override void GainsFromRight(int dividerKey, T dividerData, BPlusTreeNode<T> sibiling)
+        public void mergeWith(BPlusLeafNode<T> siblingNode, BPlusNonLeafNode<T> parent){
+            for(int i = 0; i < siblingNode.NumKeys; i++){
+                //insert all values from sibling Node into this
+            }
+            //delete siblingNode
+            //use parent to pass down to delete() to properly delete
+
+        }
+        
+        public void GainsFromRight(BPlusLeafNode<T> sibling)
         {
-            _Keys[_NumKeys] = dividerKey;
-            _Contents[_NumKeys] = dividerData;
+            _Keys[_NumKeys] = sibling.Keys[0];
+            _Contents[_NumKeys] = sibling.Contents[0];
             _NumKeys++;
         }   
-
-        public override void LosesToLeft(){
+        
+        public void LosesToLeft(){
             for (int i = 0; i < _NumKeys - 1; i++){
                 _Keys[i] = _Keys[i + 1];
                 _Contents[i] = _Contents[i + 1];
@@ -233,27 +307,27 @@ namespace BPlusTreeVisualization{
             _Contents[_NumKeys] = default;
         }
 
-        public override void GainsFromLeft(int dividerKey, T dividerData, BPlusTreeNode<T> sibiling){
+        public void GainsFromLeft(BPlusLeafNode<T> sibling){
             for (int i = _NumKeys - 1; i >= 0; i--){
                 _Keys[i + 1] = _Keys[i];
                 _Contents[i + 1] = _Contents[i];
             }
             _NumKeys++;
-            _Keys[0] = dividerKey;
-            _Contents[0] = dividerData;
+            _Keys[0] = sibling.Keys[sibling.NumKeys - 1];
+            _Contents[0] = sibling.Contents[sibling.NumKeys - 1];
         }
 
-        public override void LosesToRight(){
+        public void LosesToRight(){
             _NumKeys--;
             _Keys[_NumKeys] = default;
             _Contents[_NumKeys] = default;
         }
-        */
+        
 
         public bool IsUnderflow()
             //checks if the node needs more entries
         {
-            int minKeys = (int)Math.Ceiling((double)_Degree / 2);
+            int minKeys = (int)Math.Ceiling((double)_Degree / 2) - 1;
             return _NumKeys < minKeys;
         }
 

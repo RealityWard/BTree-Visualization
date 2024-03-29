@@ -25,14 +25,15 @@ class Program
       Person?[] altContents
       )>();
 
-    BPlusTree<Person> bPlusTree = new(4,outputBuffer);
-     for(int i = 0; i < 3;i++){
+    BPlusTree<Person> bPlusTree = new(5,outputBuffer);
+     for(int i = 0; i < 5;i++){
       bPlusTree.Insert(i,new Person("hello " + i));
 
      }
      Console.WriteLine(bPlusTree.Traverse());
      bPlusTree.Delete(1);
      Console.WriteLine(bPlusTree.Traverse());
+     Console.WriteLine("Ege is the best.");
 
     /*
 
