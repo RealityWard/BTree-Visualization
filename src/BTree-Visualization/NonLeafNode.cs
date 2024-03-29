@@ -128,8 +128,11 @@ namespace BTreeVisualization
             ?? throw new NullChildReferenceException(
               $"Child at index:{i} within node:{ID}")).SearchKeys(key, endKey));
           if (_Keys[i] < endKey)
+          {
             result.Add((Keys[i], Contents[i] ?? throw new NullContentReferenceException(
               $"Content at index:{i} within node:{ID}")));
+            _BufferBlock.SendAsync((NodeStatus.FoundRange, ID, 1, [_Keys[i]], [_Contents[i]], 0, -1, [], []));
+          }
         }
       }
       if (_Keys[_NumKeys - 1] < endKey)
@@ -294,7 +297,7 @@ namespace BTreeVisualization
           int temp = (_Children[_NumKeys] ?? throw new NullChildReferenceException(
               $"Child at index:{_NumKeys} within node:{ID}")).DeleteKeys(key, endKey, null);
           MergeAt(_NumKeys);
-          if(temp > 0)
+          if (temp > 0)
             return temp++;
           return temp;
         }
@@ -305,7 +308,7 @@ namespace BTreeVisualization
           int temp = (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
               $"Child at index:{firstKeyIndex} within node:{ID}")).DeleteKeys(key, endKey, null);
           MergeAt(firstKeyIndex);
-          if(temp > 0)
+          if (temp > 0)
             return temp++;
           return temp;
         }

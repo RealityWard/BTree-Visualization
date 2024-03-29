@@ -117,6 +117,7 @@ namespace ThreadTesting
       _StatusPrecedence[32].Add(NodeStatus.SSearching, 33);
       _StatusPrecedence[33].Add(NodeStatus.SSearching, 33);
       _StatusPrecedence[33].Add(NodeStatus.FoundRange, 34);
+      _StatusPrecedence[34].Add(NodeStatus.SSearching, 33);
       _StatusPrecedence[35].Add(NodeStatus.DSearching, 36);
       _StatusPrecedence[36].Add(NodeStatus.DSearching, 36);
       _StatusPrecedence[36].Add(NodeStatus.DeletedRange, 37);

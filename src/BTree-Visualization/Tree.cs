@@ -114,7 +114,7 @@ namespace BTreeVisualization
       _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, -1, [], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
-      _Root.DeleteKeys(key, endKey);
+      _Root.DeleteKeys(key, endKey, null);
       if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
         long temp = _Root.ID;
@@ -159,14 +159,14 @@ namespace BTreeVisualization
       List<(int key, T value)> result = _Root.SearchKeys(key, endKey);
       if (result.Count > 0)
       {
-        int[] keys = new int[result.Count];
-        T[] contents = new T[result.Count];
-        for (int i = 0; i < result.Count; i++)
-        {
-          keys[i] = result[i].key;
-          contents[i] = result[i].value;
-        }
-        _BufferBlock.SendAsync((NodeStatus.FoundRange, _Root.ID, result.Count, keys, contents, 0, -1, [], []));
+        // int[] keys = new int[result.Count];
+        // T[] contents = new T[result.Count];
+        // for (int i = 0; i < result.Count; i++)
+        // {
+        //   keys[i] = result[i].key;
+        //   contents[i] = result[i].value;
+        // }
+        // _BufferBlock.SendAsync((NodeStatus.FoundRange, _Root.ID, result.Count, keys, contents, 0, -1, [], []));
       }
       else
       {
