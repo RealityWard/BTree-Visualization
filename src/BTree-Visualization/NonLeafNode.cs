@@ -126,9 +126,12 @@ namespace BTreeVisualization
           result.AddRange((_Children[i]
             ?? throw new NullChildReferenceException(
               $"Child at index:{i} within node:{ID}")).SearchKeys(key, endKey));
-          if(_Keys[i] < endKey)
+          if (_Keys[i] < endKey)
+          {
             result.Add((Keys[i], Contents[i] ?? throw new NullContentReferenceException(
               $"Content at index:{i} within node:{ID}")));
+            _BufferBlock.SendAsync((NodeStatus.FoundRange, ID, 1, [_Keys[i]], [_Contents[i]], 0, -1, [], []));
+          }
         }
       }
       if (_Keys[_NumKeys - 1] < endKey)
@@ -237,7 +240,7 @@ namespace BTreeVisualization
         parentID, -1, [], []));
       _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID, newNode.NumKeys,
         newNode.Keys, newNode.Contents, parentID, -1, [], []));
-      for(int j = 0; j <= newNode.NumKeys; j++)
+      for (int j = 0; j <= newNode.NumKeys; j++)
       {
         _BufferBlock.SendAsync((NodeStatus.Shift, newNode.ID, -1, [], [], (newNode.Children[j]
           ?? throw new NullChildReferenceException($"Child at index:{j} within node:{newNode.ID}")).ID, -1, [], []));

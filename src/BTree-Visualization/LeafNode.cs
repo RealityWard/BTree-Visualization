@@ -83,7 +83,7 @@ namespace BTreeVisualization
     public override List<(int key, T content)> SearchKeys(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
-      List<(int, T)> result = [];
+      List<(int key, T value)> result = [];
       for (int i = 0; i < _NumKeys; i++)
       {
         if (_Keys[i] >= key && _Keys[i] < endKey)
@@ -91,6 +91,21 @@ namespace BTreeVisualization
           result.Add((Keys[i], Contents[i] ?? throw new NullContentReferenceException(
             $"Content at index:{i} within node:{ID}")));
         }
+      }
+      if (result.Count > 0)
+      {
+        int[] keys = new int[result.Count];
+        T[] contents = new T[result.Count];
+        for (int i = 0; i < result.Count; i++)
+        {
+          keys[i] = result[i].key;
+          contents[i] = result[i].value;
+        }
+        _BufferBlock.SendAsync((NodeStatus.FoundRange, ID, result.Count, keys, contents, 0, -1, [], []));
+      }
+      else
+      {
+        _BufferBlock.SendAsync((NodeStatus.FoundRange, ID, -1, [], [], 0, -1, [], []));
       }
       return result;
     }
