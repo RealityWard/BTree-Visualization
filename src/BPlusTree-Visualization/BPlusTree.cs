@@ -32,8 +32,9 @@ namespace BPlusTreeVisualization
     /// <param name="rNode">Value returned from InsertKey on _Root node.</param>
     private void Split(((int, T), BPlusTreeNode<T>) rNode)
     {
+      
       _Root = new BPlusNonLeafNode<T>(_Degree, [rNode.Item1.Item1]
-        , [_Root, rNode.Item2],bufferBlock);
+        , [_Root, rNode.Item2], bufferBlock);
     }
 
     /// <summary>
@@ -78,13 +79,14 @@ namespace BPlusTreeVisualization
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
-/*
+
     public void Delete(int key)
     {
-      bufferBlock.SendAsync((Status.Delete, 0, -1, [], [], 0, -1, [], []));
+      bufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
-      _Root.DeleteKey(key);
+      Stack<BPlusNonLeafNode<T>> pathStack = new Stack<BPlusNonLeafNode<T>>();
+      _Root.DeleteKey(key, pathStack);
       if (_Root.NumKeys == 0 && _Root as BPlusNonLeafNode<T> != null)
       {
         _Root = ((BPlusNonLeafNode<T>)_Root).Children[0]
@@ -92,7 +94,7 @@ namespace BPlusTreeVisualization
             $"Child of child on root node");;
       }
     }
-    */
+    
 
     /// <summary>
     /// Using searchKey on the nodes to return the data 

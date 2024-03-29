@@ -162,9 +162,9 @@ namespace BPlusTreeVisualization{
         }
 
         
-        /*
-        public override void DeleteKey(int key){
-            _BufferBlock.SendAsync((Status.DSearching, ID, -1, [], [], 0, -1, [], []));
+        
+        public override void DeleteKey(int key, Stack<BPlusNonLeafNode<T>> pathStack){
+            _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
             int i = Search(key);
             if (i != -1)
             {
@@ -176,10 +176,20 @@ namespace BPlusTreeVisualization{
             _NumKeys--;
             _Keys[_NumKeys] = default;
             _Contents[_NumKeys] = default;
-            _BufferBlock.SendAsync((Status.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+            _BufferBlock.SendAsync((NodeStatus.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+
+
+            
+            
+
+
+            BPlusNonLeafNode<T> parent = pathStack.Pop();
+            parent.PropagateChanges(pathStack);
+            
             }
-            _BufferBlock.SendAsync((Status.Deleted, ID, -1, [], [], 0, -1, [], []));
+            _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
         }
+        /*
 
 
         public override (int, T) ForfeitKey(){
@@ -239,6 +249,14 @@ namespace BPlusTreeVisualization{
             _Contents[_NumKeys] = default;
         }
         */
+
+        public bool IsUnderflow()
+            //checks if the node needs more entries
+        {
+            int minKeys = (int)Math.Ceiling((double)_Degree / 2);
+            return _NumKeys < minKeys;
+        }
+
         /// <summary>
         /// Prints out the contents of the node in JSON format.
         /// </summary>

@@ -111,6 +111,7 @@ namespace BPlusTreeVisualization
     {
       return _NumKeys < _Degree - 1;
     }
+    /*
     /// <summary>
     /// Insert new entry to this node or one of its children.
     /// Then recognize if a child split and adjust accordingly.
@@ -130,8 +131,8 @@ namespace BPlusTreeVisualization
     /// </summary>
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
-    /*
-    public abstract void DeleteKey(int key);
+    
+    public abstract void DeleteKey(int key, Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack);
 
     /// <summary>
     /// Retreive the right most entry of the right most leaf node of this node.
@@ -140,6 +141,7 @@ namespace BPlusTreeVisualization
     /// Date: 2024-02-23</remarks>
     /// <returns>The key and corresponding content from the right
     /// most leaf node below this node.</returns>
+    /*
     public abstract (int, T) ForfeitKey();
     /// <summary>
     /// Prints out this node and its children.

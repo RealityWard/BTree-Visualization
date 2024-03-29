@@ -186,11 +186,23 @@ namespace BPlusTreeVisualization
     /// </summary>
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
- /*
-		public override void DeleteKey(int key)
+ 
+		public override void DeleteKey(int key, Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack)
     {
-      _BufferBlock.SendAsync((Status.DSearching, ID, -1, [], [], 0, -1, [], []));
-      int result = Search(key);
+      int index = Search(key);
+      if(index >= 0 && index < _Children.Count()){
+        Tuple<BPlusNonLeafNode<T>,int> tuple = new Tuple<BPlusNonLeafNode<T>,int>(this,index);
+        pathStack.Push(tuple);
+        (_Children[index]?? throw new NullChildReferenceException(
+          $"Child at index:{index} within node:{ID}")).DeleteKey(key, pathStack);
+      }
+      else{
+        //not found
+      }
+
+      //_BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
+      //int result = Search(key);
+      /*
       if (result == -1)
       {
         // Search only goes through keys and thus if it did not 
@@ -204,7 +216,7 @@ namespace BPlusTreeVisualization
         (_Keys[result], _Contents[result]) = (_Children[result]
           ?? throw new NullChildReferenceException(
             $"Child at index:{result} within node:{ID}")).ForfeitKey();
-        _BufferBlock.SendAsync((Status.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
         MergeAt(result);
       }
       else
@@ -213,7 +225,128 @@ namespace BPlusTreeVisualization
           $"Child at index:{result} within node:{ID}")).DeleteKey(key);
         MergeAt(result);
       }
+      */
+      
     }
+
+    public void PropagateChanges(Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack){
+
+        Tuple<BPlusNonLeafNode<T>,int> navigator = pathStack.Pop();
+        int index = navigator.Item2;
+        if((_Children[index]?? throw new NullChildReferenceException(
+          $"Child at index:{index} within node:{ID}")) is BPlusLeafNode<T> leaf){
+
+            if(leaf.IsUnderflow()){
+
+            }
+          }
+        
+
+
+
+
+
+
+      
+
+    }
+
+    /// <summary>
+    /// Checks the child at index for underflow. If so it then checks for _Degree 
+    /// number of children in the right child of the key. _Degree or greater means 
+    /// either overflow or split. 
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-18</remarks>
+    /// <param name="index">Index of affected child node.</param>
+    /*
+    private void MergeAt(int index)
+    {
+      if ((_Children[index] ?? throw new NullChildReferenceException(
+          $"Child at index:{index} within node:{ID}")).IsUnderflow())
+      {
+        if (index == _NumKeys) { index--; }
+        if (_Children[index] == null)
+        {
+          throw new NullChildReferenceException(
+                    $"Child at index:{index} within node:{ID}");
+        }
+        else if (_Children[index + 1] == null)
+        {
+          throw new NullChildReferenceException(
+                    $"Child at index:{index + 1} within node:{ID}");
+        }
+        else if (_Contents[index] == null)
+        {
+          throw new NullContentReferenceException(
+                    $"Content at index:{index} within node:{ID}");
+        }
+        else
+        {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+          if (_Children[index + 1].NumKeys >= _Degree)
+          {
+#pragma warning disable CS8604 // Possible null reference argument.
+            _Children[index].GainsFromRight(_Keys[index], _Contents[index], _Children[index + 1]);
+#pragma warning restore CS8604 // Possible null reference argument.
+            _Keys[index] = _Children[index + 1].Keys[0];
+            _Contents[index] = _Children[index + 1].Contents[0];
+            _Children[index + 1].LosesToLeft();
+            _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, Children[index].NumKeys,
+              Children[index].Keys, Children[index].Contents, Children[index + 1].ID,
+              Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents));
+            if (_Children[index] as BPlusNonLeafNode<T> != null)
+            {
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+              _BufferBlock.SendAsync((NodeStatus.Shift, (((BPlusNonLeafNode<T>)Children[index])
+                .Children[Children[index].NumKeys]
+                  ?? throw new NullChildReferenceException(
+                    $"Child at index:{Children[index].NumKeys} within node:{ID}")
+                    ).ID, -1, [], [], _Children[index].ID, -1, [], []));
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+            }
+          }
+          else if (_Children[index].NumKeys >= _Degree)
+          {
+#pragma warning disable CS8604 // Possible null reference argument.
+            _Children[index + 1].GainsFromLeft(_Keys[index], _Contents[index], _Children[index]);
+#pragma warning restore CS8604 // Possible null reference argument.
+            _Keys[index] = _Children[index].Keys[_Children[index].NumKeys - 1];
+            _Contents[index] = _Children[index].Contents[_Children[index].NumKeys - 1];
+            _Children[index].LosesToRight();
+            _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index + 1].ID,
+              Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents,
+              Children[index].ID, Children[index].NumKeys,
+              Children[index].Keys, Children[index].Contents));
+            if (_Children[index] as BPlusNonLeafNode<T> != null)
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+              _BufferBlock.SendAsync((NodeStatus.Shift, ((BPlusNonLeafNode<T>)Children[index + 1])
+                .Children[0].ID, -1, [], [], _Children[index + 1].ID, -1, [], []));
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+          }
+          else
+          {
+#pragma warning disable CS8604 // Possible null reference argument.
+            _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
+#pragma warning restore CS8604 // Possible null reference argument.
+            for (; index < _NumKeys - 1;)
+            {
+              _Keys[index] = _Keys[index + 1];
+              _Contents[index] = _Contents[index + 1];
+              index++;
+              _Children[index] = _Children[index + 1];
+            }
+            _Keys[index] = default;
+            _Contents[index] = default;
+            _Children[index + 1] = default;
+            _NumKeys--;
+            _BufferBlock.SendAsync((Status.MergeParent, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
+      }
+    }
+    /*
 
     /// <summary>
     /// Calls ForfeitKey() on last child for a replacement key
@@ -259,101 +392,9 @@ namespace BPlusTreeVisualization
       _NumKeys += sibiling.NumKeys;
       _BufferBlock.SendAsync((Status.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
     }
-
-    /// <summary>
-    /// Checks the child at index for underflow. If so it then checks for _Degree 
-    /// number of children in the right child of the key. _Degree or greater means 
-    /// either overflow or split. 
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    /// <param name="index">Index of affected child node.</param>
-    private void MergeAt(int index)
-    {
-      if ((_Children[index] ?? throw new NullChildReferenceException(
-          $"Child at index:{index} within node:{ID}")).IsUnderflow())
-      {
-        if (index == _NumKeys) { index--; }
-        if (_Children[index] == null)
-        {
-          throw new NullChildReferenceException(
-                    $"Child at index:{index} within node:{ID}");
-        }
-        else if (_Children[index + 1] == null)
-        {
-          throw new NullChildReferenceException(
-                    $"Child at index:{index + 1} within node:{ID}");
-        }
-        else if (_Contents[index] == null)
-        {
-          throw new NullContentReferenceException(
-                    $"Content at index:{index} within node:{ID}");
-        }
-        else
-        {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-          if (_Children[index + 1].NumKeys >= _Degree)
-          {
-#pragma warning disable CS8604 // Possible null reference argument.
-            _Children[index].GainsFromRight(_Keys[index], _Contents[index], _Children[index + 1]);
-#pragma warning restore CS8604 // Possible null reference argument.
-            _Keys[index] = _Children[index + 1].Keys[0];
-            _Contents[index] = _Children[index + 1].Contents[0];
-            _Children[index + 1].LosesToLeft();
-            _BufferBlock.SendAsync((Status.UnderFlow, Children[index].ID, Children[index].NumKeys,
-              Children[index].Keys, Children[index].Contents, Children[index + 1].ID,
-              Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents));
-            if (_Children[index] as BPlusNonLeafNode<T> != null)
-            {
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-              _BufferBlock.SendAsync((Status.Shift, (((BPlusNonLeafNode<T>)Children[index])
-                .Children[Children[index].NumKeys]
-                  ?? throw new NullChildReferenceException(
-                    $"Child at index:{Children[index].NumKeys} within node:{ID}")
-                    ).ID, -1, [], [], _Children[index].ID, -1, [], []));
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-            }
-          }
-          else if (_Children[index].NumKeys >= _Degree)
-          {
-#pragma warning disable CS8604 // Possible null reference argument.
-            _Children[index + 1].GainsFromLeft(_Keys[index], _Contents[index], _Children[index]);
-#pragma warning restore CS8604 // Possible null reference argument.
-            _Keys[index] = _Children[index].Keys[_Children[index].NumKeys - 1];
-            _Contents[index] = _Children[index].Contents[_Children[index].NumKeys - 1];
-            _Children[index].LosesToRight();
-            _BufferBlock.SendAsync((Status.UnderFlow, Children[index + 1].ID,
-              Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents,
-              Children[index].ID, Children[index].NumKeys,
-              Children[index].Keys, Children[index].Contents));
-            if (_Children[index] as BPlusNonLeafNode<T> != null)
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-              _BufferBlock.SendAsync((Status.Shift, ((BPlusNonLeafNode<T>)Children[index + 1])
-                .Children[0].ID, -1, [], [], _Children[index + 1].ID, -1, [], []));
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-          }
-          else
-          {
-#pragma warning disable CS8604 // Possible null reference argument.
-            _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
-#pragma warning restore CS8604 // Possible null reference argument.
-            for (; index < _NumKeys - 1;)
-            {
-              _Keys[index] = _Keys[index + 1];
-              _Contents[index] = _Contents[index + 1];
-              index++;
-              _Children[index] = _Children[index + 1];
-            }
-            _Keys[index] = default;
-            _Contents[index] = default;
-            _Children[index + 1] = default;
-            _NumKeys--;
-            _BufferBlock.SendAsync((Status.MergeParent, ID, NumKeys, Keys, Contents, 0, -1, [], []));
-          }
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-        }
-      }
-    }
+    */
+    
+    /*
 
     /// <summary>
     /// Tacks on the given key and data and grabs the first child of the sibiling.
