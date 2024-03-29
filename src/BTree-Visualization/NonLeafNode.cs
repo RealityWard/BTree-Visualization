@@ -138,6 +138,8 @@ namespace BTreeVisualization
         result.AddRange((_Children[_NumKeys]
           ?? throw new NullChildReferenceException(
             $"Child at index:{NumKeys} within node:{ID}")).SearchKeys(key, endKey));
+      if (result.Count == 0)
+        _BufferBlock.SendAsync((NodeStatus.FoundRange, ID, -1, [], [], 0, -1, [], []));
       return result;
     }
 
