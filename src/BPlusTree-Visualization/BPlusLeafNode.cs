@@ -180,7 +180,7 @@ namespace BPlusTreeVisualization{
             _Contents[_NumKeys] = default;
             _BufferBlock.SendAsync((NodeStatus.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
             
-            Tuple<BPlusNonLeafNode<T>,int> parent = pathStack.Peek();
+            Tuple<BPlusNonLeafNode<T>,int> parent = pathStack.Pop();
             BPlusNonLeafNode<T> parentNode = parent.Item1;
             int index = parent.Item2;
 
@@ -217,11 +217,9 @@ namespace BPlusTreeVisualization{
                         Console.WriteLine("Merging with left");
                     }
                 }
+                parent.Item1.PropagateChanges(pathStack);
             }
-            
-            
-            parent.Item1.PropagateChanges(pathStack);
-            
+             
             }
             //send status to say key not found
             _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
@@ -337,17 +335,18 @@ namespace BPlusTreeVisualization{
 
         }
 
-        public void mergeWithL((BPlusLeafNode<T>,int) sibling, BPlusNonLeafNode<T> parent){
+        public void mergeWithL((BPlusLeafNode<T>,int) sibling, BPlusNonLeafNode<T> parentNode){
             BPlusLeafNode<T> siblingNode = sibling.Item1;
             int siblingIndex = sibling.Item2;
-            for(int i = 0; i < siblingNode.NumKeys; i++){
+            int numKeysInSibling = siblingNode.NumKeys;
+            for(int i = 0; i < numKeysInSibling; i++){
                 GainsFromLeft(siblingNode);
                 siblingNode.LosesToRight();
                 //insert all values from sibling Node into this
             }
             //_Keys.Order();
-            _NumKeys += siblingNode.NumKeys;
-            siblingNode.DeleteNode(parent,siblingIndex);
+            //_NumKeys += siblingNode.NumKeys;
+            siblingNode.DeleteNode(parentNode,siblingIndex);
             //use parent to pass down to delete() to properly delete
 
         }

@@ -230,23 +230,66 @@ namespace BPlusTreeVisualization
     }
 
     public void PropagateChanges(Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack){
+        if(pathStack.Count > 0){
+          Tuple<BPlusNonLeafNode<T>,int> nextItemUpward = pathStack.Pop();
+          BPlusNonLeafNode<T> parentNode = nextItemUpward.Item1;
+          int selfIndex = nextItemUpward.Item2;
+          BPlusNonLeafNode<T>? leftSibling = FindLeftSibling(selfIndex,parentNode);
+          BPlusNonLeafNode<T>? rightSibling = FindRightSibling(selfIndex,parentNode);
+          UpdateKeyValues();
+        }
+        UpdateKeyValues();
+        
 
-        Tuple<BPlusNonLeafNode<T>,int> navigator = pathStack.Pop();
-        int index = navigator.Item2;
-        if((_Children[index]?? throw new NullChildReferenceException(
-          $"Child at index:{index} within node:{ID}")) is BPlusLeafNode<T> leaf){
-
-          }
         //updateValues, etc...
 
 
-
-
-
-
-      
+ 
 
     }
+
+    public void UpdateKeyValues(){
+      for(int i = 0; i < NumKeys;i++){
+        _Keys[i] = default;
+      }
+      for(int i = 1; i < NumKeys + 1; i++){
+        if(_Children[i] != null){
+          UpdateKeyValuesHelper(i);
+        }
+        else{
+          return;
+        }
+        //loop should only iterate as many times as there are children - 1
+      }
+    }
+
+    public void UpdateKeyValuesHelper(int index){
+      if(_Children[index] is BPlusLeafNode<T> leaf && leaf != null){
+        if(leaf.NumKeys != 0){
+          _Keys[index - 1] = leaf.Keys[0];
+        }
+      }
+      else if(_Children[index] is BPlusNonLeafNode<T> nonLeaf){
+        int keyToAdd = nonLeaf.getLeftmostKeyofSubTree();
+        _Keys[index - 1] = keyToAdd;
+      }
+    }
+
+    public int getLeftmostKeyofSubTree()
+            //this method returns the leftmostKeyofaSubtree
+        {
+            //checking if child is a leaf, if it is, takes the leftmost leaf's leftmost key
+            if (_Children[0] is BPlusLeafNode<T> leaf && leaf != null)
+            {
+                return leaf.Keys[0];
+            }
+            //otherwise traversing down the subtree
+            else if(_Children[0] is BPlusNonLeafNode<T> nonleaf)
+            {
+                return nonleaf.getLeftmostKeyofSubTree();
+            }
+            else { return -1; }
+        }
 
     public void RemoveChildAtIndex(int index){
       for(int i = 0; i < _Children.Count();i++){
@@ -257,6 +300,26 @@ namespace BPlusTreeVisualization
     public int FindChildIndex(int key){
       return Search(key);
     }
+
+    public BPlusNonLeafNode<T>? FindLeftSibling(int selfIndex, BPlusNonLeafNode<T> parentNode){
+      if(parentNode != null){
+        if(selfIndex > 0 && parentNode.Children[selfIndex - 1] is BPlusNonLeafNode<T> leftSibling){
+          return leftSibling;
+        }       
+      }
+      return null;
+    }
+
+    public BPlusNonLeafNode<T>? FindRightSibling(int selfIndex, BPlusNonLeafNode<T> parentNode){
+      if(parentNode != null){
+        if(selfIndex >= 0 && selfIndex < parentNode.Children.Count() - 1 && parentNode.Children[selfIndex + 1] is BPlusNonLeafNode<T> leftSibling){
+          return leftSibling;
+        }       
+      }
+      return null;
+    }
+
+
 
     /// <summary>
     /// Checks the child at index for underflow. If so it then checks for _Degree 

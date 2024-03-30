@@ -24,8 +24,9 @@ class Program
       int[] altKeys,
       Person?[] altContents
       )>();
-
+    /*
     //testing redistribution from right
+    Console.WriteLine("testing redistribution from right");
     BPlusTree<Person> bPlusTree = new(5,outputBuffer);
      for(int i = 0; i < 5;i++){
       bPlusTree.Insert(i,new Person("hello " + i));
@@ -45,35 +46,64 @@ class Program
     for(int i = 4; i < 7;i++){
       bPlusTree2.Insert(i,new Person("hello " + i));
     }
-    /*
+    
     for(int i = 2; i < 4;i++){
       bPlusTree2.Insert(i,new Person("hello " + i));
     }
-    */
+    
     Console.WriteLine(bPlusTree2.Traverse());
     bPlusTree2.Delete(4);
     Console.WriteLine(bPlusTree2.Traverse());
     bPlusTree2.Delete(5);
     Console.WriteLine(bPlusTree2.Traverse());
-    /*
+    
     Console.WriteLine("testing merging with rightsibling");
     //testing merging
     bPlusTree2.Delete(6);
     bPlusTree2.Delete(2);
     bPlusTree2.Delete(1);
     Console.WriteLine(bPlusTree2.Traverse());
+    */
 
     /*
-    BPlusTree<Person> bPlusTree3 = new(4,outputBuffer);
-    for(int i = 0; i < 4;i++){
+    Console.WriteLine("testing updated root value");
+
+    BPlusTree<Person> bPlusTree3 = new(5,outputBuffer);
+    for(int i = 0; i < 2;i++){
       bPlusTree3.Insert(i,new Person("hello " + i));
     }
+    for(int i = 4; i < 7;i++){
+      bPlusTree3.Insert(i,new Person("hello " + i));
+    }
+    /*
+    for(int i = 2; i < 4;i++){
+      bPlusTree2.Insert(i,new Person("hello " + i));
+    }
+    
     Console.WriteLine(bPlusTree3.Traverse());
-    bPlusTree3.Delete(2);
-    bPlusTree3.Delete(3);
-    bPlusTree3.Delete(1);
+    bPlusTree3.Delete(4);
+    Console.WriteLine(bPlusTree3.Traverse());
+    bPlusTree3.Delete(5);
     Console.WriteLine(bPlusTree3.Traverse());
     */
+
+    Console.WriteLine("testing updated root value");
+    BPlusTree<Person> bPlusTree4 = new(5,outputBuffer);
+    for(int i = 0; i < 2;i++){
+      bPlusTree4.Insert(i,new Person("hello " + i));
+    }
+    for(int i = 4; i < 7;i++){
+      bPlusTree4.Insert(i,new Person("hello " + i));
+    }
+    Console.WriteLine(bPlusTree4.Traverse());
+    bPlusTree4.Delete(4);
+    Console.WriteLine(bPlusTree4.Traverse());
+
+    
+
+
+
+    
 
 
     
