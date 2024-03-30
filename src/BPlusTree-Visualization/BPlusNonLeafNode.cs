@@ -199,52 +199,74 @@ namespace BPlusTreeVisualization
       else{
         //not found
       }
-
-      //_BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
-      //int result = Search(key);
-      /*
-      if (result == -1)
-      {
-        // Search only goes through keys and thus if it did not 
-        // find it at the last index it returns -1.
-        (_Children[_NumKeys] ?? throw new NullChildReferenceException(
-          $"Child at index:{_NumKeys} within node:{ID}")).DeleteKey(key);
-        MergeAt(_NumKeys);
-      }
-      else if (_Keys[result] == key)
-      {
-        (_Keys[result], _Contents[result]) = (_Children[result]
-          ?? throw new NullChildReferenceException(
-            $"Child at index:{result} within node:{ID}")).ForfeitKey();
-        _BufferBlock.SendAsync((NodeStatus.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
-        MergeAt(result);
-      }
-      else
-      {
-        (_Children[result] ?? throw new NullChildReferenceException(
-          $"Child at index:{result} within node:{ID}")).DeleteKey(key);
-        MergeAt(result);
-      }
-      */
       
     }
 
+    public void DeleteNode(BPlusNonLeafNode<T>? parentNode, int indexOfNodeBeingDeleted){
+      if(this == null){
+        return;
+      }
+      for(int i = 0; i < _NumKeys;i++){
+        _Keys[i] = default;
+      }
+      _NumKeys = default;
+      if(parentNode != null){
+        if(indexOfNodeBeingDeleted != -1){
+          parentNode.Children[indexOfNodeBeingDeleted] = default;
+          for (; indexOfNodeBeingDeleted < _Degree;)
+          {
+              parentNode.Children[indexOfNodeBeingDeleted] = parentNode.Children[indexOfNodeBeingDeleted + 1];
+              indexOfNodeBeingDeleted++;
+          }
+        }
+      }
+    }
+
     public void PropagateChanges(Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack){
-        if(pathStack.Count > 0){
+        if(pathStack.Count == 0){//if stack is empty, means we are in the root -> no parent
+          UpdateKeyValues();
+          bool isRootUnderflow = IsRootUnderflow();
+          if(isRootUnderflow){
+            DeleteNode(null,-1);
+            //we still need to make its child the new root -> might already been taken care of, further testing for confirmation
+          }  
+        }
+        else{//means stack is not empty and we are in non-root node
           Tuple<BPlusNonLeafNode<T>,int> nextItemUpward = pathStack.Pop();
           BPlusNonLeafNode<T> parentNode = nextItemUpward.Item1;
           int selfIndex = nextItemUpward.Item2;
           BPlusNonLeafNode<T>? leftSibling = FindLeftSibling(selfIndex,parentNode);
           BPlusNonLeafNode<T>? rightSibling = FindRightSibling(selfIndex,parentNode);
           UpdateKeyValues();
-        }
-        UpdateKeyValues();
-        
+          bool isUnderflow = IsUnderflow();
+          if(!isUnderflow){
+            //do nothing, keep propagating upwards
+          }
+          else if(isUnderflow && leftSibling != null && leftSibling.CanForfeit()){
+            //if it is underflow, check sibling(s) for forfeiting a child
+            //if sibling(s) cannot forfeit because are at min -> mergewith respective child
+            //AddChildFromLeft();
+            //leftSibling.ForfeitChildToRight();
 
+          }
+          else if(isUnderflow && rightSibling != null && rightSibling.CanForfeit()){
+            //AddChildFromRight()
+            //rightSibling.ForfeitChildToLeft();
+          }
+          else{
+            if(rightSibling != null){
+              //mergeWith(rightSibiling);
+            }
+            else if(leftSibling != null){
+              //mergeWith(leftSibling);
+            }
+          }
+          UpdateKeyValues();
+          
+          parentNode.PropagateChanges(pathStack);
+
+        }      
         //updateValues, etc...
-
-
- 
 
     }
 
@@ -270,12 +292,12 @@ namespace BPlusTreeVisualization
         }
       }
       else if(_Children[index] is BPlusNonLeafNode<T> nonLeaf){
-        int keyToAdd = nonLeaf.getLeftmostKeyofSubTree();
+        int keyToAdd = nonLeaf.GetLeftmostKeyofSubTree();
         _Keys[index - 1] = keyToAdd;
       }
     }
 
-    public int getLeftmostKeyofSubTree()
+    public int GetLeftmostKeyofSubTree()
             //this method returns the leftmostKeyofaSubtree
         {
             //checking if child is a leaf, if it is, takes the leftmost leaf's leftmost key
@@ -286,15 +308,51 @@ namespace BPlusTreeVisualization
             //otherwise traversing down the subtree
             else if(_Children[0] is BPlusNonLeafNode<T> nonleaf)
             {
-                return nonleaf.getLeftmostKeyofSubTree();
+                return nonleaf.GetLeftmostKeyofSubTree();
             }
             else { return -1; }
         }
 
+    public int GetNumberOfChildren(){
+      int count = 0;
+      for(; count < _Children.Count();){
+        if(_Children[count] == null){
+          return count;
+        }
+        count++;
+      }
+      return -1;
+    }
+    /*
     public void RemoveChildAtIndex(int index){
       for(int i = 0; i < _Children.Count();i++){
 
       }
+    }
+    */
+
+    public bool IsRootUnderflow(){
+      //checks if the root is underflow and would need to be deleted
+      //root needs to have at least 1 key and 2 children
+      if(_NumKeys < 1 || GetNumberOfChildren() < 2){
+        return true;
+      }
+      return false;
+    }
+
+    public bool IsUnderflow(){
+      //non-root-node is underflow if it has < m/2 -1 keys or < m/2 children
+      if(_NumKeys < _Degree/2 -1 || GetNumberOfChildren() < _Degree/2){
+        return true;
+      }
+      return false;
+    }
+
+    public bool CanForfeit(){
+      if(GetNumberOfChildren() >= _Degree/2 + 1){
+        return true;
+      }
+      return false;
     }
 
     public int FindChildIndex(int key){

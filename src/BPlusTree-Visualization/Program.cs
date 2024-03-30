@@ -6,6 +6,7 @@ Desc: Main for B+Tree implementation, running code here + initial testing
 using System.Text.RegularExpressions;
 using System.Threading.Tasks.Dataflow;
 using BPlusTreeVisualization;
+using Microsoft.VisualBasic.FileIO;
 using NodeData;
 using ThreadCommunication;
 
@@ -24,7 +25,7 @@ class Program
       int[] altKeys,
       Person?[] altContents
       )>();
-    /*
+    
     //testing redistribution from right
     Console.WriteLine("testing redistribution from right");
     BPlusTree<Person> bPlusTree = new(5,outputBuffer);
@@ -35,7 +36,7 @@ class Program
      Console.WriteLine(bPlusTree.Traverse());
      bPlusTree.Delete(1);
      Console.WriteLine(bPlusTree.Traverse());
-
+    
     //testing redistribution from left
     Console.WriteLine("testing redistribution from left");
 
@@ -56,6 +57,7 @@ class Program
     Console.WriteLine(bPlusTree2.Traverse());
     bPlusTree2.Delete(5);
     Console.WriteLine(bPlusTree2.Traverse());
+    /*
     
     Console.WriteLine("testing merging with rightsibling");
     //testing merging
@@ -86,7 +88,7 @@ class Program
     bPlusTree3.Delete(5);
     Console.WriteLine(bPlusTree3.Traverse());
     */
-
+    
     Console.WriteLine("testing updated root value");
     BPlusTree<Person> bPlusTree4 = new(5,outputBuffer);
     for(int i = 0; i < 2;i++){
@@ -98,6 +100,23 @@ class Program
     Console.WriteLine(bPlusTree4.Traverse());
     bPlusTree4.Delete(4);
     Console.WriteLine(bPlusTree4.Traverse());
+
+    Console.WriteLine("testing deleting from root");
+    BPlusTree<Person> bPlusTree5 = new(5, outputBuffer);
+    for(int i = 0; i < 5;i++){
+      bPlusTree5.Insert(i,new Person("hello " + i));
+    }
+    Console.WriteLine(bPlusTree5.Traverse());
+    bPlusTree5.Delete(1);
+    bPlusTree5.Delete(2);
+    bPlusTree5.Delete(3);
+    bPlusTree5.Delete(4);
+    Console.WriteLine(bPlusTree5.Traverse());
+    
+
+    
+
+
 
     
 
