@@ -184,34 +184,41 @@ namespace BPlusTreeVisualization{
             BPlusNonLeafNode<T> parentNode = parent.Item1;
             int index = parent.Item2;
 
-            BPlusLeafNode<T>? leftSibling = GetLeftSibling(index, parentNode);
-            BPlusLeafNode<T>? rightSibling = GetRightSibling(index, parentNode);
+            (BPlusLeafNode<T>?,int) leftSibling = GetLeftSibling(index, parentNode);
+            (BPlusLeafNode<T>?,int) rightSibling = GetRightSibling(index, parentNode);
+            BPlusLeafNode<T>? leftSiblingNode = leftSibling.Item1;
+            BPlusLeafNode<T>? rightSiblingNode = rightSibling.Item1;
             bool isUnderflow = IsUnderflow();
-            if(!isUnderflow){
-                // do nothing
-            }
-            else if(isUnderflow && leftSibling != null && leftSibling.CanRedistribute()){
-                //send statusupdate 
-                GainsFromLeft(leftSibling);
-                leftSibling.LosesToRight();
-  
-            }
-            else if(isUnderflow && rightSibling != null && rightSibling.CanRedistribute()){
-                //send statusupdate
-                GainsFromRight(rightSibling);
-                rightSibling.LosesToLeft();
-                
-            }
-            else{
-                if(rightSibling != null){
-                    //mergeWith rightsibling
-                    Console.WriteLine("Merging with right");
+            if(parentNode != null){
+                if(!isUnderflow){
+                    // do nothing
+                    // return
                 }
-                else if(leftSibling != null){
-                    //mergewith leftsibling
-                    Console.WriteLine("Merging with left");
+                else if(isUnderflow && leftSiblingNode != null && leftSiblingNode.CanRedistribute()){
+                    //send statusupdate 
+                    GainsFromLeft(leftSiblingNode);
+                    leftSiblingNode.LosesToRight();  
+                }
+                else if(isUnderflow && rightSiblingNode != null && rightSiblingNode.CanRedistribute()){
+                    //send statusupdate
+                    GainsFromRight(rightSiblingNode);
+                    rightSiblingNode.LosesToLeft();
+                    
+                }
+                else{
+                    if(rightSiblingNode != null && rightSibling.Item1 != null){
+                        (BPlusLeafNode<T>,int) rightSiblingNotNull = (rightSibling.Item1,rightSibling.Item2);
+                        mergeWithR(rightSiblingNotNull,parentNode);
+                        Console.WriteLine("Merging with right");
+                    }
+                    else if(leftSiblingNode != null && leftSibling.Item1 != null){
+                        (BPlusLeafNode<T>,int) leftSiblingNotNull = (leftSibling.Item1,leftSibling.Item2);
+                        mergeWithL(leftSiblingNotNull,parentNode);
+                        Console.WriteLine("Merging with left");
+                    }
                 }
             }
+            
             
             parent.Item1.PropagateChanges(pathStack);
             
@@ -230,22 +237,22 @@ namespace BPlusTreeVisualization{
             return null;
         }
 
-        public BPlusLeafNode<T>? GetLeftSibling(int index,BPlusNonLeafNode<T> parent){
+        public (BPlusLeafNode<T>?,int) GetLeftSibling(int index,BPlusNonLeafNode<T> parent){
             if(parent != null){
                 if(index > 0 && parent.Children[index - 1] is BPlusLeafNode<T> leftSibling){
-                    return leftSibling;
+                    return (leftSibling, index - 1);
                 }
             }
-            return null;
+            return (null,-1);
         }
 
-        public BPlusLeafNode<T>? GetRightSibling(int index,BPlusNonLeafNode<T> parent){
+        public (BPlusLeafNode<T>?,int) GetRightSibling(int index,BPlusNonLeafNode<T> parent){
             if(parent != null){
                 if(index >= 0 && index < parent.Children.Count() - 1 && parent.Children[index + 1] is BPlusLeafNode<T> rightSibling){
-                    return rightSibling;
+                    return (rightSibling,index + 1);
                 }
             }
-            return null;
+            return (null,-1);
         }
 
         public bool CanRedistribute()
@@ -269,6 +276,40 @@ namespace BPlusTreeVisualization{
         }
 
         */
+
+        public void DeleteNode(BPlusNonLeafNode<T> parentNode, int indexOfChildBeingDeleted){
+            if(this == null){
+                return;
+            }          
+            if(parentNode != null){
+                if(indexOfChildBeingDeleted != -1){
+
+                parentNode.Children[indexOfChildBeingDeleted] = default;
+                for (; indexOfChildBeingDeleted < _Degree;)
+                {
+                    parentNode.Children[indexOfChildBeingDeleted] = parentNode.Children[indexOfChildBeingDeleted + 1];
+                    indexOfChildBeingDeleted++;
+                }
+                }
+                if(_NextNode != null){
+                    _NextNode._PrevNode = _PrevNode;
+                    _NextNode = null;
+                }
+                if(_PrevNode != null){
+                    _PrevNode._NextNode = _NextNode;
+                    _PrevNode = null;
+                }
+                for(int i = 0; i < _NumKeys; i++){
+                    _Keys[i] = default;
+                    _Contents[i] = default;
+                }
+                _NumKeys = default;
+            }else{
+                //
+                return;
+            }
+
+        }
         public void Merge(int dividerKey, T dividerData, BPlusLeafNode<T> sibiling){
             _Keys[_NumKeys] = dividerKey;
             _Contents[_NumKeys] = dividerData;
@@ -281,14 +322,37 @@ namespace BPlusTreeVisualization{
             _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
         }
 
-        public void mergeWith(BPlusLeafNode<T> siblingNode, BPlusNonLeafNode<T> parent){
+        public void mergeWithR((BPlusLeafNode<T>,int) sibling, BPlusNonLeafNode<T> parent){
+            BPlusLeafNode<T> siblingNode = sibling.Item1;
+            int siblingIndex = sibling.Item2;
             for(int i = 0; i < siblingNode.NumKeys; i++){
+                _Keys[_NumKeys + i] = siblingNode.Keys[i];
+                _Contents[_NumKeys + i] = siblingNode.Contents[i];
                 //insert all values from sibling Node into this
             }
-            //delete siblingNode
+            //_Keys.Order();
+            _NumKeys += siblingNode.NumKeys;
+            siblingNode.DeleteNode(parent,siblingIndex);
             //use parent to pass down to delete() to properly delete
 
         }
+
+        public void mergeWithL((BPlusLeafNode<T>,int) sibling, BPlusNonLeafNode<T> parent){
+            BPlusLeafNode<T> siblingNode = sibling.Item1;
+            int siblingIndex = sibling.Item2;
+            for(int i = 0; i < siblingNode.NumKeys; i++){
+                GainsFromLeft(siblingNode);
+                siblingNode.LosesToRight();
+                //insert all values from sibling Node into this
+            }
+            //_Keys.Order();
+            _NumKeys += siblingNode.NumKeys;
+            siblingNode.DeleteNode(parent,siblingIndex);
+            //use parent to pass down to delete() to properly delete
+
+        }
+
+
         
         public void GainsFromRight(BPlusLeafNode<T> sibling)
         {

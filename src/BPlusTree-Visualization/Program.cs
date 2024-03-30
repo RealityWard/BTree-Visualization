@@ -25,6 +25,7 @@ class Program
       Person?[] altContents
       )>();
 
+    //testing redistribution from right
     BPlusTree<Person> bPlusTree = new(5,outputBuffer);
      for(int i = 0; i < 5;i++){
       bPlusTree.Insert(i,new Person("hello " + i));
@@ -33,7 +34,65 @@ class Program
      Console.WriteLine(bPlusTree.Traverse());
      bPlusTree.Delete(1);
      Console.WriteLine(bPlusTree.Traverse());
-     Console.WriteLine("Ege is the best.");
+
+    //testing redistribution from left
+    Console.WriteLine("testing redistribution from left");
+
+    BPlusTree<Person> bPlusTree2 = new(5,outputBuffer);
+    for(int i = 0; i < 2;i++){
+      bPlusTree2.Insert(i,new Person("hello " + i));
+    }
+    for(int i = 4; i < 7;i++){
+      bPlusTree2.Insert(i,new Person("hello " + i));
+    }
+    /*
+    for(int i = 2; i < 4;i++){
+      bPlusTree2.Insert(i,new Person("hello " + i));
+    }
+    */
+    Console.WriteLine(bPlusTree2.Traverse());
+    bPlusTree2.Delete(4);
+    Console.WriteLine(bPlusTree2.Traverse());
+    bPlusTree2.Delete(5);
+    Console.WriteLine(bPlusTree2.Traverse());
+    /*
+    Console.WriteLine("testing merging with rightsibling");
+    //testing merging
+    bPlusTree2.Delete(6);
+    bPlusTree2.Delete(2);
+    bPlusTree2.Delete(1);
+    Console.WriteLine(bPlusTree2.Traverse());
+
+    /*
+    BPlusTree<Person> bPlusTree3 = new(4,outputBuffer);
+    for(int i = 0; i < 4;i++){
+      bPlusTree3.Insert(i,new Person("hello " + i));
+    }
+    Console.WriteLine(bPlusTree3.Traverse());
+    bPlusTree3.Delete(2);
+    bPlusTree3.Delete(3);
+    bPlusTree3.Delete(1);
+    Console.WriteLine(bPlusTree3.Traverse());
+    */
+
+
+    
+    
+
+  
+
+
+
+
+
+
+
+
+
+
+    //testing merging
+
+
 
     /*
 

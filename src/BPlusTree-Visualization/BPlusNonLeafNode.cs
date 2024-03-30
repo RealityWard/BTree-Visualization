@@ -248,6 +248,12 @@ namespace BPlusTreeVisualization
 
     }
 
+    public void RemoveChildAtIndex(int index){
+      for(int i = 0; i < _Children.Count();i++){
+
+      }
+    }
+
     public int FindChildIndex(int key){
       return Search(key);
     }
