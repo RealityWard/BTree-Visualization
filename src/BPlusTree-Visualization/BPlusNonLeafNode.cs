@@ -245,13 +245,16 @@ namespace BPlusTreeVisualization
           else if(isUnderflow && leftSibling != null && leftSibling.CanForfeit()){
             //if it is underflow, check sibling(s) for forfeiting a child
             //if sibling(s) cannot forfeit because are at min -> mergewith respective child
+            GainsFromLeft(leftSibling);
+            leftSibling.LosesToRight();
             //AddChildFromLeft();
             //leftSibling.ForfeitChildToRight();
 
           }
           else if(isUnderflow && rightSibling != null && rightSibling.CanForfeit()){
-            //AddChildFromRight()
-            //rightSibling.ForfeitChildToLeft();
+            GainsFromRight(rightSibling);
+            rightSibling.LosesToLeft();
+            //send statusupdate 
           }
           else{
             if(rightSibling != null){
@@ -342,7 +345,7 @@ namespace BPlusTreeVisualization
 
     public bool IsUnderflow(){
       //non-root-node is underflow if it has < m/2 -1 keys or < m/2 children
-      if(_NumKeys < _Degree/2 -1 || GetNumberOfChildren() < _Degree/2){
+      if(_NumKeys < (int)Math.Ceiling((double)_Degree/2 -1) || GetNumberOfChildren() < (int)Math.Ceiling((double)_Degree/2)){
         return true;
       }
       return false;
@@ -375,6 +378,44 @@ namespace BPlusTreeVisualization
         }       
       }
       return null;
+    }
+
+    public void GainsFromRight(BPlusNonLeafNode<T> sibling)
+    {
+      _Children[_NumKeys] = sibling.Children[0];
+    }
+
+    public void LosesToLeft()
+    {
+      for (int i = 0; i < _NumKeys - 1; i++)
+      {
+        _Keys[i] = _Keys[i + 1];
+        _Children[i] = _Children[i + 1];
+      }
+      _Children[_NumKeys] = _Children[_NumKeys + 1];
+      _Children[_NumKeys + 1] = default;
+      _NumKeys--;
+      _Keys[_NumKeys] = default;
+    }
+
+    public void GainsFromLeft( BPlusNonLeafNode<T> sibling)
+    {
+      _Children[_NumKeys + 1] = _Children[_NumKeys];
+      for (int i = _NumKeys; i > 0; i--)
+      {
+        //_Keys[i] = _Keys[i - 1];
+        _Children[i] = _Children[i - 1];
+      }
+      //_NumKeys++;
+      //_Keys[0] = sibling.Keys[sibling.NumKeys - 1];
+      _Children[0] = sibling.Children[sibling.NumKeys];
+    }
+
+    public void LosesToRight()
+    {
+      _Children[_NumKeys] = default;
+      _Keys[_NumKeys]= default;
+      _NumKeys--;
     }
 
 
@@ -522,7 +563,7 @@ namespace BPlusTreeVisualization
     }
     */
     
-    /*
+    
 
     /// <summary>
     /// Tacks on the given key and data and grabs the first child of the sibiling.
@@ -533,12 +574,8 @@ namespace BPlusTreeVisualization
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to right. (Sibiling's Keys
     /// should be greater than all the keys in the called node.)</param>
-    public override void GainsFromRight(int dividerKey, T dividerData, BPlusTreeNode<T> sibiling)
-    {
-      _Keys[_NumKeys] = dividerKey;
-      _Contents[_NumKeys] = dividerData;
-      _Children[++_NumKeys] = ((BPlusNonLeafNode<T>)sibiling).Children[0];
-    }
+    
+    /*
 
     /// <summary>
     /// Author: Tristan Anderson
@@ -548,17 +585,12 @@ namespace BPlusTreeVisualization
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
-    public override void LosesToLeft()
+    public void LosesToLeft()
     {
       for (int i = 0; i < _NumKeys - 1; i++)
       {
-        _Keys[i] = _Keys[i + 1];
-        _Contents[i] = _Contents[i + 1];
         _Children[i] = _Children[i + 1];
       }
-      _NumKeys--;
-      _Keys[_NumKeys] = default;
-      _Contents[_NumKeys] = default;
       _Children[_NumKeys] = _Children[_NumKeys + 1];
       _Children[_NumKeys + 1] = default;
     }

@@ -112,6 +112,45 @@ class Program
     bPlusTree5.Delete(3);
     bPlusTree5.Delete(4);
     Console.WriteLine(bPlusTree5.Traverse());
+
+    Console.WriteLine("testing deletion causing distributing of child from left to right");
+    BPlusTree<Person> bPlusTree6 = new(7, outputBuffer);
+    for(int i = 0; i < 11;i++){
+      bPlusTree6.Insert(i,new Person("hello " + i));
+    }
+    for(int i = 40; i < 54;i++){
+      bPlusTree6.Insert(i,new Person("hello " + i));
+    }
+    for(int i = 11; i < 15;i++){
+      bPlusTree6.Insert(i,new Person("hello " + i));
+    }
+    Console.WriteLine(bPlusTree6.Traverse());
+    bPlusTree6.Delete(41);
+    Console.WriteLine("Deleting");
+    Console.WriteLine(bPlusTree6.Traverse());
+
+    Console.WriteLine("testing deletion causing distributing of child from right to left");
+    BPlusTree<Person> bPlusTree7 = new(7, outputBuffer);
+    for(int i = 0; i < 14;i++){
+      bPlusTree7.Insert(i,new Person("hello " + i));
+    }
+    for(int i = 40; i < 51;i++){
+      bPlusTree7.Insert(i,new Person("hello " + i));
+    }
+    for(int i = 14; i < 18;i++){
+      bPlusTree7.Insert(i,new Person("hello " + i));
+    }
+    Console.WriteLine(bPlusTree7.Traverse());
+    bPlusTree7.Delete(11);
+    Console.WriteLine("Deleting");
+    Console.WriteLine(bPlusTree7.Traverse());
+
+    
+
+
+
+
+    
     
 
     

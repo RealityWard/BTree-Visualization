@@ -185,7 +185,7 @@ namespace BPlusTreeVisualization{
                 if(pathStack.Count == 0){//if stack is 0, means we are in the root
                     if(isUnderflowAsRoot()){//means there are no keys left because root has to have at least 1 key/entry
                         DeleteNode(null,-1);
-                        //statusupdate that node got deleted
+                        //statusupdate that this node got deleted
                     }
                 }
                 else{
@@ -217,14 +217,16 @@ namespace BPlusTreeVisualization{
                         }
                         else{
                             if(rightSiblingNode != null && rightSibling.Item1 != null){
+                                //send statusupdate
                                 (BPlusLeafNode<T>,int) rightSiblingNotNull = (rightSibling.Item1,rightSibling.Item2);
                                 mergeWithR(rightSiblingNotNull,parentNode);
-                                Console.WriteLine("Merging with right");
+                                //Console.WriteLine("Merging with right");
                             }
                             else if(leftSiblingNode != null && leftSibling.Item1 != null){
+                                //send statusupdate
                                 (BPlusLeafNode<T>,int) leftSiblingNotNull = (leftSibling.Item1,leftSibling.Item2);
                                 mergeWithL(leftSiblingNotNull,parentNode);
-                                Console.WriteLine("Merging with left");
+                                //Console.WriteLine("Merging with left");
                             }
                         }
                         parent.Item1.PropagateChanges(pathStack);
@@ -335,14 +337,13 @@ namespace BPlusTreeVisualization{
             int siblingIndex = sibling.Item2;
             for(int i = 0; i < siblingNode.NumKeys; i++){
                 _Keys[_NumKeys + i] = siblingNode.Keys[i];
-                _Contents[_NumKeys + i] = siblingNode.Contents[i];
-                //insert all values from sibling Node into this
+                _Contents[_NumKeys + i] = siblingNode.Contents[i]; //insert all values from sibling Node into this
+  
             }
-            //_Keys.Order();
             _NumKeys += siblingNode.NumKeys;
-            siblingNode.DeleteNode(parent,siblingIndex);
-            //use parent to pass down to delete() to properly delete
+            siblingNode.DeleteNode(parent,siblingIndex);//use parent to pass down to delete() to properly delete
 
+            
         }
 
         public void mergeWithL((BPlusLeafNode<T>,int) sibling, BPlusNonLeafNode<T> parentNode){
@@ -354,7 +355,6 @@ namespace BPlusTreeVisualization{
                 siblingNode.LosesToRight();
                 //insert all values from sibling Node into this
             }
-            //_Keys.Order();
             //_NumKeys += siblingNode.NumKeys;
             siblingNode.DeleteNode(parentNode,siblingIndex);
             //use parent to pass down to delete() to properly delete
