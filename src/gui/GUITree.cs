@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using System.ComponentModel.Design.Serialization;
 using System.Xml.Linq;
 using System.Drawing.Design;
+using System.Diagnostics;
 
 namespace B_TreeVisualizationGUI
 {
@@ -34,6 +35,13 @@ namespace B_TreeVisualizationGUI
         // Displays the tree on Panel1
         public void DrawTree(Graphics graphics, GUINode currentNode, float centerX, float x, float y, float subtreeWidth, Dictionary<int, int> heightNodesDrawn, int height)
         {
+            // Define the bounds of your drawing area (e.g., the visible area of 'panel1')
+            // Used to prevent drawing out of bounds.
+            Rectangle drawingBounds = new Rectangle(0, 0, displayPanel.ClientSize.Width, displayPanel.ClientSize.Height);
+
+            // Set the clipping region to constrain drawing to 'drawingBounds'
+            graphics.SetClip(drawingBounds);
+
             if (currentNode == null) return; // Null check
 
             var pen = new Pen(Color.MediumSlateBlue, 2); // Pen for drawing
@@ -46,10 +54,17 @@ namespace B_TreeVisualizationGUI
 
             currentNode.DisplayNode(graphics, x, y); // Draw the current node
 
+            // Log if 'x' or 'y' is NaN before drawing the node
+            if (float.IsNaN(x) || float.IsNaN(y))
+            {
+                Console.WriteLine($"NaN detected before drawing node! x: {x}, y: {y}, centerX: {centerX}, subtreeWidth: {subtreeWidth}, height: {height}");
+                return; // Or handle the NaN case as appropriate
+            }
+
             heightNodesDrawn[height]++; // Increases the number of nodes drawn at the current height
 
             // Recursively draw child nodes if this is not a leaf
-            if (currentNode.Children != null && currentNode.NumKeys > 0)
+            if (currentNode.Children != null && currentNode.NumKeys > 0) // This is letting a node with height 0 in which allows for a divide by 0 error.
             {
                 height--; // Decrease height since we are going deeper into the tree
 
@@ -60,7 +75,9 @@ namespace B_TreeVisualizationGUI
                 }
                 float leftX = centerX - subtreeWidth / 2; // Calculate left x-coordinate of the tree
 
-                float nodeSlot; // Initialize nodeSlot aka, the space that a node is going to be centered in
+                /// This was modified to be 0 when initialized for testing with NaN errors
+                /// Set this back to non-initialized if errors occur.
+                float nodeSlot = 0; // Initialize nodeSlot aka, the space that a node is going to be centered in
 
                 for (int i = 0; i < currentNode.Children.Count; i++)
                 {
@@ -78,10 +95,20 @@ namespace B_TreeVisualizationGUI
                             leafStart.RemoveAt(0);
                         }
                     }
+                    else if (currentNode.height != 0) // REMOVE
+                    {
+                        nodeSlot = (subtreeWidth / GetNodesAtHeight(currentNode.height - 1).Count); // currentNode.height somehow being 0 here.
+                        childX = leftX + (heightNodesDrawn[height] * nodeSlot) + nodeSlot / 2;
+                    }
                     else
                     {
-                        nodeSlot = (subtreeWidth / GetNodesAtHeight(currentNode.height + 1).Count);
-                        childX = leftX + (heightNodesDrawn[height] * nodeSlot) + nodeSlot / 2;
+                        throw new Exception($"Current node: {currentNode} failed to set it's leftX");
+                    }
+
+                    // Log if 'childX' or 'childY' is about to become NaN
+                    if (float.IsNaN(childX))
+                    {
+                        Console.WriteLine($"NaN detected for childX! leftX: {leftX}, nodeSlot: {nodeSlot}, subtreeWidth: {subtreeWidth}, centerX: {centerX}, height: {height}, heightNodesDrawn: {heightNodesDrawn[height]}");
                     }
 
                     float childY = y + currentNode.NodeHeight + 50; // Vertical spacing: FIX LATER
@@ -93,6 +120,9 @@ namespace B_TreeVisualizationGUI
                     }
                 }
             }
+
+            // Reset clipping region after drawing, if necessary
+            graphics.ResetClip();
         }
 
         // Finds the starting point for all of the leaf nodes
@@ -159,6 +189,7 @@ namespace B_TreeVisualizationGUI
                 nodesAtHeight.Add(node);
                 return;
             }
+
             if (node.Children != null) 
             {
                 // Decrement height and traverse child nodes

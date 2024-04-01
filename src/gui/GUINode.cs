@@ -18,17 +18,19 @@ namespace B_TreeVisualizationGUI
         public int NumKeys { get; set; }
         public float NodeWidth, NodeHeight;
         public int height { get; set; }
+        public bool highlighted = false;
 
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-    public GUINode(int[] keys, bool isLeaf, bool IsRoot, int height, int NumKeys, List<GUINode> children = null)
+        public GUINode(int[] keys, bool isLeaf, bool IsRoot, int height, int NumKeys, List<GUINode> children = null)
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-    {
+        {
             Keys = keys;
             Children = children;
             IsLeaf = isLeaf;
             this.IsRoot = IsRoot;
             this.NumKeys = NumKeys;
             this.height = height;
+
 
             // Calculate node width based on keys
             NodeWidth = 40 * NumKeys;
@@ -87,6 +89,12 @@ namespace B_TreeVisualizationGUI
             {
                 pen = new Pen(Color.Green, 2);
             }
+
+            if (highlighted)
+            {
+                pen = new Pen(Color.Blue, 2);
+            }
+
             var brush = new SolidBrush(Color.LightGray);
             var textBrush = new SolidBrush(Color.Black);
             var font = new Font("Consolas", 8);

@@ -35,7 +35,12 @@
             cmbxMaxDegree = new ComboBox();
             txtInputData = new TextBox();
             panel1 = new Panel();
+            lblCurrentProcess = new Label();
             chkDebugMode = new CheckBox();
+            btnInsertMany = new CustomControls.RJControls.RJButton();
+            trbSpeed = new TrackBar();
+            lblSpeed = new Label();
+            ((System.ComponentModel.ISupportInitialize)trbSpeed).BeginInit();
             SuspendLayout();
             // 
             // btnInsert
@@ -130,6 +135,7 @@
             cmbxMaxDegree.Size = new Size(130, 30);
             cmbxMaxDegree.TabIndex = 4;
             cmbxMaxDegree.Text = "max degree";
+            cmbxMaxDegree.SelectedIndexChanged += cmbxMaxDegree_SelectedIndexChanged;
             // 
             // txtInputData
             // 
@@ -151,21 +157,73 @@
             panel1.TabIndex = 6;
             panel1.Paint += panel1_Paint;
             // 
+            // lblCurrentProcess
+            // 
+            lblCurrentProcess.AutoSize = true;
+            lblCurrentProcess.ForeColor = SystemColors.ActiveCaptionText;
+            lblCurrentProcess.Location = new Point(12, 897);
+            lblCurrentProcess.Name = "lblCurrentProcess";
+            lblCurrentProcess.Size = new Size(188, 15);
+            lblCurrentProcess.TabIndex = 11;
+            lblCurrentProcess.Text = "No Tree Currently Being Processed";
+            // 
             // chkDebugMode
             // 
             chkDebugMode.AutoSize = true;
-            chkDebugMode.Location = new Point(1492, 909);
+            chkDebugMode.Location = new Point(1980, 907);
             chkDebugMode.Name = "chkDebugMode";
             chkDebugMode.Size = new Size(95, 19);
             chkDebugMode.TabIndex = 7;
             chkDebugMode.Text = "Debug Mode";
             chkDebugMode.UseVisualStyleBackColor = true;
             // 
+            // btnInsertMany
+            // 
+            btnInsertMany.BackColor = Color.MediumSlateBlue;
+            btnInsertMany.BackgroundColor = Color.MediumSlateBlue;
+            btnInsertMany.BorderColor = Color.PaleVioletRed;
+            btnInsertMany.BorderRadius = 20;
+            btnInsertMany.BorderSize = 0;
+            btnInsertMany.FlatAppearance.BorderSize = 0;
+            btnInsertMany.FlatStyle = FlatStyle.Flat;
+            btnInsertMany.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
+            btnInsertMany.ForeColor = Color.White;
+            btnInsertMany.Location = new Point(1824, 896);
+            btnInsertMany.Name = "btnInsertMany";
+            btnInsertMany.Size = new Size(150, 40);
+            btnInsertMany.TabIndex = 8;
+            btnInsertMany.Text = "insert many";
+            btnInsertMany.TextColor = Color.White;
+            btnInsertMany.UseVisualStyleBackColor = false;
+            btnInsertMany.Click += btnInsertMany_Click;
+            // 
+            // trbSpeed
+            // 
+            trbSpeed.Location = new Point(1714, 896);
+            trbSpeed.Minimum = 1;
+            trbSpeed.Name = "trbSpeed";
+            trbSpeed.Size = new Size(104, 45);
+            trbSpeed.TabIndex = 9;
+            trbSpeed.Value = 10;
+            // 
+            // lblSpeed
+            // 
+            lblSpeed.AutoSize = true;
+            lblSpeed.Location = new Point(1720, 927);
+            lblSpeed.Name = "lblSpeed";
+            lblSpeed.Size = new Size(98, 15);
+            lblSpeed.TabIndex = 10;
+            lblSpeed.Text = "Animation Speed";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(2087, 947);
+            Controls.Add(lblCurrentProcess);
+            Controls.Add(lblSpeed);
+            Controls.Add(trbSpeed);
+            Controls.Add(btnInsertMany);
             Controls.Add(chkDebugMode);
             Controls.Add(panel1);
             Controls.Add(txtInputData);
@@ -177,6 +235,7 @@
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;
+            ((System.ComponentModel.ISupportInitialize)trbSpeed).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -191,5 +250,9 @@
         private TextBox txtInputData;
         private Panel panel1;
         private CheckBox chkDebugMode;
+        private CustomControls.RJControls.RJButton btnInsertMany;
+        private TrackBar trbSpeed;
+        private Label lblSpeed;
+        private Label lblCurrentProcess;
     }
 }

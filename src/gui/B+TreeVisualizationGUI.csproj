@@ -12,6 +12,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
 	<LangVersion>preview</LangVersion>
+	<BaseOutputPath></BaseOutputPath>
   </PropertyGroup>
 
 </Project>
