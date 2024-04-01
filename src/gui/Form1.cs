@@ -795,7 +795,7 @@ namespace B_TreeVisualizationGUI
         private void cmbxMaxDegree_SelectedIndexChanged(object sender, EventArgs e)
         {
             _tree = null!;
-            int degree = (2 * 3) - 1; // Default value
+            int degree = 3; // Default value
             bool parseSuccess = false;
             if (cmbxMaxDegree.SelectedItem != null)
             {
