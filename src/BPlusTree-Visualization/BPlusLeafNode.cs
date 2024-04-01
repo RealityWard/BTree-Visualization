@@ -1,5 +1,7 @@
 /*
-Author: Andreas Kramer (using BTree structure from Tristan Anderson)
+Primary Author: Andreas Kramer 
+Secondary Author: Emily Elzinga
+Remark: contains code from BTree implementation (Tristan Anderson and others)
 Date: 03/04/2024
 Desc: Describes functionality for non-leaf nodes on the B+Tree. Recursive function iteration due to children nodes.
 */
@@ -163,10 +165,11 @@ namespace BPlusTreeVisualization{
             return (dividerEntry, newNode);
         }
 
+
         
         
         public override void DeleteKey(int key, Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack){
-            _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
+                      _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
             int i = Search(key);
             if (i != -1)
             {
@@ -180,9 +183,14 @@ namespace BPlusTreeVisualization{
                 _Contents[_NumKeys] = default;
                 _BufferBlock.SendAsync((NodeStatus.Deleted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
 
-                //below is propagating the changes -> into separate method?
+                PropagateChanges(pathStack);             
+            }
+            //send status to say key not found
+            _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
+        }
 
-                if(pathStack.Count == 0){//if stack is 0, means we are in the root
+        public void PropagateChanges(Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack){
+            if(pathStack.Count == 0){//if stack is 0, means we are in the root
                     if(isUnderflowAsRoot()){//means there are no keys left because root has to have at least 1 key/entry
                         DeleteNode(null,-1);
                         //statusupdate that this node got deleted
@@ -202,15 +210,14 @@ namespace BPlusTreeVisualization{
                     if(parentNode != null){
                         if(!isUnderflow){
                             // do nothing
-                            // return
                         }
                         else if(isUnderflow && leftSiblingNode != null && leftSiblingNode.CanRedistribute()){
-                            //send statusupdate 
+                            //send statusupdate redistribution of keys
                             GainsFromLeft(leftSiblingNode);
                             leftSiblingNode.LosesToRight();  
                         }
                         else if(isUnderflow && rightSiblingNode != null && rightSiblingNode.CanRedistribute()){
-                            //send statusupdate
+                            //send statusupdate redistribution of keys
                             GainsFromRight(rightSiblingNode);
                             rightSiblingNode.LosesToLeft();
                             
@@ -219,22 +226,20 @@ namespace BPlusTreeVisualization{
                             if(rightSiblingNode != null && rightSibling.Item1 != null){
                                 //send statusupdate
                                 (BPlusLeafNode<T>,int) rightSiblingNotNull = (rightSibling.Item1,rightSibling.Item2);
-                                mergeWithR(rightSiblingNotNull,parentNode);
+                                mergeWithRight(rightSiblingNotNull,parentNode);
                                 //Console.WriteLine("Merging with right");
                             }
                             else if(leftSiblingNode != null && leftSibling.Item1 != null){
                                 //send statusupdate
                                 (BPlusLeafNode<T>,int) leftSiblingNotNull = (leftSibling.Item1,leftSibling.Item2);
-                                mergeWithL(leftSiblingNotNull,parentNode);
+                                mergeWithLeft(leftSiblingNotNull,parentNode);
                                 //Console.WriteLine("Merging with left");
                             }
                         }
+                        //communicate the changes one level upwards
                         parent.Item1.PropagateChanges(pathStack);
                     }
                 }         
-            }
-            //send status to say key not found
-            _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
         }
 
         public BPlusLeafNode<T>? FindLeftSibling(int key, BPlusNonLeafNode<T> parent){
@@ -332,7 +337,7 @@ namespace BPlusTreeVisualization{
             _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
         }
 
-        public void mergeWithR((BPlusLeafNode<T>,int) sibling, BPlusNonLeafNode<T> parent){
+        public void mergeWithRight((BPlusLeafNode<T>,int) sibling, BPlusNonLeafNode<T> parent){
             BPlusLeafNode<T> siblingNode = sibling.Item1;
             int siblingIndex = sibling.Item2;
             for(int i = 0; i < siblingNode.NumKeys; i++){
@@ -346,7 +351,7 @@ namespace BPlusTreeVisualization{
             
         }
 
-        public void mergeWithL((BPlusLeafNode<T>,int) sibling, BPlusNonLeafNode<T> parentNode){
+        public void mergeWithLeft((BPlusLeafNode<T>,int) sibling, BPlusNonLeafNode<T> parentNode){
             BPlusLeafNode<T> siblingNode = sibling.Item1;
             int siblingIndex = sibling.Item2;
             int numKeysInSibling = siblingNode.NumKeys;

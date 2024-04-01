@@ -1,5 +1,7 @@
 /*
-Author: Andreas Kramer (using BTree structure from Tristan Anderson)
+Author: Andreas Kramer
+Secondary Author: Emily Elzinga
+Remark: contains code from BTree implementation (Tristan Anderson and others)
 Date: 03/04/2024
 Desc: Describes functionality for non-leaf nodes on the B+Tree. Recursive function iteration due to children nodes.
 */
@@ -56,7 +58,7 @@ namespace BPlusTreeVisualization
     /// </summary>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
     /// <returns>Returns the index of the subtree to go into</returns>
-    
+  
     private int Search(int key)
     {
       int index = 0;
@@ -178,15 +180,13 @@ namespace BPlusTreeVisualization
     }
 
     /// <summary>
-    /// Searches itself for key. If found it deletes it by overwriting it
-    /// with the returned result from calling ForfeitKey() on the
-    /// left child from the key being deleted. If not found it calls
-    /// Search on _Children[i] where i == _Keys[i] < key < _Keys[i+1].
-    /// Afterwards checks the child for underflow.
+    /// Traverses down the tree and keeps track of the path it took until it hits a leafnode
+    /// For further reference see its implementation in BPlusLeafNode.cs
     /// </summary>
-    /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
-    /// <param name="key">Integer to search for and delete if found.</param>
- 
+    /// <param name="key">the key looking to be deleted</param>
+    /// <param name="pathStack">Stack storing the nodes visited and the indeces used 
+    /// to further traverse the tree</param>
+    /// <exception cref="NullChildReferenceException"></exception>
 		public override void DeleteKey(int key, Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack)
     {
       int index = Search(key);
@@ -197,11 +197,16 @@ namespace BPlusTreeVisualization
           $"Child at index:{index} within node:{ID}")).DeleteKey(key, pathStack);
       }
       else{
-        //not found
-      }
-      
+        //do nothing
+      }  
     }
 
+    /// <summary>
+    /// Deletes this node, sets all its values to default and disconnects it from doubly linked list
+    /// as well as its parent
+    /// </summary>
+    /// <param name="parentNode"></param>
+    /// <param name="indexOfNodeBeingDeleted"></param>
     public void DeleteNode(BPlusNonLeafNode<T>? parentNode, int indexOfNodeBeingDeleted){
       if(this == null){
         return;
@@ -222,13 +227,22 @@ namespace BPlusTreeVisualization
       }
     }
 
+    /// <summary>
+    /// This method handles the changes that a deletion of an entry may bring
+    /// It updates its key values and checks if it is underflow
+    /// If it is underflow as the root it deletes itself
+    /// If it is underflow as a non-root, it checks sibling(s) for redistributing children, if the sibling(s) cannot
+    /// forfeit a child, it calls merge with the right or left sibling
+    /// Finally it updates the key values again and propagates the changes upwards
+    /// </summary>
+    /// <param name="pathStack"></param>
     public void PropagateChanges(Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack){
         if(pathStack.Count == 0){//if stack is empty, means we are in the root -> no parent
           UpdateKeyValues();
+          _NumKeys = GetNumberOfChildren() - 1;
           bool isRootUnderflow = IsRootUnderflow();
           if(isRootUnderflow){
             DeleteNode(null,-1);
-            //we still need to make its child the new root -> might already been taken care of, further testing for confirmation
           }  
         }
         else{//means stack is not empty and we are in non-root node
@@ -238,17 +252,16 @@ namespace BPlusTreeVisualization
           BPlusNonLeafNode<T>? leftSibling = FindLeftSibling(selfIndex,parentNode);
           BPlusNonLeafNode<T>? rightSibling = FindRightSibling(selfIndex,parentNode);
           UpdateKeyValues();
+          _NumKeys = GetNumberOfChildren() - 1;
           bool isUnderflow = IsUnderflow();
           if(!isUnderflow){
             //do nothing, keep propagating upwards
           }
           else if(isUnderflow && leftSibling != null && leftSibling.CanForfeit()){
             //if it is underflow, check sibling(s) for forfeiting a child
-            //if sibling(s) cannot forfeit because are at min -> mergewith respective child
             GainsFromLeft(leftSibling);
             leftSibling.LosesToRight();
-            //AddChildFromLeft();
-            //leftSibling.ForfeitChildToRight();
+            //send statusupdate
 
           }
           else if(isUnderflow && rightSibling != null && rightSibling.CanForfeit()){
@@ -256,12 +269,14 @@ namespace BPlusTreeVisualization
             rightSibling.LosesToLeft();
             //send statusupdate 
           }
-          else{
+          else{//if sibling(s) cannot forfeit because are at min -> mergewith respective child
             if(rightSibling != null){
-              //mergeWith(rightSibiling);
+              mergeWithRight(rightSibling);
+              rightSibling.DeleteNode(parentNode,selfIndex + 1); //we can use + 1 because we know there is a rightsibling
             }
             else if(leftSibling != null){
-              //mergeWith(leftSibling);
+              mergeWithLeft(leftSibling);
+              leftSibling.DeleteNode(parentNode,selfIndex - 1); //we can use -1 because we know there is a leftsibling
             }
           }
           UpdateKeyValues();
@@ -269,10 +284,11 @@ namespace BPlusTreeVisualization
           parentNode.PropagateChanges(pathStack);
 
         }      
-        //updateValues, etc...
 
     }
-
+    /// <summary>
+    /// Traverses through the (sub)tree and updates the nonleaf key values
+    /// </summary>
     public void UpdateKeyValues(){
       for(int i = 0; i < NumKeys;i++){
         _Keys[i] = default;
@@ -284,10 +300,13 @@ namespace BPlusTreeVisualization
         else{
           return;
         }
-        //loop should only iterate as many times as there are children - 1
       }
     }
 
+    /// <summary>
+    /// Helper method to traverse through the tree, grabs the leftmost child of the subtree
+    /// </summary>
+    /// <param name="index">index of subtree to take (child to go into)</param>
     public void UpdateKeyValuesHelper(int index){
       if(_Children[index] is BPlusLeafNode<T> leaf && leaf != null){
         if(leaf.NumKeys != 0){
@@ -299,9 +318,11 @@ namespace BPlusTreeVisualization
         _Keys[index - 1] = keyToAdd;
       }
     }
-
+    /// <summary>
+    /// Grabs the leftmostkey of the subtree
+    /// </summary>
+    /// <returns>its key value as int</returns>
     public int GetLeftmostKeyofSubTree()
-            //this method returns the leftmostKeyofaSubtree
         {
             //checking if child is a leaf, if it is, takes the leftmost leaf's leftmost key
             if (_Children[0] is BPlusLeafNode<T> leaf && leaf != null)
@@ -316,6 +337,10 @@ namespace BPlusTreeVisualization
             else { return -1; }
         }
 
+    /// <summary>
+    /// Gets the number of children in a nonleafnode
+    /// </summary>
+    /// <returns></returns>
     public int GetNumberOfChildren(){
       int count = 0;
       for(; count < _Children.Count();){
@@ -326,42 +351,52 @@ namespace BPlusTreeVisualization
       }
       return -1;
     }
-    /*
-    public void RemoveChildAtIndex(int index){
-      for(int i = 0; i < _Children.Count();i++){
-
-      }
-    }
-    */
-
+    /// <summary>
+    /// Checks if the root is underflow and would need to be deleted
+    /// Root needs to have at least 1 key and 2 children
+    /// </summary>
+    /// <returns></returns>
     public bool IsRootUnderflow(){
-      //checks if the root is underflow and would need to be deleted
-      //root needs to have at least 1 key and 2 children
       if(_NumKeys < 1 || GetNumberOfChildren() < 2){
         return true;
       }
       return false;
     }
-
+    /// <summary>
+    /// Non-root-node is underflow if it has < m/2 -1 keys or < m/2 children
+    /// </summary>
+    /// <returns></returns>
     public bool IsUnderflow(){
-      //non-root-node is underflow if it has < m/2 -1 keys or < m/2 children
       if(_NumKeys < (int)Math.Ceiling((double)_Degree/2 -1) || GetNumberOfChildren() < (int)Math.Ceiling((double)_Degree/2)){
         return true;
       }
       return false;
     }
-
+    /// <summary>
+    /// Checks if node has a child to spare
+    /// </summary>
+    /// <returns></returns>
     public bool CanForfeit(){
-      if(GetNumberOfChildren() >= _Degree/2 + 1){
+      if(GetNumberOfChildren() > (int)Math.Ceiling((double)_Degree/2)){
         return true;
       }
       return false;
     }
 
+    /// <summary>
+    /// Returns the index of a subtree
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
     public int FindChildIndex(int key){
       return Search(key);
     }
-
+    /// <summary>
+    /// Finds the left sibling
+    /// </summary>
+    /// <param name="selfIndex"></param>
+    /// <param name="parentNode"></param>
+    /// <returns></returns>
     public BPlusNonLeafNode<T>? FindLeftSibling(int selfIndex, BPlusNonLeafNode<T> parentNode){
       if(parentNode != null){
         if(selfIndex > 0 && parentNode.Children[selfIndex - 1] is BPlusNonLeafNode<T> leftSibling){
@@ -370,7 +405,12 @@ namespace BPlusTreeVisualization
       }
       return null;
     }
-
+    /// <summary>
+    /// Finds the right sibling
+    /// </summary>
+    /// <param name="selfIndex">Index of node which's sibling we are looking for</param>
+    /// <param name="parentNode"></param>
+    /// <returns></returns>
     public BPlusNonLeafNode<T>? FindRightSibling(int selfIndex, BPlusNonLeafNode<T> parentNode){
       if(parentNode != null){
         if(selfIndex >= 0 && selfIndex < parentNode.Children.Count() - 1 && parentNode.Children[selfIndex + 1] is BPlusNonLeafNode<T> leftSibling){
@@ -379,268 +419,96 @@ namespace BPlusTreeVisualization
       }
       return null;
     }
-
+    /// <summary>
+    /// Gains a child from the right
+    /// </summary>
+    /// <param name="sibling"></param>
     public void GainsFromRight(BPlusNonLeafNode<T> sibling)
     {
-      _Children[_NumKeys] = sibling.Children[0];
+      _Children[_NumKeys + 1] = sibling.Children[0];
+      _NumKeys++;
     }
-
+    /// <summary>
+    /// Loses a child to the left
+    /// </summary>
     public void LosesToLeft()
-    {
-      for (int i = 0; i < _NumKeys - 1; i++)
+    {     
+      for (int i = 0; i < _NumKeys; i++)
       {
         _Keys[i] = _Keys[i + 1];
         _Children[i] = _Children[i + 1];
       }
       _Children[_NumKeys] = _Children[_NumKeys + 1];
       _Children[_NumKeys + 1] = default;
-      _NumKeys--;
+      if(_NumKeys > 0){
+        _NumKeys--;
+      }
       _Keys[_NumKeys] = default;
+      
     }
-
-    public void GainsFromLeft( BPlusNonLeafNode<T> sibling)
-    {
+    /// <summary>
+    /// Gains a child from the left
+    /// </summary>
+    /// <param name="sibling"></param>
+    public void GainsFromLeft( BPlusNonLeafNode<T> sibling){
       _Children[_NumKeys + 1] = _Children[_NumKeys];
       for (int i = _NumKeys; i > 0; i--)
       {
         //_Keys[i] = _Keys[i - 1];
         _Children[i] = _Children[i - 1];
       }
-      //_NumKeys++;
+      _NumKeys++;
       //_Keys[0] = sibling.Keys[sibling.NumKeys - 1];
       _Children[0] = sibling.Children[sibling.NumKeys];
     }
-
+    /// <summary>
+    /// Loses a child to the right
+    /// </summary>
     public void LosesToRight()
     {
       _Children[_NumKeys] = default;
       _Keys[_NumKeys]= default;
       _NumKeys--;
     }
-
-
-
     /// <summary>
-    /// Checks the child at index for underflow. If so it then checks for _Degree 
-    /// number of children in the right child of the key. _Degree or greater means 
-    /// either overflow or split. 
+    /// Merges this node with its left sibling
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    /// <param name="index">Index of affected child node.</param>
-    /*
-    private void MergeAt(int index)
+    /// <param name="sibling"></param>
+    public void mergeWithLeft(BPlusNonLeafNode<T> sibling)
     {
-      if ((_Children[index] ?? throw new NullChildReferenceException(
-          $"Child at index:{index} within node:{ID}")).IsUnderflow())
-      {
-        if (index == _NumKeys) { index--; }
-        if (_Children[index] == null)
-        {
-          throw new NullChildReferenceException(
-                    $"Child at index:{index} within node:{ID}");
-        }
-        else if (_Children[index + 1] == null)
-        {
-          throw new NullChildReferenceException(
-                    $"Child at index:{index + 1} within node:{ID}");
-        }
-        else if (_Contents[index] == null)
-        {
-          throw new NullContentReferenceException(
-                    $"Content at index:{index} within node:{ID}");
-        }
-        else
-        {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-          if (_Children[index + 1].NumKeys >= _Degree)
-          {
-#pragma warning disable CS8604 // Possible null reference argument.
-            _Children[index].GainsFromRight(_Keys[index], _Contents[index], _Children[index + 1]);
-#pragma warning restore CS8604 // Possible null reference argument.
-            _Keys[index] = _Children[index + 1].Keys[0];
-            _Contents[index] = _Children[index + 1].Contents[0];
-            _Children[index + 1].LosesToLeft();
-            _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, Children[index].NumKeys,
-              Children[index].Keys, Children[index].Contents, Children[index + 1].ID,
-              Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents));
-            if (_Children[index] as BPlusNonLeafNode<T> != null)
-            {
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-              _BufferBlock.SendAsync((NodeStatus.Shift, (((BPlusNonLeafNode<T>)Children[index])
-                .Children[Children[index].NumKeys]
-                  ?? throw new NullChildReferenceException(
-                    $"Child at index:{Children[index].NumKeys} within node:{ID}")
-                    ).ID, -1, [], [], _Children[index].ID, -1, [], []));
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-            }
-          }
-          else if (_Children[index].NumKeys >= _Degree)
-          {
-#pragma warning disable CS8604 // Possible null reference argument.
-            _Children[index + 1].GainsFromLeft(_Keys[index], _Contents[index], _Children[index]);
-#pragma warning restore CS8604 // Possible null reference argument.
-            _Keys[index] = _Children[index].Keys[_Children[index].NumKeys - 1];
-            _Contents[index] = _Children[index].Contents[_Children[index].NumKeys - 1];
-            _Children[index].LosesToRight();
-            _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index + 1].ID,
-              Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents,
-              Children[index].ID, Children[index].NumKeys,
-              Children[index].Keys, Children[index].Contents));
-            if (_Children[index] as BPlusNonLeafNode<T> != null)
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-              _BufferBlock.SendAsync((NodeStatus.Shift, ((BPlusNonLeafNode<T>)Children[index + 1])
-                .Children[0].ID, -1, [], [], _Children[index + 1].ID, -1, [], []));
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-          }
-          else
-          {
-#pragma warning disable CS8604 // Possible null reference argument.
-            _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
-#pragma warning restore CS8604 // Possible null reference argument.
-            for (; index < _NumKeys - 1;)
-            {
-              _Keys[index] = _Keys[index + 1];
-              _Contents[index] = _Contents[index + 1];
-              index++;
-              _Children[index] = _Children[index + 1];
-            }
-            _Keys[index] = default;
-            _Contents[index] = default;
-            _Children[index + 1] = default;
-            _NumKeys--;
-            _BufferBlock.SendAsync((Status.MergeParent, ID, NumKeys, Keys, Contents, 0, -1, [], []));
-          }
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-        }
+      int numChildren = sibling.GetNumberOfChildren();
+      
+      for(int i = 0; i < numChildren; i++){
+        GainsFromLeft(sibling);
+        sibling.LosesToRight();
+        _NumKeys++;     
+        //needs to delete the sibling -> handled in PropagateChanges()
       }
+      _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, [], sibling.ID, -1, [], []));
     }
-    /*
-
     /// <summary>
-    /// Calls ForfeitKey() on last child for a replacement key
-    /// for the parent node. Afterwards checks the child for underflow.
+    /// Merges this node with its right sibling
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-23</remarks>
-    /// <returns>The key and corresponding content from the right
-    /// most leaf node below this node.</returns>
-    public override (int, T) ForfeitKey()
+    /// <param name="sibling"></param>
+    public void mergeWithRight(BPlusNonLeafNode<T> sibling)
     {
-      _BufferBlock.SendAsync((Status.FSearching, ID, -1, [], [], 0, -1, [], []));
-      (int, T) result =
-        (_Children[_NumKeys] ?? throw new NullChildReferenceException(
-          $"Child at index:{_NumKeys} within node:{ID}")).ForfeitKey();
-      MergeAt(_NumKeys);
-      return result;
-    }
-
-    /// <summary>
-    /// Appends the given divider to itself and appends 
-    /// all the entries from the sibiling to itself.
-    /// </summary>
-    /// <remarks>
-    /// Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
-    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
-    /// <param name="sibiling">Sibiling to right. (Sibiling's Keys should be
-    /// greater than all the keys in the called node.)</param>
-    public override void Merge(int dividerKey, T dividerData, BPlusTreeNode<T> sibiling)
-    {
-      _Keys[_NumKeys] = dividerKey;
-      _Contents[_NumKeys] = dividerData;
-      _NumKeys++;
-      for (int i = 0; i < sibiling.NumKeys; i++)
-      {
-        _Keys[_NumKeys + i] = sibiling.Keys[i];
-        _Contents[_NumKeys + i] = sibiling.Contents[i];
-        _Children[_NumKeys + i] = ((BPlusNonLeafNode<T>)sibiling).Children[i];
+      int numChildrenOfSibling = sibling.GetNumberOfChildren();
+      _NumKeys = GetNumberOfChildren() - 1;
+      
+      for(int i = 0; i < numChildrenOfSibling; i++){
+        GainsFromRight(sibling);
+        sibling.LosesToLeft();  
+        //needs to delete the sibling -> handled in PropagateChanges()
       }
-      _Children[_NumKeys + sibiling.NumKeys] = ((BPlusNonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
-      _NumKeys += sibiling.NumKeys;
-      _BufferBlock.SendAsync((Status.Merge, ID, NumKeys, Keys, Contents, sibiling.ID, -1, [], []));
-    }
-    */
-    
-    
-
-    /// <summary>
-    /// Tacks on the given key and data and grabs the first child of the sibiling.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
-    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
-    /// <param name="sibiling">Sibiling to right. (Sibiling's Keys
-    /// should be greater than all the keys in the called node.)</param>
-    
-    /*
-
-    /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-18
-    /// Shifts the values in the arrays by one to the left overwriting 
-    /// the first entries and decrements the _NumKeys var.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    public void LosesToLeft()
-    {
-      for (int i = 0; i < _NumKeys - 1; i++)
-      {
-        _Children[i] = _Children[i + 1];
-      }
-      _Children[_NumKeys] = _Children[_NumKeys + 1];
-      _Children[_NumKeys + 1] = default;
-    }
-
-    /// <summary>
-    /// Inserts at the beginning of this node arrays the 
-    /// given key and data and grabs the last child of the sibiling.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-22</remarks>
-    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
-    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
-    /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
-    /// smaller than all the keys in the called node.)</param>
-    public override void GainsFromLeft(int dividerKey, T dividerData, BPlusTreeNode<T> sibiling)
-    {
-      _Children[_NumKeys + 1] = _Children[_NumKeys];
-      for (int i = _NumKeys; i > 0; i--)
-      {
-        _Keys[i] = _Keys[i - 1];
-        _Contents[i] = _Contents[i - 1];
-        _Children[i] = _Children[i - 1];
-      }
-      _NumKeys++;
-      _Keys[0] = dividerKey;
-      _Contents[0] = dividerData;
-      _Children[0] = ((BPlusNonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
-    }
-
-    /// <summary>
-    /// Decrements the _NumKeys var.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-22</remarks>
-    public override void LosesToRight()
-    {
-      _Children[_NumKeys] = default;
-      _NumKeys--;
-      _Keys[_NumKeys] = default;
-      _Contents[_NumKeys] = default;
+      _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, [], sibling.ID, -1, [], []));
     }
 
     /// <summary>
     /// Prints out the contents of the node in JSON format.
     /// </summary>
     /// <remarks>Author: Tristan Anderson, modified by Andreas Kramer
-    /// Date: 2024-02-13</remarks>
     /// <param name="x">Hierachical Node ID</param>
     /// <returns>String with the entirety of this node's keys and contents arrays formmatted in JSON syntax.</returns>
-    */
 		public override string Traverse(string x)
     {
       string output = Spacer(x) + "{\n";
