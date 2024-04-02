@@ -108,7 +108,7 @@ namespace BPlusTreeVisualization{
             int i = 0;
             while (i < _NumKeys && key >= _Keys[i])
                 i++;
-            if (i == _NumKeys || key != _Keys[i] || key == 0){
+            //if (i == _NumKeys || key != _Keys[i] || key == 0){
                 for (int j = _NumKeys - 1; j >= i; j--){
                     _Keys[j + 1] = _Keys[j];
                     _Contents[j + 1] = _Contents[j];
@@ -120,10 +120,10 @@ namespace BPlusTreeVisualization{
                 if (IsFull()){
                     return Split();
                 }
-            }
-            else{
+            //}
+            //else{
                 _BufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
-            }
+            //}
             return ((-1, default(T)), null);
         }
         /// <summary>

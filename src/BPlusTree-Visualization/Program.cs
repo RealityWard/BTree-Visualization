@@ -188,6 +188,23 @@ class Program
       bPlusTree10.Delete(i);
     }
     Console.WriteLine(bPlusTree10.Traverse());
+
+    BPlusTree<Person> bPlusTree11 = new(4, outputBuffer);
+    bPlusTree11.Insert(1,new Person("hello" + 1));
+    for(int i = 0; i < 10;i++){
+      bPlusTree11.Insert(i,new Person("hello " + i));
+    }
+    bPlusTree11.Insert(5, new Person("Testing"));
+    for(int i = 5; i < 15;i++){
+      bPlusTree11.Insert(i,new Person("hello " + i));
+    }
+    bPlusTree11.Insert(1,new Person("Andreas" + 1));
+    Console.WriteLine(bPlusTree11.Traverse());
+    bPlusTree11.Delete(1);
+    bPlusTree11.Delete(5);
+    Console.WriteLine(bPlusTree11.Traverse());
+
+
     
 
 

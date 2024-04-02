@@ -117,7 +117,7 @@ namespace BPlusTreeVisualization
       while(i < _NumKeys && key > _Keys[i]){
         i++;
       }
-      if(i == _NumKeys || key != _Keys[i] || key == 0){
+      //if(i == _NumKeys || key != _Keys[i] || key == 0){
         result = (Children[i]?? throw new NullChildReferenceException(
           $"Child at index:{i} within node:{ID}")).InsertKey(key,data);
         if(result.Item2 != null){
@@ -135,9 +135,9 @@ namespace BPlusTreeVisualization
             return Split();
           }
         }
-      }else{
+      //}else{
           _BufferBlock.SendAsync((NodeStatus.Inserted,0,-1,[],[],0,-1,[],[]));
-        }
+      //}
       
       return ((-1, default(T)),null);
     }
