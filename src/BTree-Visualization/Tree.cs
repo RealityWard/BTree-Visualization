@@ -105,7 +105,7 @@ namespace BTreeVisualization
         _Root = ((NonLeafNode<T>)_Root).Children[0]
           ?? throw new NullChildReferenceException(
             $"Child of child on root node");
-        _BufferBlock.SendAsync((NodeStatus.Merge, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.MergeRoot, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
       }
     }
     
@@ -114,14 +114,14 @@ namespace BTreeVisualization
       _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, -1, [], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
-      _Root.DeleteKeys(key, endKey, null);
+      _Root.DeleteKeys(key, endKey);
       if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
         long temp = _Root.ID;
         _Root = ((NonLeafNode<T>)_Root).Children[0]
           ?? throw new NullChildReferenceException(
             $"Child of child on root node");
-        _BufferBlock.SendAsync((NodeStatus.Merge, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.MergeRoot, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
       }
     }
 

@@ -32,10 +32,18 @@ namespace BTreeVisualization
     /// Output Buffer for Status updates to be externally viewed.
     /// </summary>
     protected BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock = bufferBlock;
+    public BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> GetBufferBlock
+    {
+      get { return _BufferBlock; }
+    }
     /// <summary>
     /// Determines the number of keys and children per node.
     /// </summary>
     protected readonly int _Degree = degree;
+    public int Degree
+    {
+      get { return _Degree; }
+    }
     /// <summary>
     /// Identifier to be unique per node for reference on gui side.
     /// </summary>
@@ -83,7 +91,9 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
     public abstract void DeleteKey(int key);
-    public abstract int DeleteKeys(int key, int endKey, bool? leftFork);
+    public abstract int DeleteKeys(int key, int endKey);
+    public abstract int DeleteKeysLeft(int key);
+    public abstract int DeleteKeysRight(int endKey);
     /// <summary>
     /// Prints out this node and its children.
     /// </summary>
@@ -113,7 +123,7 @@ namespace BTreeVisualization
       get { return _NumKeys; }
     }
 
-    
+
     public void ZeroOutNumKeys()
     {
       _NumKeys = 0;
@@ -188,6 +198,7 @@ namespace BTreeVisualization
     /// greater than all the keys in the called node.)</param>
     public abstract void Merge(int dividerKey, T dividerData, BTreeNode<T> sibiling);
     public abstract void Merge(BTreeNode<T> sibiling);
+    public abstract ((int?, T?, BTreeNode<T>?)?, bool) Rebalance(BTreeNode<T> sibiling, int underCode);
     /// <summary>
     /// This node appends its sibiling's left most entry to its own entries.
     /// </summary>

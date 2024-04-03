@@ -103,6 +103,10 @@ namespace BTreeVisualization
         }
         _BufferBlock.SendAsync((NodeStatus.FoundRange, ID, result.Count, keys, contents, 0, -1, [], []));
       }
+      else
+      {
+        _BufferBlock.SendAsync((NodeStatus.FoundRange, ID, -1, [], [], 0, -1, [], []));
+      }
       return result;
     }
 
@@ -210,97 +214,145 @@ namespace BTreeVisualization
       }
     }
 
-    public override int DeleteKeys(int key, int endKey, bool? leftFork)
+    public override int DeleteKeys(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
-      if (_Keys[_NumKeys - 1] > key && _Keys[0] < endKey && key <= endKey)
-      {
+      if (key <= endKey)
+      {// Check if this call is valid
         int firstKeyIndex = Search(this, key);
+        if (firstKeyIndex == -1)
+        {// Range is to the far right and doesn't include any keys of this node
+          _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
+          return 0;
+        }
+        // if -1 it is last child index
         int lastIndex = Search(this, endKey);
-        if (lastIndex >= 0)
-        {
-          for (; firstKeyIndex < lastIndex; firstKeyIndex++, lastIndex++)
-          {
-            _Keys[firstKeyIndex] = _Keys[lastIndex];
-            _Contents[firstKeyIndex] = _Contents[lastIndex];
-          }
-          int temp = firstKeyIndex;
-          for (; firstKeyIndex < _NumKeys; firstKeyIndex++)
-          {
-            _Keys[firstKeyIndex] = default;
-            _Contents[firstKeyIndex] = default;
-          }
-          _NumKeys = temp;
-          _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+        if (firstKeyIndex == lastIndex)
+        {// Range is to the far left and doesn't include any keys of this node
+          _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
           return 0;
         }
-        else
+        // After this point means changes to this node
+        // LastIndex is the last index of something not guaranteed to be deleted
+        if (lastIndex == -1)
+          lastIndex = _NumKeys;
+        for (int j = lastIndex; j < _NumKeys; j++)
         {
-          _NumKeys = 0;
-          _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
-          return 0;
+          _Keys[firstKeyIndex] = _Keys[j];
+          _Contents[firstKeyIndex++] = _Contents[j];
         }
+        while (lastIndex < _NumKeys)
+        {
+          _Keys[lastIndex] = default;
+          _Contents[lastIndex++] = default;
+        }
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
       }
       else
       {
         _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
-        return 0;
       }
+      return 0;
     }
 
-    public override (int?, T?, BTreeNode<T>?)? RebalanceNodes(BTreeNode<T> sibiling)
+    public override int DeleteKeysLeft(int key)
     {
-      if (_NumKeys + sibiling.NumKeys >= 2 * _Degree - 2 && _NumKeys != 0 && sibiling.NumKeys != 0)
-      {// Must balance keys between nodes
-        int diff = ((_NumKeys + sibiling.NumKeys - 1) / 2) + 1 - _NumKeys;
-        if (diff > 0)
-        {// Not enough keys in this node
-          for (int j = _NumKeys, i = 0; i < diff; i++, j++)
-          {
-            _Keys[j] = sibiling.Keys[i];
-            _Contents[j] = sibiling.Contents[i];
-          }
-          sibiling.LosesToLeft(diff);
-        }
-        else if (diff < 0)
-        {// Not enough keys in sibiling
-          sibiling.GainsFromLeft(-diff, this);
-          for (int i = _NumKeys + diff; i < _NumKeys; i++)
-          {
-            _Keys[i] = default;
-            _Contents[i] = default;
-          }
-        }
-        _NumKeys += diff - 1;
-        _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, NumKeys, Keys, Contents
-          , sibiling.ID, sibiling.NumKeys, sibiling.Keys, sibiling.Contents));
-        return (Keys[_NumKeys + 1], Contents[_NumKeys + 1], sibiling);
+      _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
+      int firstKeyIndex = Search(this, key);
+      if (firstKeyIndex == -1)
+      {// Range is to the far right and doesn't include any keys of this node
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
+      }
+      else if (firstKeyIndex == 0)
+      {
+        _NumKeys = 0;
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
       }
       else
-      {// Not enough keys for two nodes
-        if(_NumKeys == 0 && sibiling.NumKeys == 0)
+      {
+        for (int i = firstKeyIndex; i < _NumKeys; i++)
         {
-          return null;
+          _Keys[i] = default;
+          _Contents[i] = default;
         }
-        else if (sibiling.NumKeys == 0)
+        _NumKeys = firstKeyIndex;
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+      }
+      return 0;
+    }
+
+    public override int DeleteKeysRight(int endKey)
+    {
+      _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
+      int lastIndex = Search(this, endKey);
+      if (lastIndex == -1)
+      {// Range includes all keys of this node
+        _NumKeys = 0;
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
+      }
+      else if (lastIndex != 0)
+      {
+        for (int i = lastIndex, j = 0; i < _NumKeys; i++)
         {
-          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, sibiling.ID, -1, [], [], 0, -1, [], []));
-          return (null, default, null);
+          _Keys[j] = _Keys[i];
+          _Contents[j] = _Contents[i];
         }
-        else if (_NumKeys == 0)
-        {
-          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, ID, -1, [], [], 0, -1, [], []));
-          return (null, default, sibiling);
+        _NumKeys -= lastIndex;
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+      }
+      else
+      {
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
+      }
+      return 0;
+    }
+
+    public override ((int?, T?, BTreeNode<T>?)?, bool) Rebalance(BTreeNode<T> rightSibiling, int underFlowLevel)
+    {
+      return (RebalanceNodes(rightSibiling), false);
+    }
+
+    public override (int?, T?, BTreeNode<T>?)? RebalanceNodes(BTreeNode<T> rightSibiling)
+    {
+      if (IsUnderflow() || rightSibiling.IsUnderflow())
+      {
+        if (_NumKeys + rightSibiling.NumKeys > 2 * _Degree - 2)
+        {// Must balance keys between nodes
+          int diff = ((_NumKeys + rightSibiling.NumKeys - 1) / 2) + 1 - _NumKeys;
+          if (diff > 0)
+          {// Not enough keys in this node
+            for (int j = _NumKeys, i = 0; i < diff; i++)
+            {
+              _Keys[j] = rightSibiling.Keys[i];
+              _Contents[j] = rightSibiling.Contents[i];
+            }
+            rightSibiling.LosesToLeft(diff);
+          }
+          else if (diff < 0)
+          {// Not enough keys in sibiling
+            rightSibiling.GainsFromLeft(-diff, this);
+            for (int i = _NumKeys + diff; i < _NumKeys; i++)
+            {
+              _Keys[i] = default;
+              _Contents[i] = default;
+            }
+          }
+          _NumKeys += diff - 1;
+          _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, NumKeys, Keys, Contents
+            , rightSibiling.ID, rightSibiling.NumKeys, rightSibiling.Keys, rightSibiling.Contents));
+          (int?, T?, BTreeNode<T>?)? results = (Keys[_NumKeys + 1], Contents[_NumKeys + 1], rightSibiling);
+          _Keys[_NumKeys + 1] = default;
+          _Contents[_NumKeys + 1] = default;
+          return results;
         }
         else
-        {
-          Merge(sibiling);
-          _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, NumKeys, Keys, Contents
-            , sibiling.ID, sibiling.NumKeys, sibiling.Keys, sibiling.Contents));
-          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, sibiling.ID, -1, [], [], 0, -1, [], []));
+        {// Not enough keys for two nodes
+          Merge(rightSibiling);
+          rightSibiling.ZeroOutNumKeys();
           return (null, default, null);
         }
       }
+      return null;
     }
 
     /// <summary>
