@@ -2,7 +2,7 @@
 Primary Author: Tristan Anderson
 Secondary Author: Andreas Kramer (for tree height methods)
 Date: 2024-02-03
-Desc: Maintains the entry point of the BTree data 
+Desc: Maintains the entry point of the BTree data
 structure and initializes root and new node creation in the beginning.
 */
 using System.Threading.Tasks.Dataflow;
@@ -26,7 +26,6 @@ namespace BTreeVisualization
     private bool zeroKeyUsed;
     private BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock;
 
-    
     public BTree(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
     {
       _Degree = degree;
@@ -45,7 +44,7 @@ namespace BTreeVisualization
     {
       _Root = new NonLeafNode<T>(_Degree, [rNode.Item1.Item1], [rNode.Item1.Item2]
         , [_Root, rNode.Item2], _BufferBlock);
-      _BufferBlock.SendAsync((NodeStatus.Inserted, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.NewRoot, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
       _BufferBlock.SendAsync((NodeStatus.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[0]
         ?? throw new NullChildReferenceException($"Child of new root node at index:0")).ID, -1, [], []));
       _BufferBlock.SendAsync((NodeStatus.Shift, _Root.ID, -1, [], [], (((NonLeafNode<T>)_Root).Children[1]
@@ -53,8 +52,8 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Inserts data at root node and set root to a new 
-    /// leaf node if root isn't yet created. It also 
+    /// Inserts data at root node and set root to a new
+    /// leaf node if root isn't yet created. It also
     /// checks for a split afterwards.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
@@ -70,7 +69,7 @@ namespace BTreeVisualization
         if (key == 0)
           zeroKeyUsed = true;
         _BufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [key], [data], 0, -1, [], []));
-        ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data);
+        ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data, 0);
         if (result.Item2 != null && result.Item1.Item2 != null)
         {
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
@@ -85,10 +84,10 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Invokes a delete through out the tree to find 
-    /// an entry matching key and deletes it. If there 
-    /// are duplicates only the first encountered is deleted. 
-    /// If after the delete the root is reduced too 
+    /// Invokes a delete through out the tree to find
+    /// an entry matching key and deletes it. If there
+    /// are duplicates only the first encountered is deleted.
+    /// If after the delete the root is reduced too
     /// much it will grab its remaining child and make that the root.
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
@@ -111,7 +110,7 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Using searchKey on the nodes to return the data 
+    /// Using searchKey on the nodes to return the data
     /// correlated to the key.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
@@ -120,19 +119,48 @@ namespace BTreeVisualization
     public T? Search(int key)
     {
       _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
-      (int, BTreeNode<T>?) result = _Root.SearchKey(key);
-      if (result.Item1 == -1 || result.Item2 == null)
+      (int key, T content)? result = _Root.SearchKey(key);
+      if(result == null)
       {
         return default;
       }
       else
       {
-        return result.Item2.Contents[result.Item1];
+        return result.Value.content;
       }
     }
 
     /// <summary>
-    /// Invokes Traverse recursively through out the 
+    /// Invokes the SearchKey overload 1 on the root node.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Lower bound inclusive.</param>
+    /// <param name="endKey">Upper bound exclusive.</param>
+    /// <returns>A list of key-value pairs from the matching range in order of found.</returns>
+    public List<(int key, T content)> Search(int key, int endKey)
+    {
+      _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
+      List<(int key, T value)> result = _Root.SearchKeys(key, endKey);
+      if (result.Count > 0)
+      {
+        int[] keys = new int[result.Count];
+        T[] contents = new T[result.Count];
+        for (int i = 0; i < result.Count; i++)
+        {
+          keys[i] = result[i].key;
+          contents[i] = result[i].value;
+        }
+        _BufferBlock.SendAsync((NodeStatus.FoundRange, _Root.ID, result.Count, keys, contents, 0, -1, [], []));
+      }
+      else
+      {
+        _BufferBlock.SendAsync((NodeStatus.FoundRange, _Root.ID, -1, [], [], 0, -1, [], []));
+      }
+      return result;
+    }
+
+    /// <summary>
+    /// Invokes Traverse recursively through out the
     /// tree to return a json print out of all nodes.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
@@ -141,9 +169,15 @@ namespace BTreeVisualization
     {
       return _Root.Traverse("Root");
     }
-    
-    public void Clear(){
-      _Root = new LeafNode<T>(_Degree,_BufferBlock);
+
+    public void Clear()
+    {
+      _Root = new LeafNode<T>(_Degree, _BufferBlock);
+    }
+
+    public void Close()
+    {
+      _BufferBlock.SendAsync((NodeStatus.Close, 0, -1, [], [], 0, -1, [], []));
     }
 
     /// <summary>
@@ -152,20 +186,22 @@ namespace BTreeVisualization
     /// </summary>
     /// <returns></returns>
 
-    public int GetTreeHeight(){
-      if(_Root == null){
+    public int GetTreeHeight()
+    {
+      if (_Root == null)
+      {
         return 0;
       }
       int height = 1;
       BTreeNode<T> currentNode = _Root;
-      while(currentNode is NonLeafNode<T> nonLeafNode && nonLeafNode.Children.Length > 0)
+      while (currentNode is NonLeafNode<T> nonLeafNode && nonLeafNode.Children.Length > 0)
       {
         currentNode = nonLeafNode.Children[0] ?? throw new NullChildReferenceException(
           $"Child at index:0 within node:{nonLeafNode.ID}");
         height++;
       }
       return height;
-    }  
+    }
 
     /// <summary>
     /// Author: Andreas Kramer
@@ -173,24 +209,31 @@ namespace BTreeVisualization
     /// </summary>
     /// <returns> minimum height of the B-tree as an integer
     /// 
-    public int GetMinHeight(){
-      return GetMinHeight(_Root,0);
+    public int GetMinHeight()
+    {
+      return GetMinHeight(_Root, 0);
     }
-    static private int GetMinHeight(BTreeNode<T> node, int currentLevel){
-      if(node == null || node is LeafNode<T>){
+    static private int GetMinHeight(BTreeNode<T> node, int currentLevel)
+    {
+      if (node == null || node is LeafNode<T>)
+      {
         return currentLevel + 1;
       }
-      if(node is NonLeafNode<T> nonLeafNode){
+      if (node is NonLeafNode<T> nonLeafNode)
+      {
         int minHeight = int.MaxValue;
-        foreach(var child in nonLeafNode.Children){
-          if(child != null){
+        foreach (var child in nonLeafNode.Children)
+        {
+          if (child != null)
+          {
             int childHeight = GetMinHeight(child, currentLevel + 1);
-            if(childHeight < minHeight){
+            if (childHeight < minHeight)
+            {
               minHeight = childHeight;
             }
           }
         }
-      return minHeight;     
+        return minHeight;
       }
       return currentLevel;
     }
@@ -201,24 +244,31 @@ namespace BTreeVisualization
     /// </summary>
     /// <returns></returns>
     /// 
-    public int GetMaxHeight(){
-      return GetMaxHeight(_Root,0);
+    public int GetMaxHeight()
+    {
+      return GetMaxHeight(_Root, 0);
     }
-    private int GetMaxHeight(BTreeNode<T> node, int currentLevel){
-      if(node == null || node is LeafNode<T>){
+    private int GetMaxHeight(BTreeNode<T> node, int currentLevel)
+    {
+      if (node == null || node is LeafNode<T>)
+      {
         return currentLevel + 1;
       }
-      if(node is NonLeafNode<T> nonLeafNode){
+      if (node is NonLeafNode<T> nonLeafNode)
+      {
         int maxHeight = currentLevel;
-        foreach(var child in nonLeafNode.Children){
-          if(child != null){
+        foreach (var child in nonLeafNode.Children)
+        {
+          if (child != null)
+          {
             int childHeight = GetMinHeight(child, currentLevel + 1);
-            if(childHeight > maxHeight){
+            if (childHeight > maxHeight)
+            {
               maxHeight = childHeight;
             }
-          }          
+          }
         }
-      return maxHeight;     
+        return maxHeight;
       }
       return currentLevel;
     }
@@ -230,38 +280,47 @@ namespace BTreeVisualization
     /// </summary>
     /// <returns></returns>
 
-    public bool IsBalanced() {
-        if (_Root == null) {
-            return true; 
-        }
-        int leafLevel = -1; 
-        return CheckNodeBalance(_Root, 0, ref leafLevel);
+    public bool IsBalanced()
+    {
+      if (_Root == null)
+      {
+        return true;
+      }
+      int leafLevel = -1;
+      return CheckNodeBalance(_Root, 0, ref leafLevel);
     }
 
-    static private bool CheckNodeBalance(BTreeNode<T> node, int currentLevel, ref int leafLevel) {
-        if (node is LeafNode<T>) {
-            if (leafLevel == -1) {
-                leafLevel = currentLevel;
-                return true;
-            }
-            return currentLevel == leafLevel;
+    static private bool CheckNodeBalance(BTreeNode<T> node, int currentLevel, ref int leafLevel)
+    {
+      if (node is LeafNode<T>)
+      {
+        if (leafLevel == -1)
+        {
+          leafLevel = currentLevel;
+          return true;
         }
+        return currentLevel == leafLevel;
+      }
 
-        if (node is NonLeafNode<T> nonLeafNode) {
-            foreach (var child in nonLeafNode.Children) {
-                if (child != null && !CheckNodeBalance(child, currentLevel + 1, ref leafLevel)) {
-                    return false;
-                }
-            }
+      if (node is NonLeafNode<T> nonLeafNode)
+      {
+        foreach (var child in nonLeafNode.Children)
+        {
+          if (child != null && !CheckNodeBalance(child, currentLevel + 1, ref leafLevel))
+          {
+            return false;
+          }
         }
-        return true;
+      }
+      return true;
     }
 
     /// <summary>
     /// Gets the total number of keys in this tree.
     /// </summary>
     /// <returns>Count of all keys.</returns>
-    public long KeyCount(){
+    public long KeyCount()
+    {
       if (_Root as NonLeafNode<T> != null)
         return NonLeafNode<T>.KeyCount((NonLeafNode<T>)_Root);
       else
@@ -272,7 +331,8 @@ namespace BTreeVisualization
     /// Gets the total number of nodes in this tree.
     /// </summary>
     /// <returns>Count of all keys.</returns>
-    public int NodeCount(){
+    public int NodeCount()
+    {
       if (_Root as NonLeafNode<T> != null)
         return NonLeafNode<T>.NodeCount((NonLeafNode<T>)_Root);
       else

@@ -45,13 +45,20 @@ namespace BTreeVisualization
     /// </summary>
     /// <param name="key">Integer to find in _Keys[].</param>
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
-    public abstract (int, N) SearchKey(int key);
+    public abstract (int key, T content)? SearchKey(int key);
+    /// <summary>
+    /// Searches for all keys equal to or greater than key and less than endKey.
+    /// </summary>
+    /// <param name="key">Lower bound inclusive.</param>
+    /// <param name="endKey">Upper bound exclusive.</param>
+    /// <returns>A list of key-content pairs from the matching range.</returns>
+    public abstract List<(int key, T content)> SearchKeys(int key, int endKey);
     /// <summary>
     /// Split this node into two.
     /// </summary>
     /// <returns>The new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).</returns>
-    public abstract ((int, T), N) Split();
+    public abstract ((int, T), N) Split(long parentID);
     /// <summary>
     /// Append the entry between this node and its sibiling.
     /// Then append all the entries from the sibiling to this node.
@@ -122,7 +129,7 @@ namespace BTreeVisualization
     /// the new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).
     /// Otherwise it returns ((-1, null), null).</returns>
-    public abstract ((int, T?), N?) InsertKey(int key, T data);
+    public abstract ((int, T?), N?) InsertKey(int key, T data, long parentID);
 
     /// <summary>
     /// Delete an entry matching key from this node or child node.
@@ -207,7 +214,8 @@ namespace BTreeVisualization
   public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<BTreeNode<T>, T>(degree, bufferBlock)
   {
     /// <summary>
-    /// Holds children for this node.
+    /// Generic typed array parallel to the keys array.
+    /// It holds the values associated with the corresponding key.
     /// </summary>
     protected T?[] _Contents = new T[2 * degree - 1];
 

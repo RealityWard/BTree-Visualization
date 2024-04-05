@@ -35,6 +35,12 @@
             cmbxMaxDegree = new ComboBox();
             txtInputData = new TextBox();
             panel1 = new Panel();
+            lblCurrentProcess = new Label();
+            chkDebugMode = new CheckBox();
+            btnInsertMany = new CustomControls.RJControls.RJButton();
+            trbSpeed = new TrackBar();
+            lblSpeed = new Label();
+            ((System.ComponentModel.ISupportInitialize)trbSpeed).BeginInit();
             SuspendLayout();
             // 
             // btnInsert
@@ -46,9 +52,9 @@
             btnInsert.BorderSize = 0;
             btnInsert.FlatAppearance.BorderSize = 0;
             btnInsert.FlatStyle = FlatStyle.Flat;
-            btnInsert.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            btnInsert.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnInsert.ForeColor = Color.White;
-            btnInsert.Location = new Point(130, 901);
+            btnInsert.Location = new Point(719, 896);
             btnInsert.Name = "btnInsert";
             btnInsert.Size = new Size(150, 40);
             btnInsert.TabIndex = 0;
@@ -66,9 +72,9 @@
             btnDelete.BorderSize = 0;
             btnDelete.FlatAppearance.BorderSize = 0;
             btnDelete.FlatStyle = FlatStyle.Flat;
-            btnDelete.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            btnDelete.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnDelete.ForeColor = Color.White;
-            btnDelete.Location = new Point(286, 901);
+            btnDelete.Location = new Point(875, 896);
             btnDelete.Name = "btnDelete";
             btnDelete.Size = new Size(150, 40);
             btnDelete.TabIndex = 1;
@@ -86,9 +92,9 @@
             btnSearch.BorderSize = 0;
             btnSearch.FlatAppearance.BorderSize = 0;
             btnSearch.FlatStyle = FlatStyle.Flat;
-            btnSearch.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            btnSearch.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnSearch.ForeColor = Color.White;
-            btnSearch.Location = new Point(442, 901);
+            btnSearch.Location = new Point(1031, 896);
             btnSearch.Name = "btnSearch";
             btnSearch.Size = new Size(150, 40);
             btnSearch.TabIndex = 2;
@@ -106,9 +112,9 @@
             btnclear.BorderSize = 0;
             btnclear.FlatAppearance.BorderSize = 0;
             btnclear.FlatStyle = FlatStyle.Flat;
-            btnclear.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            btnclear.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnclear.ForeColor = Color.White;
-            btnclear.Location = new Point(598, 901);
+            btnclear.Location = new Point(1187, 896);
             btnclear.Name = "btnclear";
             btnclear.Size = new Size(150, 40);
             btnclear.TabIndex = 3;
@@ -120,11 +126,11 @@
             // cmbxMaxDegree
             // 
             cmbxMaxDegree.BackColor = Color.MediumSlateBlue;
-            cmbxMaxDegree.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
+            cmbxMaxDegree.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             cmbxMaxDegree.ForeColor = SystemColors.Window;
             cmbxMaxDegree.FormattingEnabled = true;
             cmbxMaxDegree.Items.AddRange(new object[] { "3", "4", "5", "6", "7" });
-            cmbxMaxDegree.Location = new Point(754, 907);
+            cmbxMaxDegree.Location = new Point(1343, 902);
             cmbxMaxDegree.Name = "cmbxMaxDegree";
             cmbxMaxDegree.Size = new Size(130, 30);
             cmbxMaxDegree.TabIndex = 4;
@@ -133,26 +139,92 @@
             // 
             // txtInputData
             // 
-            txtInputData.Location = new Point(12, 912);
+            txtInputData.Location = new Point(506, 907);
             txtInputData.Name = "txtInputData";
-            txtInputData.Size = new Size(100, 23);
+            txtInputData.Size = new Size(195, 23);
             txtInputData.TabIndex = 5;
-            txtInputData.Text = "Insert data here";
+            txtInputData.Text = "Insert Data Here...";
+            txtInputData.Enter += txt_txtInputData_Enter;
+            txtInputData.Leave += txt_txtInputData_Leave;
             // 
             // panel1
             // 
             panel1.AutoScroll = true;
+            panel1.BackColor = SystemColors.ControlDarkDark;
             panel1.Location = new Point(12, 12);
             panel1.Name = "panel1";
-            panel1.Size = new Size(1015, 883);
+            panel1.Size = new Size(2063, 883);
             panel1.TabIndex = 6;
             panel1.Paint += panel1_Paint;
+            // 
+            // lblCurrentProcess
+            // 
+            lblCurrentProcess.AutoSize = true;
+            lblCurrentProcess.ForeColor = SystemColors.ActiveCaptionText;
+            lblCurrentProcess.Location = new Point(12, 897);
+            lblCurrentProcess.Name = "lblCurrentProcess";
+            lblCurrentProcess.Size = new Size(188, 15);
+            lblCurrentProcess.TabIndex = 11;
+            lblCurrentProcess.Text = "No Tree Currently Being Processed";
+            // 
+            // chkDebugMode
+            // 
+            chkDebugMode.AutoSize = true;
+            chkDebugMode.Location = new Point(1980, 907);
+            chkDebugMode.Name = "chkDebugMode";
+            chkDebugMode.Size = new Size(95, 19);
+            chkDebugMode.TabIndex = 7;
+            chkDebugMode.Text = "Debug Mode";
+            chkDebugMode.UseVisualStyleBackColor = true;
+            // 
+            // btnInsertMany
+            // 
+            btnInsertMany.BackColor = Color.MediumSlateBlue;
+            btnInsertMany.BackgroundColor = Color.MediumSlateBlue;
+            btnInsertMany.BorderColor = Color.PaleVioletRed;
+            btnInsertMany.BorderRadius = 20;
+            btnInsertMany.BorderSize = 0;
+            btnInsertMany.FlatAppearance.BorderSize = 0;
+            btnInsertMany.FlatStyle = FlatStyle.Flat;
+            btnInsertMany.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
+            btnInsertMany.ForeColor = Color.White;
+            btnInsertMany.Location = new Point(1824, 896);
+            btnInsertMany.Name = "btnInsertMany";
+            btnInsertMany.Size = new Size(150, 40);
+            btnInsertMany.TabIndex = 8;
+            btnInsertMany.Text = "insert many";
+            btnInsertMany.TextColor = Color.White;
+            btnInsertMany.UseVisualStyleBackColor = false;
+            btnInsertMany.Click += btnInsertMany_Click;
+            // 
+            // trbSpeed
+            // 
+            trbSpeed.Location = new Point(1714, 896);
+            trbSpeed.Minimum = 1;
+            trbSpeed.Name = "trbSpeed";
+            trbSpeed.Size = new Size(104, 45);
+            trbSpeed.TabIndex = 9;
+            trbSpeed.Value = 10;
+            // 
+            // lblSpeed
+            // 
+            lblSpeed.AutoSize = true;
+            lblSpeed.Location = new Point(1720, 927);
+            lblSpeed.Name = "lblSpeed";
+            lblSpeed.Size = new Size(98, 15);
+            lblSpeed.TabIndex = 10;
+            lblSpeed.Text = "Animation Speed";
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1039, 947);
+            ClientSize = new Size(2087, 947);
+            Controls.Add(lblCurrentProcess);
+            Controls.Add(lblSpeed);
+            Controls.Add(trbSpeed);
+            Controls.Add(btnInsertMany);
+            Controls.Add(chkDebugMode);
             Controls.Add(panel1);
             Controls.Add(txtInputData);
             Controls.Add(cmbxMaxDegree);
@@ -163,6 +235,7 @@
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;
+            ((System.ComponentModel.ISupportInitialize)trbSpeed).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -176,5 +249,10 @@
         private ComboBox cmbxMaxDegree;
         private TextBox txtInputData;
         private Panel panel1;
+        private CheckBox chkDebugMode;
+        private CustomControls.RJControls.RJButton btnInsertMany;
+        private TrackBar trbSpeed;
+        private Label lblSpeed;
+        private Label lblCurrentProcess;
     }
 }

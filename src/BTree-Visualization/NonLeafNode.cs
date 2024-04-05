@@ -80,7 +80,7 @@ namespace BTreeVisualization
     /// LeafNode.SearchKey()</remarks>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
-    public override (int, BTreeNode<T>) SearchKey(int key)
+    public override (int key, T content)? SearchKey(int key)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       int result = Search(key);
@@ -93,7 +93,8 @@ namespace BTreeVisualization
       else if (_Keys[result] == key)
       {
         _BufferBlock.SendAsync((NodeStatus.Found, ID, result, [key], [Contents[result]], 0, -1, [], []));
-        return (result, this);
+        return (Keys[result], Contents[result] ?? throw new NullContentReferenceException(
+            $"Content at index:{result} within node:{ID}"));
       }
       else
       {
@@ -101,6 +102,40 @@ namespace BTreeVisualization
           ?? throw new NullChildReferenceException(
             $"Child at index:{result} within node:{ID}")).SearchKey(key);
       }
+    }
+
+    /// <summary>
+    /// Recursively searches for all keys, wihtin this node and children nodes, (equal to or greater than key) and less than endKey.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Lower bound inclusive.</param>
+    /// <param name="endKey">Upper bound exclusive.</param>
+    /// <returns>A list of key-content pairs from the matching range in order of found.</returns>
+    /// <exception cref="NullChildReferenceException">In the case that one of the children
+    /// nodes in the range is null.</exception>
+    /// <exception cref="NullContentReferenceException">In the case that one of the key-content
+    /// pairs would have a null for a value.</exception>
+    public override List<(int key, T content)> SearchKeys(int key, int endKey)
+    {
+      _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
+      List<(int, T)> result = [];
+      for (int i = 0; i < _NumKeys; i++)
+      {
+        if (_Keys[i] >= key)
+        {
+          result.AddRange((_Children[i]
+            ?? throw new NullChildReferenceException(
+              $"Child at index:{i} within node:{ID}")).SearchKeys(key, endKey));
+          if(_Keys[i] < endKey)
+            result.Add((Keys[i], Contents[i] ?? throw new NullContentReferenceException(
+              $"Content at index:{i} within node:{ID}")));
+        }
+      }
+      if(_Keys[_NumKeys - 1] < endKey)
+        result.AddRange((_Children[_NumKeys]
+          ?? throw new NullChildReferenceException(
+            $"Child at index:{NumKeys} within node:{ID}")).SearchKeys(key, endKey));
+      return result;
     }
 
     /// <summary>
@@ -118,7 +153,7 @@ namespace BTreeVisualization
     /// the new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).
     /// Otherwise it returns ((-1, null), null).</returns>
-    public override ((int, T?), BTreeNode<T>?) InsertKey(int key, T data)
+    public override ((int, T?), BTreeNode<T>?) InsertKey(int key, T data, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.ISearching, ID, -1, [key], [data], 0, -1, [], []));
       ((int, T?), BTreeNode<T>?) result;
@@ -131,7 +166,7 @@ namespace BTreeVisualization
       {
         result = (_Children[i]
           ?? throw new NullChildReferenceException(
-            $"Child at index:{i} within node:{ID}")).InsertKey(key, data);
+            $"Child at index:{i} within node:{ID}")).InsertKey(key, data, ID);
         if (result.Item2 != null && result.Item1.Item2 != null)
         {
           for (int j = _NumKeys - 1; j >= i; j--)
@@ -144,16 +179,16 @@ namespace BTreeVisualization
           _Contents[i] = result.Item1.Item2;
           _Children[i + 1] = result.Item2;
           _NumKeys++;
-          _BufferBlock.SendAsync((NodeStatus.Inserted, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          _BufferBlock.SendAsync((NodeStatus.SplitInsert, ID, NumKeys, Keys, Contents, 0, -1, [], []));
           if (IsFull())
           {
-            return Split();
+            return Split(parentID);
           }
         }
       }
       else
       {
-        _BufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.SplitInsert, 0, -1, [], [], 0, -1, [], []));
       }
       return ((-1, default(T)), null);
     }
@@ -166,8 +201,9 @@ namespace BTreeVisualization
     /// LeafNode.Split()</remarks>
     /// <returns>The new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).</returns>
-    public override ((int, T), BTreeNode<T>) Split()
+    public override ((int, T), BTreeNode<T>) Split(long parentID)
     {
+      _BufferBlock.SendAsync((NodeStatus.Split, ID, -1, [], [], 0, -1, [], []));
       int[] newKeys = new int[_Degree - 1];
       T[] newContent = new T[_Degree - 1];
       BTreeNode<T>[] newChildren = new BTreeNode<T>[_Degree];
@@ -197,8 +233,10 @@ namespace BTreeVisualization
           $"Content at index:{_NumKeys} within node:{ID}"));
       _Keys[_NumKeys] = default;
       _Contents[_NumKeys] = default;
-      _BufferBlock.SendAsync((NodeStatus.Split, ID, NumKeys, Keys, Contents,
-        newNode.ID, newNode.NumKeys, newNode.Keys, newNode.Contents));
+      _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, NumKeys, Keys, Contents,
+        parentID, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID, newNode.NumKeys,
+        newNode.Keys, newNode.Contents, parentID, -1, [], []));
       for(int j = 0; j <= newNode.NumKeys; j++)
       {
         _BufferBlock.SendAsync((NodeStatus.Shift, newNode.ID, -1, [], [], (newNode.Children[j]
@@ -290,9 +328,17 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Checks the child at index for underflow. If so it then checks for _Degree 
-    /// number of children in the right child of the key. _Degree or greater means 
-    /// either overflow or split. 
+    /// Checks the child at index for underflow. If so it then checks for _Degree
+    /// number of children in the right child of the key. _Degree or greater means
+    /// merging the two will result in an overflow or a split. If less than _Degree
+    /// then the merge will not be a full node needing to be split immediately.
+    /// This is meant to reduce the number of times elements are moved back and forth.
+    /// Underflow is _NumKeys <= _Degree - 2.
+    /// Full is _NumKeys == 2 * _Degree - 1.
+    /// Don't forget the dividing key adds 1
+    /// Sum of the two nodes in minimal bad scenario:
+    /// (_Degree - 2) + _Degree + 1 == 2 * _Degree - 1
+    /// Results in Full at least.
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
