@@ -1,5 +1,9 @@
-
-
+/*
+Author: Andreas Kramer (modified code from B-Tree implementation by Tristan Anderson)
+Remark: contains code from BTree implementation (Tristan Anderson and others)
+Date: 03/04/2024
+Desc: Describes functionality for non-leaf nodes on the B+Tree. Recursive function iteration due to children nodes.
+*/
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
 
@@ -44,61 +48,23 @@ namespace BPlusTreeVisualization
     /// <param name="key">Integer to find in _Keys[].</param>
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
     public abstract (int, N) SearchKey(int key);
-    /// <summary>
-    /// Split this node into two.
-    /// </summary>
-    /// <returns>The new node created from the split and the dividing key with
-    /// corresponding content as ((dividing Key, Content), new Node).</returns>
-    //public abstract ((int, T), N) Split();
-    /*
-  /// <summary>
-    /// Append the entry between this node and its sibiling.
-    /// Then append all the entries from the sibiling to this node.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
-    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
-    /// <param name="sibiling">Sibiling to right. (Sibiling's Keys should be
-    /// greater than all the keys in the called node.)</param>
-    public abstract void Merge(int dividerKey, T dividerData, N sibiling);
-    /// <summary>
-    /// This node appends its sibiling's left most entry to its own entries.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
-    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
-    /// <param name="sibiling">Sibiling to right. (Sibiling's Keys
-    /// should be greater than all the keys in the called node.)</param>
-    public abstract void GainsFromRight(int dividerKey, T dividerData, N sibiling);
-    /// <summary>
-    /// This node prepends its sibiling's left most entry to its own entries.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-22</remarks>
-    /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
-    /// <param name="dividerData">Coresponding Content to dividerKey.</param>
-    /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
-    /// smaller than all the keys in the called node.)</param>
-    public abstract void GainsFromLeft(int dividerKey, T dividerData, N sibiling);
+    
     /// <summary>
     /// Removes the beginning entry of this node.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
+    /// Date: 2024-03-18</remarks>
     public abstract void LosesToLeft();
     /// <summary>
     /// Removes the last entry of this node.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
+    /// Date: 2024-03-18</remarks>
+    
     public abstract void LosesToRight();
     /// <summary>
     /// Checks if this node is at max capacity.
     /// </summary>
     /// <returns>True if it is full.</returns>
-    /// */
+    /// 
     public bool IsFull()
     {
       return _NumKeys > _Degree - 1;
@@ -107,12 +73,10 @@ namespace BPlusTreeVisualization
     /// Checks if this node is below minimum capacity.
     /// </summary>
     /// <returns>True if it is below.</returns>
-    /*
-    public bool IsUnderflow()
-    {
-      return _NumKeys < _Degree - 1;
-    }
-    /*
+    
+    public abstract bool IsUnderflow();
+ 
+    
     /// <summary>
     /// Insert new entry to this node or one of its children.
     /// Then recognize if a child split and adjust accordingly.
@@ -136,22 +100,13 @@ namespace BPlusTreeVisualization
     public abstract void DeleteKey(int key, Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack);
 
     /// <summary>
-    /// Retreive the right most entry of the right most leaf node of this node.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-23</remarks>
-    /// <returns>The key and corresponding content from the right
-    /// most leaf node below this node.</returns>
-    /*
-    public abstract (int, T) ForfeitKey();
-    /// <summary>
     /// Prints out this node and its children.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="x">Hierachical Node ID</param>
     /// <returns>String in JSON syntax.</returns>
     
-    */
+    
     public abstract string Traverse(string x);
     /// <summary>
     /// Getter of _Keys

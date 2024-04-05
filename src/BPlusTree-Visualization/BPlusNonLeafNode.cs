@@ -366,7 +366,7 @@ namespace BPlusTreeVisualization
     /// Non-root-node is underflow if it has < m/2 -1 keys or < m/2 children
     /// </summary>
     /// <returns></returns>
-    public bool IsUnderflow(){
+    public override bool IsUnderflow(){
       if(_NumKeys < (int)Math.Ceiling((double)_Degree/2 -1) || GetNumberOfChildren() < (int)Math.Ceiling((double)_Degree/2)){
         return true;
       }
@@ -431,7 +431,7 @@ namespace BPlusTreeVisualization
     /// <summary>
     /// Loses a child to the left
     /// </summary>
-    public void LosesToLeft()
+    public override void LosesToLeft()
     {     
       for (int i = 0; i < _NumKeys; i++)
       {
@@ -450,7 +450,7 @@ namespace BPlusTreeVisualization
     /// Gains a child from the left
     /// </summary>
     /// <param name="sibling"></param>
-    public void GainsFromLeft( BPlusNonLeafNode<T> sibling){
+    public void GainsFromLeft(BPlusNonLeafNode<T> sibling){
       _Children[_NumKeys + 1] = _Children[_NumKeys];
       for (int i = _NumKeys; i > 0; i--)
       {
@@ -464,7 +464,7 @@ namespace BPlusTreeVisualization
     /// <summary>
     /// Loses a child to the right
     /// </summary>
-    public void LosesToRight()
+    public override void LosesToRight()
     {
       _Children[_NumKeys] = default;
       _Keys[_NumKeys]= default;
