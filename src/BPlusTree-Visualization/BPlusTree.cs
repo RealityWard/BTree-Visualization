@@ -7,6 +7,7 @@ structure and initializes root and new node creation in the beginning.
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks.Dataflow;
 using BTreeVisualization;
+using NodeData;
 using ThreadCommunication;
 namespace BPlusTreeVisualization
 {
@@ -116,6 +117,79 @@ namespace BPlusTreeVisualization
         }else{
           throw new InvalidOperationException("Unexpected return type.");
         }       
+    }
+    /// <summary>
+    /// Returns all BPlusLeafNodes (as Id's) in ascending order (based on their key values)
+    /// </summary>
+    /// <returns></returns>
+    public string GetLeafNodesAsString(){
+      List<BPlusLeafNode<T>> list = GetAllLeafNodes();
+      string output = "";
+      foreach(BPlusLeafNode<T> node in list){
+        output += node.ID + " -> ";
+      }
+      return output;
+    }
+    /// <summary>
+    /// Returns a list of existing key values in the BPlusTree that are within a given range (bound-leafinclusive)
+    /// </summary>
+    /// <param name="low">lower bound of the keyRange</param>
+    /// <param name="high">uppper bound of the keyRange</param>
+    /// <returns></returns>
+    public List<int>? RangeQuery(int low, int high)
+    {
+      List<int> keyRange = new List<int>();
+      BPlusLeafNode<T>? bPlusLeafNode = GetFirstLeafNode();
+      while(bPlusLeafNode != null && bPlusLeafNode is BPlusLeafNode<T> leaf)
+      {
+        for(int i = 0; i < leaf.NumKeys; i++){
+          if(leaf.Contents[i] != null){
+            if(leaf.Keys[i] >= low && leaf.Keys[i] <= high){
+              keyRange.Add(leaf.Keys[i]);
+            }
+            else if(leaf.Keys[i] > high){
+              return keyRange;
+            }
+          }
+        }
+        bPlusLeafNode = leaf.GetNextNode();
+      }
+      return keyRange;
+    }
+
+    /// <summary>
+    /// Returns a list containing all leafNodes in ascending order
+    /// </summary>
+    /// <returns></returns>
+    public List<BPlusLeafNode<T>> GetAllLeafNodes(){
+      List<BPlusLeafNode<T>> leafNodes = new List<BPlusLeafNode<T>>();
+      BPlusLeafNode<T>? currentNode = GetFirstLeafNode();
+
+      while(currentNode is BPlusLeafNode<T> leafNode && currentNode != null){     
+        leafNodes.Add(leafNode);
+        currentNode = leafNode.GetNextNode();
+        
+      }
+      return leafNodes;
+    }
+
+    /// <summary>
+    /// Gets the first leafnode of the BPlusTree (leafnode containing the lowest key value)
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NullChildReferenceException"></exception>
+    private BPlusLeafNode<T>? GetFirstLeafNode(){
+      BPlusTreeNode<T> currentNode = _Root;
+      while(currentNode is BPlusNonLeafNode<T> nonLeaf){
+        currentNode = (nonLeaf.Children[0] ?? throw new NullChildReferenceException(
+          $"Child at index:{0} within node:{nonLeaf.ID}"));
+      }
+      if(currentNode is BPlusLeafNode<T> leaf){
+        return leaf;
+      }
+      else{
+         return null;
+      }
     }
 
   

@@ -31,6 +31,10 @@ namespace BPlusTreeVisualization{
     {
         private BPlusLeafNode<T>? _NextNode;
 
+        public BPlusLeafNode<T>? GetNextNode()
+        {
+            return _NextNode;
+        }
         private BPlusLeafNode<T>? _PrevNode;
 
         protected T?[] _Contents = new T[degree];
@@ -434,6 +438,15 @@ namespace BPlusTreeVisualization{
         public bool isUnderflowAsRoot(){
             int minKeys = 1;
             return _NumKeys >= minKeys;
+        }
+
+        public string toString(){
+            string output = "";
+            for(int i = 0; i < NumKeys;i++){
+                output += (Contents[0]?? throw new NullContentReferenceException(
+                $"Content at index:{i + _Degree} within node:{ID}")).ToString() + " ";
+            }
+            return output;
         }
 
         /// <summary>

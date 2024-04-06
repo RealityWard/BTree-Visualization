@@ -204,6 +204,9 @@ class Program
     bPlusTree11.Delete(5);
     Console.WriteLine(bPlusTree11.Traverse());
 
+    Console.WriteLine(bPlusTree11.GetLeafNodesAsString());
+    bPlusTree11.RangeQuery(2,8);
+
 
     
 
