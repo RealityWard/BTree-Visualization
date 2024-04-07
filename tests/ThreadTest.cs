@@ -545,7 +545,7 @@ namespace ThreadTesting
         else
         {
           key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
-          await _InputBuffer.SendAsync((TreeCommand.DeleteRange, key, key + 10
+          await _InputBuffer.SendAsync((TreeCommand.DeleteRange, key, key + 100
             , null));
           for (int l = 0; l < 9; l++)
           {

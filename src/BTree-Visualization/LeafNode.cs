@@ -292,10 +292,16 @@ namespace BTreeVisualization
       }
       else if (lastIndex != 0)
       {
-        for (int i = lastIndex, j = 0; i < _NumKeys; i++)
+        int j = 0;
+        for (int i = lastIndex; i < _NumKeys; i++, j++)
         {
           _Keys[j] = _Keys[i];
           _Contents[j] = _Contents[i];
+        }
+        for(; j < _NumKeys; j++)
+        {
+          _Keys[j] = default;
+          _Contents[j] = default;
         }
         _NumKeys -= lastIndex;
         _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));

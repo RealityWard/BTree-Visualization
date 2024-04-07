@@ -679,24 +679,27 @@ namespace BTreeVisualization
 
     private void asdf(int firstKeyIndex, int lastIndex)
     {
-      for (; lastIndex < _NumKeys; firstKeyIndex++, lastIndex++)
+      if (firstKeyIndex != lastIndex)
       {
-        _Keys[firstKeyIndex] = _Keys[lastIndex];
-        _Contents[firstKeyIndex] = _Contents[lastIndex];
+        for (; lastIndex < _NumKeys; firstKeyIndex++, lastIndex++)
+        {
+          _Keys[firstKeyIndex] = _Keys[lastIndex];
+          _Contents[firstKeyIndex] = _Contents[lastIndex];
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-        _BufferBlock.SendAsync((NodeStatus.NodeDeleted, _Children[firstKeyIndex].ID, -1, [], [], 0, -1, [], []));
+          _BufferBlock.SendAsync((NodeStatus.NodeDeleted, _Children[firstKeyIndex].ID, -1, [], [], 0, -1, [], []));
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
+          _Children[firstKeyIndex] = _Children[lastIndex];
+        }
         _Children[firstKeyIndex] = _Children[lastIndex];
+        int temp = firstKeyIndex;
+        while (firstKeyIndex < _NumKeys)
+        {
+          _Keys[firstKeyIndex] = default;
+          _Contents[firstKeyIndex] = default;
+          _Children[++firstKeyIndex] = default;
+        }
+        _NumKeys = temp;
       }
-      _Children[firstKeyIndex] = _Children[lastIndex];
-      int temp = firstKeyIndex;
-      while (firstKeyIndex < _NumKeys)
-      {
-        _Keys[firstKeyIndex] = default;
-        _Contents[firstKeyIndex] = default;
-        _Children[++firstKeyIndex] = default;
-      }
-      _NumKeys = temp;
     }
 
     /// <summary>
@@ -812,11 +815,11 @@ namespace BTreeVisualization
           if (_Children[index] as NonLeafNode<T> != null)
           {
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-            _BufferBlock.SendAsync((NodeStatus.Shift, (((NonLeafNode<T>)Children[index])
-              .Children[Children[index].NumKeys]
+            _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index].ID, -1, [], [],
+              (((NonLeafNode<T>)Children[index]).Children[Children[index].NumKeys]
                 ?? throw new NullChildReferenceException(
                   $"Child at index:{Children[index].NumKeys} within node:{ID}")
-                  ).ID, -1, [], [], _Children[index].ID, -1, [], []));
+                  ).ID, -1, [], []));
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
           }
         }
@@ -834,8 +837,8 @@ namespace BTreeVisualization
             Children[index].Keys, Children[index].Contents));
           if (_Children[index] as NonLeafNode<T> != null)
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-            _BufferBlock.SendAsync((NodeStatus.Shift, ((NonLeafNode<T>)Children[index + 1])
-              .Children[0].ID, -1, [], [], _Children[index + 1].ID, -1, [], []));
+            _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index + 1].ID, -1, [], [],
+              ((NonLeafNode<T>)Children[index + 1]).Children[0].ID, -1, [], []));
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
         }
         else
