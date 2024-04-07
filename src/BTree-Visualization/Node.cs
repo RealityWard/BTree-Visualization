@@ -264,6 +264,19 @@ namespace BTreeVisualization
       }
       return node.Keys[midIndex] >= key ? midIndex : -1;
     }
+    
+    public (int, int[], T?[]) CreateBufferVar()
+    {
+      int numKeys = NumKeys;
+      int[] keys = new int[_Keys.Length];
+      T?[] contents = new T[_Keys.Length];
+      for (int i = 0; i < _Keys.Length; i++)
+      {
+        keys[i] = Keys[i];
+        contents[i] = Contents[i];
+      }
+      return (numKeys, keys, contents);
+    }
   }
 
   /// <summary>
