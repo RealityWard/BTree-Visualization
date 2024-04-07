@@ -129,6 +129,8 @@ namespace BPlusTreeVisualization
           _Keys[i] = result.Item1.Item1;
           _Children[i + 1] = result.Item2;
           _NumKeys++;
+          int[] intArray = new int[Keys.Length];
+          
           _BufferBlock.SendAsync((NodeStatus.Inserted, ID, NumKeys, Keys, [], 0, -1, [], []));
           if (IsFull())
           {
