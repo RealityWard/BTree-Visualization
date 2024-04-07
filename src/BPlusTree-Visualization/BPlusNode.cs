@@ -89,7 +89,7 @@ namespace BPlusTreeVisualization
     /// corresponding content as ((dividing Key, Content), new Node).
     /// Otherwise it returns ((-1, null), null).</returns>
     /// */
-    public abstract ((int, T?), N?) InsertKey(int key, T data);
+    public abstract ((int, T?), N?) InsertKey(int key, T data, long parentID);
 
     /// <summary>
     /// Delete an entry matching key from this node or child node.
@@ -170,7 +170,7 @@ namespace BPlusTreeVisualization
                 T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) 
                 : Node<BPlusTreeNode<T>, T>(degree, bufferBlock)
     {
-
+      
         
     }
 
