@@ -355,7 +355,27 @@ namespace BTreeVisualization
         (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
           $"Child at index:{firstKeyIndex} within node:{ID}"))
           .DeleteKeys(key, endKey);
-        MergeAt(firstKeyIndex);
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+        if (_Children[firstKeyIndex].NumKeys < _Degree - 2)
+        {
+#pragma warning disable CS8604 // Possible null reference argument.
+          ((int, T?), BTreeNode<T>?) result = _Children[firstKeyIndex]
+            .InsertKey(_Keys[firstKeyIndex], _Contents[firstKeyIndex], ID);
+          if (result.Item2 != null)
+          {// Split in child occured
+            (_Keys[firstKeyIndex], _Contents[firstKeyIndex]) = result.Item1;
+            for(int i )
+            _Children[firstKeyIndex + 1] = result.Item2;
+          }
+          (int?, T?, BTreeNode<T>?) merged =
+            _Children[firstKeyIndex].RebalanceNodes(_Children[firstKeyIndex + 1]);
+#pragma warning restore CS8604 // Possible null reference argument.
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
+        else
+        {
+          MergeAt(firstKeyIndex);
+        }
       }
       else
       {// Range includes keys from this node.
@@ -380,7 +400,7 @@ namespace BTreeVisualization
         -1, [], [], 0, -1, [], []));
       if (index != _NumKeys)
       {
-        for (int i = index; i < _NumKeys - 1;)
+        for (int i = index; i < _NumKeys;)
         {
           _Keys[i] = default;
           _Contents[i] = default;

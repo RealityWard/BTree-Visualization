@@ -245,11 +245,12 @@ namespace BTreeVisualization
           _Keys[firstKeyIndex] = _Keys[lastIndex];
           _Contents[firstKeyIndex] = _Contents[lastIndex];
         }
-        for (; firstKeyIndex < _NumKeys; firstKeyIndex++)
+        for (int i = firstKeyIndex; i < _NumKeys; i++)
         {
-          _Keys[firstKeyIndex] = default;
-          _Contents[firstKeyIndex] = default;
+          _Keys[i] = default;
+          _Contents[i] = default;
         }
+        _NumKeys = firstKeyIndex;
       }
     }
 
@@ -259,7 +260,7 @@ namespace BTreeVisualization
         -1, [], [], 0, -1, [], []));
       if (index != _NumKeys)
       {
-        for (int i = index; i < _NumKeys - 1; i++)
+        for (int i = index; i < _NumKeys; i++)
         {
           _Keys[i] = default;
           _Contents[i] = default;
@@ -320,24 +321,28 @@ namespace BTreeVisualization
           }
         }
         _NumKeys += diff - 1;
+        int dividerKey = _Keys[_NumKeys];
+        T? dividerData = _Contents[_NumKeys];
+        _Keys[_NumKeys] = default;
+        _Contents[_NumKeys] = default;
         (int, int[], T?[]) bufferVarLeft = CreateBufferVar();
         (int, int[], T?[]) bufferVarRight = rightSibiling.CreateBufferVar();
         _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID,
           bufferVarLeft.Item1, bufferVarLeft.Item2, bufferVarLeft.Item3
           , rightSibiling.ID, bufferVarRight.Item1, bufferVarRight.Item2,
           bufferVarRight.Item3));
-        return (Keys[_NumKeys], Contents[_NumKeys], rightSibiling);
+        return (dividerKey, dividerData, rightSibiling);
       }
       else
       {// Not enough keys for two nodes
         if (_NumKeys == 0)
         {
-          return (default, default, rightSibiling);
+          return (null, default, rightSibiling);
         }
         else
         {
           Merge(rightSibiling);
-          return (default, default, default);
+          return (null, default, null);
         }
       }
     }
