@@ -12,6 +12,111 @@ using ThreadCommunication;
 
 class Program
 {
+  
+    static int[] CreateUniqueRandomArray(int length){
+      int[] array = new int[length];
+      for(int i = 0; i < length;i++){
+        Random rand = new Random();
+        array[i] = rand.Next(0,1000);
+      }
+      int[] uniqueArray = array.Distinct().ToArray();
+      return uniqueArray;    
+    }
+
+    static int[] CreateRandomArray(int length){
+      int[] array = new int[length];
+      for(int i = 0; i < length;i++){
+        Random rand = new Random();
+        array[i] = rand.Next(0,100000);
+      }
+      return array;    
+    }
+
+    static void RandomOpsTestRevised(int numOps,BPlusTree<Person> bPlusTree){
+      int[] array = CreateUniqueRandomArray(numOps);
+      numOps = array.Length;
+      List<int> deletedKeys = new List<int>();
+      for(int i = 0; i < numOps;i++){
+        Random rand = new Random();
+        int op = rand.Next(0,3);
+        int key = array[i];
+        bPlusTree.Insert(key,new Person($"Person {key}"));
+        if(op == 0){
+          var result = bPlusTree.Search(key);
+          if(result == null){
+            Console.WriteLine($"Key {key} should be found.");
+          }
+        }else if(op == 1){
+          var foundkey = bPlusTree.Search(key);
+          if(foundkey != null){
+            bPlusTree.Delete(key);
+            deletedKeys.Add(key);
+            var result = bPlusTree.Search(key);
+            if(result != null){
+              Console.WriteLine($"Key {key} should not be found. ");
+            }
+
+          }
+        }
+          else{
+            var result = bPlusTree.Search(key);
+          if(result == null)
+            {
+              Console.WriteLine($"Key {key} should be found.");
+            }
+          }
+        }
+      
+    }
+    static void RandomOperationsTest(int numOps, BPlusTree<Person> bPlusTree){
+      List<int> keys = new List<int>();
+      List<int> deletedKeys = new List<int>();
+      for(int i = 0; i < numOps; i++){
+        Random rand = new Random();
+        int op = rand.Next(0,3);
+        int key = rand.Next(0,1000);
+        keys.Add(key);
+        bPlusTree.Insert(key, new Person($"Person {key}"));
+        if (op == 0){
+          var result = bPlusTree.Search(key);
+          //Assert.That(result, Is.Not.Null, $"Key {key} should be found.");
+        }
+        else if (op == 1){
+         var  foundKey = bPlusTree.Search(key);
+          if (foundKey != null){
+            bPlusTree.Delete(key);
+            deletedKeys.Add(key);
+            var result = bPlusTree.Search(key);
+            if(result != null)
+            {
+              Console.WriteLine($"\nKey {key} should not be found." + " Here are the key values: ");
+              foreach(int integer in keys){
+                Console.Write(" " + integer +"," );
+              }
+              Console.WriteLine("\nDeleted Keys: ");
+              foreach(int integer in deletedKeys){
+                Console.Write(" " + integer +"," );
+              }
+
+            }
+            //Assert.That(result, Is.Null, $"Key {key} should not be found.");
+          }
+        }
+        else{
+          var result = bPlusTree.Search(key);
+          if(result == null)
+            {
+              Console.WriteLine($"Key {key} should be found." + " Here are the key values: ");
+              foreach(int integer in keys){
+                Console.WriteLine("" + integer);
+              }
+            }
+          //Assert.That(result, Is.Not.Null, $"Inserted key {key} should be found.");
+          //Assert.That(result.Name, Is.EqualTo($"Person {key}"), $"Key {key} should return the correct person.");
+        
+        }
+      }
+    }
   static void Main()
   {
       var outputBuffer = new BufferBlock<(
@@ -206,6 +311,32 @@ class Program
 
     Console.WriteLine(bPlusTree11.GetLeafNodesAsString());
     bPlusTree11.RangeQuery(2,8);
+
+    BPlusTree<Person> bPlusTree12 = new(3, outputBuffer);
+    BPlusTree<Person> bPlusTree13 = new(4, outputBuffer);
+    BPlusTree<Person> bPlusTree14 = new(5, outputBuffer);
+    BPlusTree<Person> bPlusTree15 = new(6, outputBuffer);
+    BPlusTree<Person> bPlusTree16 = new(7, outputBuffer);
+    
+    RandomOpsTestRevised(1000,bPlusTree12);
+    RandomOpsTestRevised(1000,bPlusTree13);
+    RandomOpsTestRevised(1000,bPlusTree14);
+    RandomOpsTestRevised(1000,bPlusTree15);
+    RandomOpsTestRevised(1000,bPlusTree16);
+
+    BPlusTree<Person> bPlusTree17 = new(3, outputBuffer);
+    
+    int[] array = CreateRandomArray(10000);
+    for(int i = 0; i < array.Length;i++){
+        int key = array[i];
+        bPlusTree16.Insert(key,new Person("Person " + key));
+    }
+    for(int i = 0; i < array.Length / 2 ;i++){
+        int key = array[i];
+        bPlusTree16.Delete(key);
+    }
+
+
 
 
     

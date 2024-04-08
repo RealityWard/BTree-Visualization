@@ -241,8 +241,11 @@ namespace BPlusTreeVisualization
     /// <param name="pathStack"></param>
     public void PropagateChanges(Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack){
         if(pathStack.Count == 0){//if stack is empty, means we are in the root -> no parent
+          _NumKeys = GetNumberOfChildren() - 1;//switched with line below
           UpdateKeyValues();
-          _NumKeys = GetNumberOfChildren() - 1;
+          
+          (int, int[]) temp5 = CreateBufferVar(); 
+          //_BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp5.Item1,temp5.Item2,[],-1,-1,[],[]));
           bool isRootUnderflow = IsRootUnderflow();
           if(isRootUnderflow){
             //merge root status update
@@ -255,15 +258,20 @@ namespace BPlusTreeVisualization
           int selfIndex = nextItemUpward.Item2;
           BPlusNonLeafNode<T>? leftSibling = FindLeftSibling(selfIndex,parentNode);
           BPlusNonLeafNode<T>? rightSibling = FindRightSibling(selfIndex,parentNode);
+          _NumKeys = GetNumberOfChildren() - 1;//switched with line below
           UpdateKeyValues();
+          
           //new status update: updated key values
-          _NumKeys = GetNumberOfChildren() - 1;
+          (int, int[]) temp = CreateBufferVar();
+          //_BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp.Item1,temp.Item2,[],-1,-1,[],[]));
           bool isUnderflow = IsUnderflow();
+
           if(!isUnderflow){
             //do nothing, keep propagating upwards
           }
           else if(isUnderflow && leftSibling != null && leftSibling.CanForfeit()){
             //if it is underflow, check sibling(s) for forfeiting a child
+            //check if this is the correct status update
             _BufferBlock.SendAsync((NodeStatus.Shift,ID,-1,[],[],(leftSibling.Children[leftSibling._NumKeys] 
             ?? throw new NullChildReferenceException($"Child at index 0 in node:{leftSibling.ID}")).ID,
             -1,[],[]));
@@ -271,29 +279,38 @@ namespace BPlusTreeVisualization
             GainsFromLeft(leftSibling);
             leftSibling.LosesToRight();
             
-
           }
           else if(isUnderflow && rightSibling != null && rightSibling.CanForfeit()){
+            //check if this is the correct status update (underflow?)
             _BufferBlock.SendAsync((NodeStatus.Shift,ID,-1,[],[],(rightSibling.Children[0] 
             ?? throw new NullChildReferenceException($"Child at index 0 in node:{rightSibling.ID}")).ID,
             -1,[],[]));
 
             GainsFromRight(rightSibling);
             rightSibling.LosesToLeft();
-            //send statusupdate 
           }
           else{//if sibling(s) cannot forfeit because are at min -> mergewith respective child
             if(rightSibling != null){
+              long rightSiblingID = rightSibling.ID;
               mergeWithRight(rightSibling);
               rightSibling.DeleteNode(parentNode,selfIndex + 1); //we can use + 1 because we know there is a rightsibling
+              (int, int[]) temp3 = CreateBufferVar();
+              _BufferBlock.SendAsync((NodeStatus.Merge,ID, temp3.Item1, temp3.Item2, [], rightSiblingID,-1, [],[]));
+
             }
             else if(leftSibling != null){
+              long leftSiblingID = leftSibling.ID;
               mergeWithLeft(leftSibling);
               leftSibling.DeleteNode(parentNode,selfIndex - 1); //we can use -1 because we know there is a leftsibling
+              
+              (int, int[]) temp2 = CreateBufferVar();
+              _BufferBlock.SendAsync((NodeStatus.Merge,ID, temp2.Item1, temp2.Item2, [], leftSiblingID,-1, [],[]));
             }
           }
           UpdateKeyValues();
-          
+          (int, int[]) temp4 = CreateBufferVar();
+          //_BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp4.Item1,temp4.Item2,[],-1,-1,[],[]));
+  
           parentNode.PropagateChanges(pathStack);
 
         }      
@@ -464,15 +481,17 @@ namespace BPlusTreeVisualization
     /// </summary>
     /// <param name="sibling"></param>
     public void GainsFromLeft(BPlusNonLeafNode<T> sibling){
-      _Children[_NumKeys + 1] = _Children[_NumKeys];
-      for (int i = _NumKeys; i > 0; i--)
+      
+      _Children[NumKeys + 1] = _Children[_NumKeys];
+      for (int i = _NumKeys; i > 0; i--) 
       {
         //_Keys[i] = _Keys[i - 1];
-        _Children[i] = _Children[i - 1];
+        _Children[i] = _Children[i-1];
       }
       _NumKeys++;
       //_Keys[0] = sibling.Keys[sibling.NumKeys - 1];
       _Children[0] = sibling.Children[sibling.NumKeys];
+
     }
     /// <summary>
     /// Loses a child to the right
@@ -493,8 +512,7 @@ namespace BPlusTreeVisualization
       
       for(int i = 0; i < numChildren; i++){
         GainsFromLeft(sibling);
-        sibling.LosesToRight();
-        _NumKeys++;     
+        sibling.LosesToRight();    
         //needs to delete the sibling -> handled in PropagateChanges()
       }
       _BufferBlock.SendAsync((NodeStatus.Merge, ID, NumKeys, Keys, [], sibling.ID, -1, [], []));

@@ -22,11 +22,6 @@ namespace BPlusTreeVisualization
     /// </summary>
     private readonly int _Degree = degree;
     /// <summary>
-    /// Tracks whether a key of zero is in use in the tree.
-    /// </summary>
-    private bool zeroKeyUsed = false;
-
-    /// <summary>
     /// Takes a node and the key and data to place into root.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>

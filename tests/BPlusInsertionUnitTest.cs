@@ -77,6 +77,6 @@ namespace BPlustests{
           }
         }
         Assert.That(Regex.Count(_Tree.Traverse(),"name"), Is.EqualTo(x), "Missing insertions");
-        }
+    }
   }
 }

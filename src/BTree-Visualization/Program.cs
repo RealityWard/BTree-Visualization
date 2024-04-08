@@ -145,6 +145,13 @@ namespace ThreadCommunication
     /// </summary>
     FoundRange,
     /// <summary>
+    /// Sent once the key values of the nonLeafNode are updated
+    /// when the leafnodes in the bplustree get deleted, or a merge happens
+    /// the key values for the non-leafnodes have to change
+    /// sends the ID, Keys
+    /// </summary>
+    //UpdateKeyValues,
+    /// <summary>
     /// Sent if the node had nothing left
     /// during a delete over a range of keys.
     /// Just the ID of the one being deleted.
