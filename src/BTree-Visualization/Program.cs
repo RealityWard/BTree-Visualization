@@ -100,6 +100,13 @@ namespace ThreadCommunication
     /// </summary>
     MergeParent,
     /// <summary>
+    /// Sent once after replacing the root.
+    /// ID,NumKeys,Keys,Contents,AltID
+    /// values will be sent to update existing node.
+    /// AltID refers to old root.
+    /// </summary>
+    MergeRoot,
+    /// <summary>
     /// Sent when a full merge is not possible thus one sibiling takes a
     /// bite out of its sibiling. Alt refers the sibiling node being biten.
     /// ID,NumKeys,Keys,Contents,AltID,AltNumKeys,AltKeys,AltContents

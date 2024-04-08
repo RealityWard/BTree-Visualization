@@ -105,7 +105,7 @@ namespace BTreeVisualization
         _Root = ((NonLeafNode<T>)_Root).Children[0]
           ?? throw new NullChildReferenceException(
             $"Child of child on root node");
-        _BufferBlock.SendAsync((NodeStatus.Merge, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.MergeRoot, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
       }
     }
 

@@ -592,17 +592,19 @@ namespace BTreeVisualization
             if (index == 0)
             {
               _Children[index + 1].GainsFromLeft(_Keys[index], _Contents[index], _Children[index]);
-              _BufferBlock.SendAsync((NodeStatus.NodeDeleted, _Children[index].ID, -1, [], [], 0, -1, [], []));
+              _BufferBlock.SendAsync((NodeStatus.NodeDeleted, _Children[index].ID, -1, [], [], ID, -1, [], []));
               _Children[index] = _Children[index + 1];
             }
             else
             {
               _Children[index - 1].Merge(_Keys[index], _Contents[index], _Children[index]);
+              _BufferBlock.SendAsync((NodeStatus.NodeDeleted, _Children[index].ID, -1, [], [], ID, -1, [], []));
             }
           }
           else
           {
             _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
+            _BufferBlock.SendAsync((NodeStatus.NodeDeleted, _Children[index + 1].ID, -1, [], [], ID, -1, [], []));
           }
 #pragma warning restore CS8604 // Possible null reference argument.
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
@@ -616,7 +618,7 @@ namespace BTreeVisualization
           _Contents[index] = default;
           _Children[index + 1] = default;
           _NumKeys--;
-          (int,int[],T?[]) bufferVar = CreateBufferVar();
+          (int, int[], T?[]) bufferVar = CreateBufferVar();
           _BufferBlock.SendAsync((NodeStatus.MergeParent, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
         }
       }
