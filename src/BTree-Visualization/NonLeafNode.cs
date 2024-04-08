@@ -184,8 +184,8 @@ namespace BTreeVisualization
           _Contents[i] = result.Item1.Item2;
           _Children[i + 1] = result.Item2;
           _NumKeys++;
-          (int, int[], T?[]) temp = CreateBufferVar();
-          _BufferBlock.SendAsync((NodeStatus.SplitInsert, ID, temp.Item1, temp.Item2, temp.Item3, 0, -1, [], []));
+          (int, int[], T?[]) bufferVar = CreateBufferVar();
+          _BufferBlock.SendAsync((NodeStatus.SplitInsert, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
           if (IsFull())
           {
             return Split(parentID);
@@ -239,12 +239,12 @@ namespace BTreeVisualization
           $"Content at index:{_NumKeys} within node:{ID}"));
       _Keys[_NumKeys] = default;
       _Contents[_NumKeys] = default;
-      (int, int[], T?[]) temp = CreateBufferVar();
-      _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, temp.Item1, temp.Item2, temp.Item3,
+      (int, int[], T?[]) bufferVar = CreateBufferVar();
+      _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3,
         parentID, -1, [], []));
-      (int, int[], T?[]) temp2 = newNode.CreateBufferVar();
-      _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID, temp2.Item1,
-        temp2.Item2, temp2.Item3, parentID, -1, [], []));
+      (int, int[], T?[]) newNodeBufferVar = newNode.CreateBufferVar();
+      _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID, newNodeBufferVar.Item1,
+        newNodeBufferVar.Item2, newNodeBufferVar.Item3, parentID, -1, [], []));
       for (int j = 0; j <= newNode.NumKeys; j++)
       {
         _BufferBlock.SendAsync((NodeStatus.Shift, newNode.ID, -1, [], [], (newNode.Children[j]
@@ -279,8 +279,8 @@ namespace BTreeVisualization
         (_Keys[result], _Contents[result]) = (_Children[result]
           ?? throw new NullChildReferenceException(
             $"Child at index:{result} within node:{ID}")).ForfeitKey();
-        (int, int[], T?[]) temp = CreateBufferVar();
-        _BufferBlock.SendAsync((NodeStatus.Deleted, ID, temp.Item1, temp.Item2, temp.Item3, 0, -1, [], []));
+        (int, int[], T?[]) bufferVar = CreateBufferVar();
+        _BufferBlock.SendAsync((NodeStatus.Deleted, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
         MergeAt(result);
       }
       else
@@ -355,8 +355,8 @@ namespace BTreeVisualization
           MergeAt(firstKeyIndex + 1);
         MergeAt(firstKeyIndex);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-        (int, int[], T?[]) temp = CreateBufferVar();
-        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, temp.Item1, temp.Item2, temp.Item3, 0, -1, [], []));
+        (int, int[], T?[]) bufferVar = CreateBufferVar();
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
         return true;
       }
       else
@@ -390,10 +390,10 @@ namespace BTreeVisualization
           }
         }
         _NumKeys += diff - 1;
-        (int, int[], T?[]) temp = CreateBufferVar();
-        (int, int[], T?[]) temp2 = sibiling.CreateBufferVar();
-        _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, temp.Item1, temp.Item2, temp.Item3
-          , sibiling.ID, temp2.Item1, temp2.Item2, temp2.Item3));
+        (int, int[], T?[]) bufferVar = CreateBufferVar();
+        (int, int[], T?[]) sibilingBufferVar = sibiling.CreateBufferVar();
+        _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3
+          , sibiling.ID, sibilingBufferVar.Item1, sibilingBufferVar.Item2, sibilingBufferVar.Item3));
         return (Keys[_NumKeys + 1], Contents[_NumKeys + 1], sibiling);
       }
       else
@@ -411,10 +411,10 @@ namespace BTreeVisualization
         else
         {
           Merge(sibiling);
-          (int, int[], T?[]) temp = CreateBufferVar();
-          (int, int[], T?[]) temp2 = sibiling.CreateBufferVar();
-          _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, temp.Item1, temp.Item2, temp.Item3
-            , sibiling.ID, temp2.Item1, temp2.Item2, temp2.Item3));
+          (int, int[], T?[]) bufferVar = CreateBufferVar();
+          (int, int[], T?[]) sibilingBufferVar = sibiling.CreateBufferVar();
+          _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3
+            , sibiling.ID, sibilingBufferVar.Item1, sibilingBufferVar.Item2, sibilingBufferVar.Item3));
           _BufferBlock.SendAsync((NodeStatus.NodeDeleted, sibiling.ID, -1, [], [], 0, -1, [], []));
           return (null, default, null);
         }
@@ -433,14 +433,14 @@ namespace BTreeVisualization
         _Children[firstKeyIndex] = _Children[lastIndex];
       }
       _Children[firstKeyIndex] = _Children[lastIndex];
-      int temp = firstKeyIndex;
+      int holdNewNumKeys = firstKeyIndex;
       while (firstKeyIndex < _NumKeys)
       {
         _Keys[firstKeyIndex] = default;
         _Contents[firstKeyIndex] = default;
         _Children[++firstKeyIndex] = default;
       }
-      _NumKeys = temp;
+      _NumKeys = holdNewNumKeys;
     }
 
     /// <summary>
@@ -485,8 +485,8 @@ namespace BTreeVisualization
       }
       _Children[_NumKeys + sibiling.NumKeys] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
       _NumKeys += sibiling.NumKeys;
-      (int, int[], T?[]) temp = CreateBufferVar();
-      _BufferBlock.SendAsync((NodeStatus.Merge, ID, temp.Item1, temp.Item2, temp.Item3, sibiling.ID, -1, [], []));
+      (int, int[], T?[]) bufferVar = CreateBufferVar();
+      _BufferBlock.SendAsync((NodeStatus.Merge, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, sibiling.ID, -1, [], []));
     }
 
     public override void Merge(BTreeNode<T> sibiling)
@@ -545,11 +545,11 @@ namespace BTreeVisualization
           _Keys[index] = _Children[index + 1].Keys[0];
           _Contents[index] = _Children[index + 1].Contents[0];
           _Children[index + 1].LosesToLeft();
-          (int, int[], T?[]) temp = Children[index].CreateBufferVar();
-          (int, int[], T?[]) temp2 = Children[index + 1].CreateBufferVar();
-          _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, temp.Item1,
-            temp.Item2, temp.Item3, Children[index + 1].ID,
-            temp2.Item1, temp2.Item2, temp2.Item3));
+          (int, int[], T?[]) leftBufferVar = Children[index].CreateBufferVar();
+          (int, int[], T?[]) rightBufferVar = Children[index + 1].CreateBufferVar();
+          _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, leftBufferVar.Item1,
+            leftBufferVar.Item2, leftBufferVar.Item3, Children[index + 1].ID,
+            rightBufferVar.Item1, rightBufferVar.Item2, rightBufferVar.Item3));
           if (_Children[index] as NonLeafNode<T> != null)
           {
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
@@ -569,15 +569,15 @@ namespace BTreeVisualization
           _Keys[index] = _Children[index].Keys[_Children[index].NumKeys - 1];
           _Contents[index] = _Children[index].Contents[_Children[index].NumKeys - 1];
           _Children[index].LosesToRight();
-          (int, int[], T?[]) temp = Children[index].CreateBufferVar();
-          (int, int[], T?[]) temp2 = Children[index + 1].CreateBufferVar();
-          _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, temp.Item1,
-            temp.Item2, temp.Item3, Children[index + 1].ID,
-            temp2.Item1, temp2.Item2, temp2.Item3));
+          (int, int[], T?[]) leftBufferVar = Children[index].CreateBufferVar();
+          (int, int[], T?[]) rightBufferVar = Children[index + 1].CreateBufferVar();
+          _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, leftBufferVar.Item1,
+            leftBufferVar.Item2, leftBufferVar.Item3, Children[index + 1].ID,
+            rightBufferVar.Item1, rightBufferVar.Item2, rightBufferVar.Item3));
           _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index + 1].ID,
-            temp2.Item1, temp2.Item2, temp2.Item3,
-            Children[index].ID, temp.Item1,
-            temp.Item2, temp.Item3));
+            rightBufferVar.Item1, rightBufferVar.Item2, rightBufferVar.Item3,
+            Children[index].ID, leftBufferVar.Item1,
+            leftBufferVar.Item2, leftBufferVar.Item3));
           if (_Children[index] as NonLeafNode<T> != null)
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
             _BufferBlock.SendAsync((NodeStatus.Shift, ((NonLeafNode<T>)Children[index + 1])
