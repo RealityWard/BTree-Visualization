@@ -26,7 +26,7 @@ namespace BTreeVisualization
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class Node<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+  public abstract class Node<T,N>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Output Buffer for Status updates to be externally viewed.
@@ -92,8 +92,9 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public abstract void DeleteKey(int key);
     public abstract int DeleteKeys(int key, int endKey);
-    public abstract int DeleteKeysLeft(int key);
-    public abstract int DeleteKeysRight(int endKey);
+    public abstract int DeleteKeysSplit(int key, int endKey, N rightSibiling);
+    public abstract void DeleteKeysLeft(int index);
+    public abstract void DeleteKeysRight(int index);
     /// <summary>
     /// Prints out this node and its children.
     /// </summary>
@@ -165,7 +166,7 @@ namespace BTreeVisualization
   /// <param name="degree">Same as parent node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<T>(degree, bufferBlock)
+  public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<T,BTreeNode<T>>(degree, bufferBlock)
   {
     /// <summary>
     /// Generic typed array parallel to the keys array.
@@ -198,7 +199,7 @@ namespace BTreeVisualization
     /// greater than all the keys in the called node.)</param>
     public abstract void Merge(int dividerKey, T dividerData, BTreeNode<T> sibiling);
     public abstract void Merge(BTreeNode<T> sibiling);
-    public abstract ((int?, T?, BTreeNode<T>?)?, bool) Rebalance(BTreeNode<T> sibiling, int underCode);
+    public abstract (int?, T?, BTreeNode<T>?) Rebalance(BTreeNode<T> sibiling, int underCode);
     /// <summary>
     /// This node appends its sibiling's left most entry to its own entries.
     /// </summary>
@@ -281,6 +282,19 @@ namespace BTreeVisualization
         }
       }
       return node.Keys[midIndex] >= key ? midIndex : -1;
+    }
+    
+    public (int, int[], T?[]) CreateBufferVar()
+    {
+      int numKeys = NumKeys;
+      int[] keys = new int[_Keys.Length];
+      T?[] contents = new T[_Keys.Length];
+      for (int i = 0; i < _Keys.Length; i++)
+      {
+        keys[i] = Keys[i];
+        contents[i] = Contents[i];
+      }
+      return (numKeys, keys, contents);
     }
   }
 

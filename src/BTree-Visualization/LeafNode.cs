@@ -236,16 +236,18 @@ namespace BTreeVisualization
         // LastIndex is the last index of something not guaranteed to be deleted
         if (lastIndex == -1)
           lastIndex = _NumKeys;
+        int holdNewNumKeys = _NumKeys - (lastIndex - firstKeyIndex);
         for (int j = lastIndex; j < _NumKeys; j++)
         {
           _Keys[firstKeyIndex] = _Keys[j];
           _Contents[firstKeyIndex++] = _Contents[j];
         }
-        while (lastIndex < _NumKeys)
+        while (firstKeyIndex < _NumKeys)
         {
-          _Keys[lastIndex] = default;
-          _Contents[lastIndex++] = default;
+          _Keys[firstKeyIndex] = default;
+          _Contents[firstKeyIndex++] = default;
         }
+        _NumKeys = holdNewNumKeys;
         _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
       }
       else
@@ -298,7 +300,7 @@ namespace BTreeVisualization
           _Keys[j] = _Keys[i];
           _Contents[j] = _Contents[i];
         }
-        for(; j < _NumKeys; j++)
+        for (; j < _NumKeys; j++)
         {
           _Keys[j] = default;
           _Contents[j] = default;
@@ -320,45 +322,41 @@ namespace BTreeVisualization
 
     public override (int?, T?, BTreeNode<T>?)? RebalanceNodes(BTreeNode<T> rightSibiling)
     {
-      if (IsUnderflow() || rightSibiling.IsUnderflow())
-      {
-        if (_NumKeys + rightSibiling.NumKeys > 2 * _Degree - 2)
-        {// Must balance keys between nodes
-          int diff = ((_NumKeys + rightSibiling.NumKeys - 1) / 2) + 1 - _NumKeys;
-          if (diff > 0)
-          {// Not enough keys in this node
-            for (int j = _NumKeys, i = 0; i < diff; i++)
-            {
-              _Keys[j] = rightSibiling.Keys[i];
-              _Contents[j] = rightSibiling.Contents[i];
-            }
-            rightSibiling.LosesToLeft(diff);
+      if (_NumKeys + rightSibiling.NumKeys > 2 * _Degree - 2)
+      {// Must balance keys between nodes
+        int diff = ((_NumKeys + rightSibiling.NumKeys - 1) / 2) + 1 - _NumKeys;
+        if (diff > 0)
+        {// Not enough keys in this node
+          for (int j = _NumKeys, i = 0; i < diff; i++)
+          {
+            _Keys[j] = rightSibiling.Keys[i];
+            _Contents[j] = rightSibiling.Contents[i];
           }
-          else if (diff < 0)
-          {// Not enough keys in sibiling
-            rightSibiling.GainsFromLeft(-diff, this);
-            for (int i = _NumKeys + diff; i < _NumKeys; i++)
-            {
-              _Keys[i] = default;
-              _Contents[i] = default;
-            }
+          rightSibiling.LosesToLeft(diff);
+        }
+        else if (diff < 0)
+        {// Not enough keys in sibiling
+          rightSibiling.GainsFromLeft(-diff, this);
+          for (int i = _NumKeys + diff; i < _NumKeys; i++)
+          {
+            _Keys[i] = default;
+            _Contents[i] = default;
           }
-          _NumKeys += diff - 1;
-          _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, NumKeys, Keys, Contents
-            , rightSibiling.ID, rightSibiling.NumKeys, rightSibiling.Keys, rightSibiling.Contents));
-          (int?, T?, BTreeNode<T>?)? results = (Keys[_NumKeys + 1], Contents[_NumKeys + 1], rightSibiling);
-          _Keys[_NumKeys + 1] = default;
-          _Contents[_NumKeys + 1] = default;
-          return results;
         }
-        else
-        {// Not enough keys for two nodes
-          Merge(rightSibiling);
-          rightSibiling.ZeroOutNumKeys();
-          return (null, default, null);
-        }
+        _NumKeys += diff - 1;
+        _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID, NumKeys, Keys, Contents
+          , rightSibiling.ID, rightSibiling.NumKeys, rightSibiling.Keys, rightSibiling.Contents));
+        (int?, T?, BTreeNode<T>?)? results = (Keys[_NumKeys + 1], Contents[_NumKeys + 1], rightSibiling);
+        _Keys[_NumKeys + 1] = default;
+        _Contents[_NumKeys + 1] = default;
+        return results;
       }
-      return null;
+      else
+      {// Not enough keys for two nodes
+        Merge(rightSibiling);
+        rightSibiling.ZeroOutNumKeys();
+        return (null, default, null);
+      }
     }
 
     /// <summary>
