@@ -18,7 +18,8 @@ namespace B_TreeVisualizationGUI
         public int NumKeys { get; set; }
         public float NodeWidth, NodeHeight;
         public int height { get; set; }
-        public bool highlighted = false;
+        public bool Searched = false;
+        public bool Highlighted = false;
 
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
         public GUINode(int[] keys, bool isLeaf, bool IsRoot, int height, int NumKeys, List<GUINode> children = null)
@@ -54,33 +55,6 @@ namespace B_TreeVisualizationGUI
             return leafCount;
         }
 
-        // Finds the depth of the first leaf node it finds starting from the root
-        /*public int FindDepthOfFirstLeaf()
-        {
-            return FindDepthOfFirstLeafHelper(this);
-        }
-
-        // Helper method to traverse the tree and find the depth of the first leaf node encountered
-        private int FindDepthOfFirstLeafHelper(GUINode node)
-        {
-            if (node.IsLeaf)
-            {
-                return node.height;
-            }
-
-            if (node.Children != null)
-            {
-                foreach (var child in node.Children)
-                {
-                    int depth = FindDepthOfFirstLeafHelper(child);
-                    if (depth != -1) // If leaf is found in the child subtree
-                        return depth;
-                }
-            }
-
-            return -1; // Leaf not found in this subtree
-        }*/
-
         public void DisplayNode(Graphics graphics, float x, float y)
         {
             // Brushes
@@ -90,7 +64,12 @@ namespace B_TreeVisualizationGUI
                 pen = new Pen(Color.Green, 2);
             }
 
-            if (highlighted)
+            if (Highlighted)
+            {
+                pen = new Pen(Color.Red, 2);
+            }
+
+            if (Searched)
             {
                 pen = new Pen(Color.Blue, 2);
             }
@@ -100,6 +79,7 @@ namespace B_TreeVisualizationGUI
             var font = new Font("Consolas", 8);
 
             // Draw node rectangle
+            
             graphics.FillRectangle(brush, x - NodeWidth / 2, y, NodeWidth, NodeHeight);
             graphics.DrawRectangle(pen, x - NodeWidth / 2, y, NodeWidth, NodeHeight);
 
