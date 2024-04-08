@@ -616,7 +616,8 @@ namespace BTreeVisualization
           _Contents[index] = default;
           _Children[index + 1] = default;
           _NumKeys--;
-          _BufferBlock.SendAsync((NodeStatus.MergeParent, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          (int,int[],T?[]) bufferVar = CreateBufferVar();
+          _BufferBlock.SendAsync((NodeStatus.MergeParent, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
         }
       }
     }
