@@ -361,7 +361,7 @@ namespace BPlusTreeVisualization
       _Contents[0] = dividerData;
     }
 
-    public override void GainsFromLeft(int diff, BTreeNode<T> sibiling)
+    public override void GainsFromLeftSpecial(int diff, BTreeNode<T> sibiling)
     {
       for (int i = _NumKeys - 1; i >= 0; i--)
       {
