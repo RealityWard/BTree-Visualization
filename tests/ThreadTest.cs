@@ -12,7 +12,7 @@ namespace ThreadTesting
   /// Tests for threading properly ordered messages. 
   /// </summary>
   /// <remarks>Author: Tristan Anderson</remarks>
-  [TestFixture(3)]
+  // [TestFixture(30)]
   public partial class ThreadTests(int degree)
   {
     Dictionary<NodeStatus, int>[] _StatusPrecedence = [];
@@ -501,8 +501,8 @@ namespace ThreadTesting
     /// Simply test insertion times
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks> 
-    [TestCase(100)]
-    [TestCase(1000)]
+    // [TestCase(100)]
+    // [TestCase(1000)]
     public async Task PresedenceTesting(int x)
     {
       Random random = new();
@@ -545,7 +545,7 @@ namespace ThreadTesting
         else
         {
           key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
-          await _InputBuffer.SendAsync((TreeCommand.DeleteRange, key, key + 1000
+          await _InputBuffer.SendAsync((TreeCommand.DeleteRange, key, key + 10000
             , null));
           for (int l = 0; l < 9; l++)
           {

@@ -84,14 +84,13 @@ namespace BTreeVisualization
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
       List<(int key, T value)> result = [];
-      for (int i = 0; i < _NumKeys; i++)
-      {
-        if (_Keys[i] >= key && _Keys[i] < endKey)
+      int index = Search(this, key);
+      if (index != -1)
+        for (; index < _NumKeys && _Keys[index] >= key && _Keys[index] < endKey; index++)
         {
-          result.Add((Keys[i], Contents[i] ?? throw new NullContentReferenceException(
-            $"Content at index:{i} within node:{ID}")));
+          result.Add((Keys[index], Contents[index] ?? throw new NullContentReferenceException(
+            $"Content at index:{index} within node:{ID}")));
         }
-      }
       if (result.Count > 0)
       {
         int[] keys = new int[result.Count];
@@ -440,20 +439,21 @@ namespace BTreeVisualization
 
     public override void LosesToLeft(int diff)
     {
-      if (diff != 0)
+      if (diff > 0)
       {
         int i = 0;
-        for (; diff < _NumKeys - 1; i++, diff++)
+        int j = diff;
+        for (; diff < _NumKeys - 1; i++, j++)
         {
-          _Keys[i] = _Keys[diff];
-          _Contents[i] = _Contents[diff];
+          _Keys[i] = _Keys[j];
+          _Contents[i] = _Contents[j];
         }
-        _NumKeys -= diff;
         while (i < _NumKeys - 1)
         {
           _Keys[i] = default;
           _Contents[i] = default;
         }
+        _NumKeys -= diff;
       }
     }
 
