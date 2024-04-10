@@ -202,10 +202,9 @@
             trbSpeed.Location = new Point(1714, 896);
             trbSpeed.Minimum = 1;
             trbSpeed.Name = "trbSpeed";
-            trbSpeed.RightToLeft = RightToLeft.Yes;
             trbSpeed.Size = new Size(104, 45);
             trbSpeed.TabIndex = 9;
-            trbSpeed.Value = 5;
+            trbSpeed.Value = 10;
             // 
             // lblSpeed
             // 
