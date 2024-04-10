@@ -27,7 +27,7 @@ namespace RangeOperationTesting
       , Person?[] altContents)> _OutputBufferHistory = [];
     private List<(TreeCommand action, int key, int endKey
       , Person? content)> _InputBufferHistory = [];
-    List<(int, Person)> _Entries = [];
+    Dictionary<int, Person> _Entries = [];
     private readonly int _NumberOfKeys = numKeys;
     private Task? _Producer;
     private Task? _Consumer;
@@ -135,9 +135,9 @@ namespace RangeOperationTesting
         {
           key = random.Next(1, _NumberOfKeys * 1000);
           person = new(key.ToString());
-        } while (_Entries.Contains((key, person)));
+        } while (_Entries.ContainsKey(key));
         await _InputBuffer.SendAsync((TreeCommand.Insert, key, -1, person));
-        _Entries.Add((key, person));
+        _Entries.Add(key, person);
       }
       await _InputBuffer.SendAsync((TreeCommand.Close, 0, -1, null));
     }
@@ -148,28 +148,22 @@ namespace RangeOperationTesting
       Random random = new();
       int key, endKey, index, endIndex;
       List<(int key, Person content)> range = [];
-      int numberOfKeysRemaining = _NumberOfKeys;
-      _Entries.Sort((first, second) =>
-      {
-        return first.Item1.CompareTo(second.Item1);
-      });
-      while (numberOfKeysRemaining > 0)
+      while (_Entries.Count > 0)
       {
         index = random.Next(1, _Entries.Count - 1);
-        key = _Entries[index].Item1;
+        key = _Entries.ElementAt(index).Key;
         endKey = key + rangeSize;
-        for (endIndex = index; endIndex < _Entries.Count && _Entries[endIndex].Item1 >= key && _Entries[endIndex].Item1 <= endKey; endIndex++)
+        for (endIndex = index; endIndex < _Entries.Count && _Entries.ElementAt(endIndex).Key >= key && _Entries.ElementAt(endIndex).Key < endKey; endIndex++)
         {
-          range.Add(_Entries[endIndex]);
+          range.Add((_Entries.ElementAt(endIndex).Key, _Entries.ElementAt(endIndex).Value));
+          _Entries.Remove(_Entries.ElementAt(endIndex).Key);
         }
         // Console.WriteLine(string.Join(',', range));
         // // Assert.That(_Tree.Search(key), Is.Not.Null);
         // Console.WriteLine($"After Count:{_Tree.Search(key, endKey).Count()}\n Range:{key} - {endKey}");
-        Assert.That(_Tree.Search(key, endKey), Is.EqualTo(range));
+        Assert.That(_Tree.Search(key, endKey), Is.EqualTo(range),$"{_Tree.Traverse()}");
         _Tree.DeleteRange(key, endKey);
         Assert.That(_Tree.Search(key, endKey), Is.Empty);
-        _Entries.RemoveRange(index, range.Count);
-        numberOfKeysRemaining -= range.Count;
         range.Clear();
       }
     }

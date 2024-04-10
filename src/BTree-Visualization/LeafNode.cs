@@ -213,6 +213,18 @@ namespace BTreeVisualization
       }
     }
 
+    public override bool CheckMyself()
+    {
+      bool result = true;
+      for (int i = 0; i < _NumKeys; i++)
+      {
+        result = result && _Contents[i] != null;
+      }
+      if (!result)
+        Console.Write("here");
+      return result;
+    }
+
     public override void DeleteKeysSplit(int key, int endKey,
       BTreeNode<T> rightSibiling)
     {
@@ -226,6 +238,7 @@ namespace BTreeVisualization
         firstKeyIndex = _NumKeys;
       DeleteKeysLeft(firstKeyIndex);
       rightSibiling.DeleteKeysRight(lastIndex);
+      CheckMyself();
     }
 
     public override void DeleteKeys(int key, int endKey)
@@ -251,6 +264,7 @@ namespace BTreeVisualization
         }
         _NumKeys = firstKeyIndex;
       }
+      CheckMyself();
     }
 
     public override void DeleteKeysLeft(int index)
@@ -443,15 +457,15 @@ namespace BTreeVisualization
       {
         int i = 0;
         int j = diff;
-        for (; diff < _NumKeys - 1; i++, j++)
+        for (; j < _NumKeys; i++, j++)
         {
           _Keys[i] = _Keys[j];
           _Contents[i] = _Contents[j];
         }
-        while (i < _NumKeys - 1)
+        while (i < _NumKeys)
         {
           _Keys[i] = default;
-          _Contents[i] = default;
+          _Contents[i++] = default;
         }
         _NumKeys -= diff;
       }
