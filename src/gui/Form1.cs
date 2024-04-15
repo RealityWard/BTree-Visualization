@@ -338,7 +338,7 @@ namespace B_TreeVisualizationGUI
                             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
                             {
                                 lblCurrentProcess.Text = ("Deleting input key."); // Inform user of what process is currently happening
-                                                                                  // Update node
+                                // Update node
                                 node.Keys = feedback.keys;
                                 node.NumKeys = feedback.numKeys;
                                 node.UpdateNodeWidth();
@@ -399,6 +399,65 @@ namespace B_TreeVisualizationGUI
                         break;
                     }
 
+                // MERGE
+                case NodeStatus.Merge: case NodeStatus.MergeRoot:
+                    {
+                        UnhighlightSearched(); // Unhighlight any previously searched nodes
+                        Debug.WriteLine("Received Merge or MergeRoot status."); // For debug purposes DELETE LATER
+                        lblCurrentProcess.Text = ("Merging nodes."); // Inform user of what process is currently happening
+                                                                     // Add sibling keys to node
+                        if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
+                        {
+                            // Update node
+                            node.Keys = feedback.keys;
+                            node.NumKeys = feedback.numKeys;
+                            if (feedback.status == NodeStatus.MergeRoot)
+                            {
+                                node.IsRoot = true;
+                                rootHeight--;
+                            }
+                            node.UpdateNodeWidth();
+                            Debug.WriteLine($"Node ID={feedback.id} updated. Remaining keys: {String.Join(", ", node.Keys)}"); // For debug purposes DELETE LATER
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update."); // For debug purposes DELETE LATER
+                        }
+                        // Eat sibling node
+                        if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? sibling) && sibling != null)
+                        {
+                            if (feedback.status == NodeStatus.Merge)
+                            {
+                                if (nodeDictionary[feedback.altID].IsRoot)
+                                {
+                                    nodeDictionary[feedback.id].IsRoot = true;
+                                    rootHeight--;
+                                }
+                                if (sibling.Children != null)
+                                {
+                                    if (node.Children == null)
+                                    {
+                                        List<GUINode> children = new List<GUINode>();
+                                        children.AddRange(sibling.Children);
+                                        node.Children = children;
+                                    }
+                                    else
+                                    {
+                                        nodeDictionary[feedback.id].Children.AddRange(sibling.Children);
+                                    }
+                                }
+                            }
+                            nodeDictionary.Remove(feedback.altID); // Delete sibling from dicitonary
+                            Debug.WriteLine($"Node ID={feedback.altID} deleted.");
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"Node with ID={feedback.altID} not found when attempting to update after deletion.");
+                        }
+                        UpdateVisuals();
+                        break;
+                    }
+
                 // MERGE PARENT
                 case NodeStatus.MergeParent:
                     {
@@ -441,8 +500,8 @@ namespace B_TreeVisualizationGUI
                         if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? sibling) && sibling != null)
                         {
                             // Bite sibling node
-                            sibling.Keys = feedback.keys;
-                            sibling.NumKeys = feedback.numKeys;
+                            sibling.Keys = feedback.altKeys;
+                            sibling.NumKeys = feedback.altNumKeys;
                             sibling.UpdateNodeWidth();
                             Debug.WriteLine($"Node ID={feedback.altID} updated. Remaining keys: {String.Join(", ", node.Keys)}"); // For debug purposes DELETE LATER
                         }
@@ -459,7 +518,7 @@ namespace B_TreeVisualizationGUI
                     {
                         UnhighlightSearched(); // Unhighlight any previously searched nodes
                         Debug.WriteLine("Received Shift status."); // For debug purposes DELETE LATER
-                        lblCurrentProcess.Text = ("Updating children.");
+                        lblCurrentProcess.Text = ("Updating children."); // Inform user of what process is currently happening
                         GUINode childNode = nodeDictionary[feedback.altID];
                         // Remove the child from its previous parent
                         foreach (var kvp in nodeDictionary)
@@ -555,20 +614,14 @@ namespace B_TreeVisualizationGUI
                 case NodeStatus.NodeDeleted:
                     {
                         UnhighlightSearched(); // Unhighlight any previously searched nodes
-                        Debug.WriteLine("Received NodeFeleted status."); // For debug purposes DELETE LATER
+                        Debug.WriteLine("Received NodeDeleted status."); // For debug purposes DELETE LATER
                         lblCurrentProcess.Text = ("Deleting node."); // Inform user of what process is currently happening
                         nodeDictionary.Remove(feedback.id);
-                        if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? node) && feedback.numKeys == -1)
+                        // If node is still in the dictionary, delete it
+                        if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node))
                         {
-                            // Update node
-                            for (int i = 0; i < node.Children.Count; i++)
-                            {
-                                if (node.Children[i].ID == feedback.id)
-                                {
-                                    node.Children.RemoveAt(i);
-                                }
-                            }
-                            node.NodeWidth = 40 * feedback.numKeys;
+                            nodeDictionary.Remove(feedback.id);
+                            nodeDictionary[feedback.altID].Children.Remove(nodeDictionary[feedback.id]);
                         }
                         break;
                     }
@@ -579,64 +632,6 @@ namespace B_TreeVisualizationGUI
                         Debug.WriteLine("Unknown status recieved.");
                         break;
                     }
-            }
-
-            // MERGE
-            if (feedback.status == NodeStatus.Merge || feedback.status == NodeStatus.MergeRoot)
-            {
-                UnhighlightSearched(); // Unhighlight any previously searched nodes
-                Debug.WriteLine("Received Merge status."); // For debug purposes DELETE LATER
-                lblCurrentProcess.Text = ("Merging nodes."); // Inform user of what process is currently happening
-                // Add sibling keys to node
-                if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
-                {
-                    // Update node
-                    node.Keys = feedback.keys;
-                    node.NumKeys = feedback.numKeys;
-                    if (feedback.status == NodeStatus.MergeRoot)
-                    {
-                        node.IsRoot = true;
-                        rootHeight--;
-                    }
-                    node.UpdateNodeWidth();
-                    Debug.WriteLine($"Node ID={feedback.id} updated. Remaining keys: {String.Join(", ", node.Keys)}"); // For debug purposes DELETE LATER
-                }
-                else
-                {
-                    Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update."); // For debug purposes DELETE LATER
-                }
-                // Eat sibling node
-                if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? sibling) && sibling != null)
-                {
-                    if (feedback.status == NodeStatus.Merge)
-                    {
-                        if (nodeDictionary[feedback.altID].IsRoot)
-                        {
-                            nodeDictionary[feedback.id].IsRoot = true;
-                            rootHeight--;
-                        }
-                        if (sibling.Children != null)
-                        {
-                            if (node.Children == null)
-                            {
-                                List<GUINode> children = new List<GUINode>();
-                                children.AddRange(sibling.Children);
-                                node.Children = children;
-                            }
-                            else
-                            {
-                                nodeDictionary[feedback.id].Children.AddRange(sibling.Children);
-                            }
-                        }
-                    }
-                    nodeDictionary.Remove(feedback.altID); // Delete sibling from dicitonary
-                    Debug.WriteLine($"Node ID={feedback.altID} deleted.");
-                }
-                else
-                {
-                    Debug.WriteLine($"Node with ID={feedback.altID} not found when attempting to update after deletion.");
-                }
-                UpdateVisuals();
             }
         }
 
