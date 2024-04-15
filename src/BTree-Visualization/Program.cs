@@ -155,7 +155,8 @@ namespace ThreadCommunication
     /// Sent if the node had nothing left
     /// during a delete over a range of keys.
     /// Just the ID of the one being deleted.
-    /// ID,-1,[],[]
+    /// ID,-1,[],[],AltID
+    /// Alt refers to parent.
     /// </summary>
     NodeDeleted,
     /// <summary>

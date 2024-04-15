@@ -279,9 +279,9 @@ namespace BTreeVisualization
         (_Keys[result], _Contents[result]) = (_Children[result]
           ?? throw new NullChildReferenceException(
             $"Child at index:{result} within node:{ID}")).ForfeitKey();
+        MergeAt(result);
         (int, int[], T?[]) bufferVar = CreateBufferVar();
         _BufferBlock.SendAsync((NodeStatus.Deleted, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
-        MergeAt(result);
       }
       else
       {
@@ -553,11 +553,12 @@ namespace BTreeVisualization
           if (_Children[index] as NonLeafNode<T> != null)
           {
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-            _BufferBlock.SendAsync((NodeStatus.Shift, (((NonLeafNode<T>)Children[index])
+            _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index].ID, -1, [], [],
+              (((NonLeafNode<T>)Children[index])
               .Children[Children[index].NumKeys]
                 ?? throw new NullChildReferenceException(
                   $"Child at index:{Children[index].NumKeys} within node:{ID}")
-                  ).ID, -1, [], [], _Children[index].ID, -1, [], []));
+                  ).ID, -1, [], []));
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
           }
         }
@@ -580,8 +581,9 @@ namespace BTreeVisualization
             leftBufferVar.Item2, leftBufferVar.Item3));
           if (_Children[index] as NonLeafNode<T> != null)
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-            _BufferBlock.SendAsync((NodeStatus.Shift, ((NonLeafNode<T>)Children[index + 1])
-              .Children[0].ID, -1, [], [], _Children[index + 1].ID, -1, [], []));
+            _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index + 1].ID, -1, [], [], 
+              ((NonLeafNode<T>)Children[index + 1])
+              .Children[0].ID, -1, [], []));
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
         }
         else
