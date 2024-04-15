@@ -68,7 +68,7 @@ namespace BTreeVisualization
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
-    public abstract void LosesToRight();
+    public abstract void LosesToRight(int diff);
     /// <summary>
     /// Checks if this node is at max capacity.
     /// </summary>
@@ -219,7 +219,7 @@ namespace BTreeVisualization
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
     /// smaller than all the keys in the called node.)</param>
-    public abstract void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling);
+    public abstract void GainsFromLeft(int diff, int dividerKey, T? dividerData, BTreeNode<T> sibiling);
     public abstract void GainsFromLeftSpecial(int diff, BTreeNode<T> sibiling);
     public abstract (int?, T?, BTreeNode<T>?) RebalanceNodes(BTreeNode<T> sibiling);
     /// <summary>

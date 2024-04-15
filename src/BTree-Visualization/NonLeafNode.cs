@@ -343,17 +343,19 @@ namespace BTreeVisualization
 #pragma warning disable CS8604 // Possible null reference argument.
       (int?, T?, BTreeNode<T>?) merged = _Children[firstKeyIndex]
         .RebalanceNodes(((NonLeafNode<T>)rightSibiling).Children[0]);
+      if (_Children[0] as NonLeafNode<T> != null)
+        ((NonLeafNode<T>)rightSibiling).ResolveLeadingKey(0);
+      _NumKeys += NormalRebalanceReturn(merged, firstKeyIndex);
       if (_Children[firstKeyIndex].IsFull())
       {
         ((int, T?), BTreeNode<T>?) result = _Children[firstKeyIndex].Split(ID);
         MakeSpaceAt(firstKeyIndex);
         _Keys[firstKeyIndex] = result.Item1.Item1;
         _Contents[firstKeyIndex] = result.Item1.Item2;
-        _Children[++firstKeyIndex] = result.Item2;
+        _Children[firstKeyIndex + 1] = result.Item2;
       }
 #pragma warning restore CS8604 // Possible null reference argument.
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-      _NumKeys += NormalRebalanceReturn(merged, _NumKeys);
       CheckMyself();
     }
 
@@ -387,6 +389,12 @@ namespace BTreeVisualization
           .DeleteKeysSplit(key, endKey, _Children[lastIndex]
             ?? throw new NullChildReferenceException(
             $"Child at index:{firstKeyIndex} within node:{ID}"));
+        if (_Children[lastIndex] as NonLeafNode<T> != null)
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+          ((NonLeafNode<T>)_Children[lastIndex]).ResolveLeadingKey(0);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
 #pragma warning disable CS8604 // Possible null reference argument.
         (int?, T?, BTreeNode<T>?) merged =
@@ -478,9 +486,10 @@ namespace BTreeVisualization
         {
           _Keys[i] = default;
           _Contents[i] = default;
+          i++;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
           _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-            _Children[++i].ID, -1, [], [], 0, -1, [], []));
+            _Children[i].ID, -1, [], [], 0, -1, [], []));
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
           _Children[i] = default;
         }
@@ -501,10 +510,6 @@ namespace BTreeVisualization
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
         -1, [], [], 0, -1, [], []));
-      if (index < _NumKeys)
-      {
-        index += ResolveLeadingKey(index);
-      }
       if (index > 0)
       {
         int j = 0;
@@ -540,7 +545,7 @@ namespace BTreeVisualization
       CheckMyself();
     }
 
-    private int ResolveLeadingKey(int index)
+    private void ResolveLeadingKey(int index)
     {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
 #pragma warning disable CS8604 // Possible null reference argument.
@@ -553,76 +558,79 @@ namespace BTreeVisualization
         _Children[index] = _Children[index + 1];
         (_Keys[index], _Contents[index]) = result.Item1;
         _Children[index + 1] = result.Item2;
-      CheckMyself();
-        return 0;
+        CheckMyself();
       }
-      CheckMyself();
-      return 1;
+      else
+      {
+        LosesToLeft(1);
+        CheckMyself();
+      }
     }
 
     public override (int?, T?, BTreeNode<T>?) RebalanceNodes(BTreeNode<T> rightSibiling)
     {
-      // Solve middle children
-      // #pragma warning disable CS8604 // Possible null reference argument.
-      //       (int?, T?, BTreeNode<T>?) merged = (_Children[_NumKeys]
-      //         ?? throw new NullChildReferenceException(
-      //           $"Child at index:{_NumKeys} within node:{ID}"))
-      //           .RebalanceNodes(((NonLeafNode<T>)rightSibiling).Children[0]);
-      // #pragma warning restore CS8604 // Possible null reference argument.
-      // _NumKeys += NormalRebalanceReturn(merged, _NumKeys);
-      if (_NumKeys + rightSibiling.NumKeys > 2 * _Degree - 2)
+      int? dividerKey;
+      T? dividerData;
+      if (_NumKeys + rightSibiling.NumKeys >= 2 * _Degree - 2)
       {// Must balance keys between nodes
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+        (dividerKey, dividerData) = _Children[_NumKeys].ForfeitKey();
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+        MergeAt(_NumKeys);
         int diff = ((_NumKeys + rightSibiling.NumKeys - 1) / 2) + 1 - _NumKeys;
         if (diff > 0)
         {// Not enough keys in this node
-          for (int j = _NumKeys, i = 0; i < diff;)
+          _Keys[_NumKeys] = (int)dividerKey;
+          _Contents[_NumKeys] = dividerData;
+          _NumKeys++;
+          for (int j = _NumKeys, i = 0; i < diff; i++, j++)
           {
             _Keys[j] = rightSibiling.Keys[i];
             _Contents[j] = rightSibiling.Contents[i];
-            _Children[++j] = ((NonLeafNode<T>)rightSibiling).Children[++i];
+            _Children[j] = ((NonLeafNode<T>)rightSibiling).Children[i];
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             _BufferBlock.SendAsync((NodeStatus.Shift, ID, -1, [], [],
               ((NonLeafNode<T>)rightSibiling).Children[i].ID, -1, [], []));
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
           }
-          rightSibiling.LosesToLeft(diff - ((NonLeafNode<T>)rightSibiling).ResolveLeadingKey(diff));
+          _NumKeys += diff - 1;
+          dividerKey = _Keys[_NumKeys];
+          dividerData = _Contents[_NumKeys];
+          _Keys[_NumKeys] = default;
+          _Contents[_NumKeys] = default;
+          rightSibiling.LosesToLeft(diff);
         }
         else if (diff < 0)
         {// Not enough keys in sibiling
-          rightSibiling.GainsFromLeftSpecial(-diff, this);
-          for (int i = _NumKeys + diff; i < _NumKeys;)
-          {
-            _Keys[i] = default;
-            _Contents[i] = default;
-            _Children[++i] = default;
-          }
-          rightSibiling.LosesToLeft(((NonLeafNode<T>)rightSibiling).ResolveLeadingKey(0));
+          rightSibiling.GainsFromLeft(-diff, (int)dividerKey, dividerData, this);
+          dividerKey = _Keys[_NumKeys + diff];
+          dividerData = _Contents[_NumKeys + diff];
+          LosesToRight(-diff);
         }
-        _NumKeys += diff;
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-        (int dividerKey, T? dividerData) = _Children[_NumKeys].ForfeitKey();
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-        MergeAt(_NumKeys);
         (int, int[], T?[]) bufferVarLeft = CreateBufferVar();
         (int, int[], T?[]) bufferVarRight = rightSibiling.CreateBufferVar();
         _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID,
           bufferVarLeft.Item1, bufferVarLeft.Item2, bufferVarLeft.Item3
           , rightSibiling.ID, bufferVarRight.Item1, bufferVarRight.Item2,
           bufferVarRight.Item3));
-      CheckMyself();
+        CheckMyself();
         return (dividerKey, dividerData, rightSibiling);
       }
       else
       {// Not enough keys for two nodes
         if (_NumKeys == 0)
         {
-      CheckMyself();
+          CheckMyself();
           return (null, default, rightSibiling);
         }
         else
         {
-          Merge(rightSibiling);
-      CheckMyself();
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+          (dividerKey, dividerData) = _Children[_NumKeys].ForfeitKey();
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+          MergeAt(_NumKeys);
+          Merge((int)dividerKey, dividerData, rightSibiling);
+          CheckMyself();
           return (null, default, default);
         }
       }
@@ -630,22 +638,26 @@ namespace BTreeVisualization
 
     private int NormalRebalanceReturn((int?, T?, BTreeNode<T>?) merged, int indexToAssignTo)
     {
-      if (merged.Item1 != null)
+      if (merged.Item2 != null)
       {
+#pragma warning disable CS8629 // Nullable value type may be null.
         _Keys[indexToAssignTo] = (int)merged.Item1;
+#pragma warning restore CS8629 // Nullable value type may be null.
         _Contents[indexToAssignTo] = merged.Item2;
         _Children[++indexToAssignTo] = merged.Item3;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
         _BufferBlock.SendAsync((NodeStatus.Shift, ID, -1, [], [],
           _Children[indexToAssignTo].ID, -1, [], []));
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-      CheckMyself();
+        CheckMyself();
         return 1;
       }
       else if (merged.Item3 != default)
       {
-        _BufferBlock.SendAsync((NodeStatus.NodeDeleted, ID, -1, [], [],
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+        _BufferBlock.SendAsync((NodeStatus.NodeDeleted, _Children[indexToAssignTo].ID, -1, [], [],
           0, -1, [], []));
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
         _Children[indexToAssignTo] = merged.Item3;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
         _BufferBlock.SendAsync((NodeStatus.Shift, ID, -1, [], [],
@@ -708,7 +720,7 @@ namespace BTreeVisualization
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
       (_Keys[_NumKeys], _Contents[_NumKeys]) = _Children[_NumKeys++].ForfeitKey();
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-      for (int i = 0; i < rightSibiling.NumKeys;)
+      for (int i = 0; i < rightSibiling.NumKeys; i++)
       {
         _Keys[_NumKeys] = rightSibiling.Keys[i];
         _Contents[_NumKeys] = rightSibiling.Contents[i];
@@ -787,11 +799,11 @@ namespace BTreeVisualization
         else if (_Children[index].NumKeys >= _Degree && !emptyNode)
         {
 #pragma warning disable CS8604 // Possible null reference argument.
-          _Children[index + 1].GainsFromLeft(_Keys[index], _Contents[index], _Children[index]);
+          _Children[index + 1].GainsFromLeft(1, _Keys[index], _Contents[index], _Children[index]);
 #pragma warning restore CS8604 // Possible null reference argument.
           _Keys[index] = _Children[index].Keys[_Children[index].NumKeys - 1];
           _Contents[index] = _Children[index].Contents[_Children[index].NumKeys - 1];
-          _Children[index].LosesToRight();
+          _Children[index].LosesToRight(1);
           _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index + 1].ID,
             Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents,
             Children[index].ID, Children[index].NumKeys,
@@ -809,7 +821,7 @@ namespace BTreeVisualization
           {
             if (index == 0)
             {
-              _Children[index + 1].GainsFromLeft(_Keys[index], _Contents[index], _Children[index]);
+              _Children[index + 1].GainsFromLeft(1, _Keys[index], _Contents[index], _Children[index]);
               _BufferBlock.SendAsync((NodeStatus.NodeDeleted, _Children[index].ID, -1, [], [], 0, -1, [], []));
               _Children[index] = _Children[index + 1];
             }
@@ -895,7 +907,8 @@ namespace BTreeVisualization
         {
           _Keys[i] = default;
           _Contents[i] = default;
-          _Children[++i] = default;
+          i++;
+          _Children[i] = default;
         }
         _NumKeys -= diff;
       }
@@ -911,19 +924,27 @@ namespace BTreeVisualization
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
     /// smaller than all the keys in the called node.)</param>
-    public override void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling)
+    public override void GainsFromLeft(int diff, int dividerKey, T? dividerData, BTreeNode<T> sibiling)
     {
-      _Children[_NumKeys + 1] = _Children[_NumKeys];
-      for (int i = _NumKeys; i > 0; i--)
+      _Children[_NumKeys + diff] = _Children[_NumKeys];
+      for (int i = _NumKeys - 1; i >= 0; i--)
       {
-        _Keys[i] = _Keys[i - 1];
-        _Contents[i] = _Contents[i - 1];
-        _Children[i] = _Children[i - 1];
+        _Keys[i + diff] = _Keys[i];
+        _Contents[i + diff] = _Contents[i];
+        _Children[i + diff] = _Children[i];
       }
-      _NumKeys++;
-      _Keys[0] = dividerKey;
-      _Contents[0] = dividerData;
-      _Children[0] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
+      _NumKeys += diff;
+      diff--;
+      _Keys[diff] = dividerKey;
+      _Contents[diff] = dividerData;
+      _Children[diff] = ((NonLeafNode<T>)sibiling).Children[sibiling.NumKeys];
+      diff--;
+      for (int j = sibiling.NumKeys - 1; diff >= 0; diff--, j--)
+      {
+        _Keys[diff] = sibiling.Keys[j];
+        _Contents[diff] = sibiling.Contents[j];
+        _Children[diff] = ((NonLeafNode<T>)sibiling).Children[j];
+      }
     }
 
     public override void GainsFromLeftSpecial(int diff, BTreeNode<T> sibiling)
@@ -952,12 +973,15 @@ namespace BTreeVisualization
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-22</remarks>
-    public override void LosesToRight()
+    public override void LosesToRight(int diff)
     {
-      _Children[_NumKeys] = default;
-      _NumKeys--;
-      _Keys[_NumKeys] = default;
-      _Contents[_NumKeys] = default;
+      for (int i = 0; i < diff; i++)
+      {
+        _Children[_NumKeys] = default;
+        _NumKeys--;
+        _Keys[_NumKeys] = default;
+        _Contents[_NumKeys] = default;
+      }
     }
 
     /// <summary>

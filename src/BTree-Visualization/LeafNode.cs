@@ -312,7 +312,10 @@ namespace BTreeVisualization
 
     public override (int?, T?, BTreeNode<T>?) RebalanceNodes(BTreeNode<T> rightSibiling)
     {
-      if (_NumKeys + rightSibiling.NumKeys > 2 * _Degree - 2)
+      // rightSibiling.LosesToLeft(((NonLeafNode<T>)rightSibiling).ResolveLeadingKey(0));
+      int dividerKey;
+      T? dividerData;
+      if (_NumKeys + rightSibiling.NumKeys >= 2 * _Degree - 2)
       {// Must balance keys between nodes
         int diff = ((_NumKeys + rightSibiling.NumKeys - 1) / 2) + 1 - _NumKeys;
         if (diff > 0)
@@ -322,41 +325,52 @@ namespace BTreeVisualization
             _Keys[j] = rightSibiling.Keys[i];
             _Contents[j] = rightSibiling.Contents[i];
           }
+          _NumKeys += diff-1;
+          UpdateDivider(out dividerKey, out dividerData);
           rightSibiling.LosesToLeft(diff);
         }
         else if (diff < 0)
         {// Not enough keys in sibiling
           rightSibiling.GainsFromLeftSpecial(-diff, this);
-          for (int i = _NumKeys + diff; i < _NumKeys; i++)
-          {
-            _Keys[i] = default;
-            _Contents[i] = default;
-          }
+          LosesToRight(-diff);
+          _NumKeys--;
+          UpdateDivider(out dividerKey, out dividerData);
         }
-        _NumKeys += diff - 1;
-        int dividerKey = _Keys[_NumKeys];
-        T? dividerData = _Contents[_NumKeys];
-        _Keys[_NumKeys] = default;
-        _Contents[_NumKeys] = default;
+        else
+        {
+          _NumKeys--;
+          UpdateDivider(out dividerKey, out dividerData);
+        }
         (int, int[], T?[]) bufferVarLeft = CreateBufferVar();
         (int, int[], T?[]) bufferVarRight = rightSibiling.CreateBufferVar();
         _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID,
           bufferVarLeft.Item1, bufferVarLeft.Item2, bufferVarLeft.Item3
           , rightSibiling.ID, bufferVarRight.Item1, bufferVarRight.Item2,
           bufferVarRight.Item3));
+        CheckMyself();
         return (dividerKey, dividerData, rightSibiling);
       }
       else
       {// Not enough keys for two nodes
         if (_NumKeys == 0)
         {
+          CheckMyself();
           return (null, default, rightSibiling);
         }
         else
         {
           Merge(rightSibiling);
-          return (null, default, null);
+          CheckMyself();
+          return (null, default, default);
         }
+      }
+
+      void UpdateDivider(out int dividerKey, out T? dividerData)
+      {
+        dividerKey = _Keys[_NumKeys];
+        dividerData = _Contents[_NumKeys];
+        _Keys[_NumKeys] = default;
+        _Contents[_NumKeys] = default;
       }
     }
 
@@ -481,16 +495,23 @@ namespace BTreeVisualization
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
     /// smaller than all the keys in the called node.)</param>
-    public override void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling)
+    public override void GainsFromLeft(int diff, int dividerKey, T? dividerData, BTreeNode<T> sibiling)
     {
       for (int i = _NumKeys - 1; i >= 0; i--)
       {
-        _Keys[i + 1] = _Keys[i];
-        _Contents[i + 1] = _Contents[i];
+        _Keys[i + diff] = _Keys[i];
+        _Contents[i + diff] = _Contents[i];
       }
-      _NumKeys++;
-      _Keys[0] = dividerKey;
-      _Contents[0] = dividerData;
+      _NumKeys += diff;
+      diff--;
+      _Keys[diff] = dividerKey;
+      _Contents[diff] = dividerData;
+      diff--;
+      for (int j = sibiling.NumKeys - 1; diff >= 0; diff--)
+      {
+        _Keys[diff] = sibiling.Keys[j];
+        _Contents[diff] = sibiling.Contents[j];
+      }
     }
 
     public override void GainsFromLeftSpecial(int diff, BTreeNode<T> sibiling)
@@ -513,11 +534,14 @@ namespace BTreeVisualization
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-22</remarks>
-    public override void LosesToRight()
+    public override void LosesToRight(int diff)
     {
-      _NumKeys--;
-      _Keys[_NumKeys] = default;
-      _Contents[_NumKeys] = default;
+      for (int i = 0; i < diff; i++)
+      {
+        _NumKeys--;
+        _Keys[_NumKeys] = default;
+        _Contents[_NumKeys] = default;
+      }
     }
 
     /// <summary>
