@@ -213,11 +213,15 @@ namespace BTreeVisualization
       }
     }
 
-    public override bool CheckMyself()
+    public override bool CheckMyself(int key)
     {
+      if (key == 590875)
+        Console.Write("here");
       bool result = true;
       for (int i = 0; i < _NumKeys; i++)
       {
+        if (Keys[i] == 933013)
+          Console.Write("here");
         result = result && _Contents[i] != null;
       }
       if (!result)
@@ -225,9 +229,10 @@ namespace BTreeVisualization
       return result;
     }
 
-    public override void DeleteKeysSplit(int key, int endKey,
+    public override bool DeleteKeysSplit(int key, int endKey,
       BTreeNode<T> rightSibiling)
     {
+      CheckMyself(key);
       // if -1 it is last child index
       int firstKeyIndex = Search(this, key);
       // if -1 it is last child index
@@ -238,11 +243,12 @@ namespace BTreeVisualization
         firstKeyIndex = _NumKeys;
       DeleteKeysLeft(firstKeyIndex);
       rightSibiling.DeleteKeysRight(lastIndex);
-      CheckMyself();
+      return false;
     }
 
     public override void DeleteKeys(int key, int endKey)
     {
+      CheckMyself(key);
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [],
         0, -1, [], []));
       int firstKeyIndex = Search(this, key);
@@ -264,7 +270,6 @@ namespace BTreeVisualization
         }
         _NumKeys = firstKeyIndex;
       }
-      CheckMyself();
     }
 
     public override void DeleteKeysLeft(int index)
@@ -317,6 +322,11 @@ namespace BTreeVisualization
       T? dividerData;
       if (_NumKeys + rightSibiling.NumKeys >= 2 * _Degree - 2)
       {// Must balance keys between nodes
+        if (_NumKeys == 0)
+        {
+          CheckMyself(0);
+          return (null, default, rightSibiling);
+        }
         int diff = ((_NumKeys + rightSibiling.NumKeys - 1) / 2) + 1 - _NumKeys;
         if (diff > 0)
         {// Not enough keys in this node
@@ -325,7 +335,7 @@ namespace BTreeVisualization
             _Keys[j] = rightSibiling.Keys[i];
             _Contents[j] = rightSibiling.Contents[i];
           }
-          _NumKeys += diff-1;
+          _NumKeys += diff - 1;
           UpdateDivider(out dividerKey, out dividerData);
           rightSibiling.LosesToLeft(diff);
         }
@@ -347,20 +357,20 @@ namespace BTreeVisualization
           bufferVarLeft.Item1, bufferVarLeft.Item2, bufferVarLeft.Item3
           , rightSibiling.ID, bufferVarRight.Item1, bufferVarRight.Item2,
           bufferVarRight.Item3));
-        CheckMyself();
+        CheckMyself(dividerKey);
         return (dividerKey, dividerData, rightSibiling);
       }
       else
       {// Not enough keys for two nodes
         if (_NumKeys == 0)
         {
-          CheckMyself();
+          CheckMyself(0);
           return (null, default, rightSibiling);
         }
         else
         {
           Merge(rightSibiling);
-          CheckMyself();
+          CheckMyself(0);
           return (null, default, default);
         }
       }
@@ -381,15 +391,23 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
     /// <returns>Tuple of Key and corresponding content.</returns>
-    public override (int, T) ForfeitKey()
+    public override (int, T?) ForfeitKey()
     {
       _BufferBlock.SendAsync((NodeStatus.FSearching, ID, -1, [], [], 0, -1, [], []));
-      _NumKeys--;
-      (int, T) keyToBeLost = (_Keys[_NumKeys], _Contents[_NumKeys]
-        ?? throw new NullContentReferenceException(
-          $"Content at index:{_NumKeys} within node:{ID}"));
-      _Keys[_NumKeys] = default;
-      _Contents[_NumKeys] = default;
+      (int, T?) keyToBeLost;
+      if (_NumKeys != 0)
+      {
+        _NumKeys--;
+        keyToBeLost = (_Keys[_NumKeys], _Contents[_NumKeys]
+          ?? throw new NullContentReferenceException(
+            $"Content at index:{_NumKeys} within node:{ID}"));
+        _Keys[_NumKeys] = default;
+        _Contents[_NumKeys] = default;
+      }
+      else
+      {
+        keyToBeLost = (0, default);
+      }
       _BufferBlock.SendAsync((NodeStatus.Forfeit, ID, NumKeys, Keys, Contents, 0, -1, [], []));
       return keyToBeLost;
     }

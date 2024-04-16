@@ -92,7 +92,7 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public abstract void DeleteKey(int key);
     public abstract void DeleteKeys(int key, int endKey);
-    public abstract void DeleteKeysSplit(int key, int endKey, N rightSibiling);
+    public abstract bool DeleteKeysSplit(int key, int endKey, N rightSibiling);
     public abstract void DeleteKeysLeft(int index);
     public abstract void DeleteKeysRight(int index);
     /// <summary>
@@ -122,12 +122,6 @@ namespace BTreeVisualization
     public int NumKeys
     {
       get { return _NumKeys; }
-    }
-
-
-    public void ZeroOutNumKeys()
-    {
-      _NumKeys = 0;
     }
 
     /// <summary>
@@ -168,7 +162,7 @@ namespace BTreeVisualization
   /// be externally viewed.</param>
   public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<T,BTreeNode<T>>(degree, bufferBlock)
   {
-    public abstract bool CheckMyself();
+    public abstract bool CheckMyself(int key);
     /// <summary>
     /// Generic typed array parallel to the keys array.
     /// It holds the values associated with the corresponding key.
@@ -241,7 +235,7 @@ namespace BTreeVisualization
     /// Date: 2024-02-23</remarks>
     /// <returns>The key and corresponding content from the right
     /// most leaf node below this node.</returns>
-    public abstract (int, T) ForfeitKey();
+    public abstract (int, T?) ForfeitKey();
     /// <summary>
     /// Find a key in this node or in its children.
     /// </summary>
