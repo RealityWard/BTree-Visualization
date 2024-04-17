@@ -173,6 +173,7 @@ namespace BPlusTreeVisualization
       
         
     }
+    /*
 
     public class NullContentReferenceException : Exception
   {
@@ -180,6 +181,7 @@ namespace BPlusTreeVisualization
     public NullContentReferenceException(string message) : base(message) { }
     public NullContentReferenceException(string message, Exception inner) : base(message, inner) { }
   }
+  */
 
   /// <summary>
   /// Thrown when a reference to a content object is null.
