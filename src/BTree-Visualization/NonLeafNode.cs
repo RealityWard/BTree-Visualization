@@ -550,6 +550,9 @@ namespace BTreeVisualization
           _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, leftBufferVar.Item1,
             leftBufferVar.Item2, leftBufferVar.Item3, Children[index + 1].ID,
             rightBufferVar.Item1, rightBufferVar.Item2, rightBufferVar.Item3));
+          (int, int[], T?[]) bufferVar = CreateBufferVar();
+          _BufferBlock.SendAsync((NodeStatus.UnderFlowParent, ID, bufferVar.Item1,
+            bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
           if (_Children[index] as NonLeafNode<T> != null)
           {
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
@@ -572,13 +575,13 @@ namespace BTreeVisualization
           _Children[index].LosesToRight();
           (int, int[], T?[]) leftBufferVar = Children[index].CreateBufferVar();
           (int, int[], T?[]) rightBufferVar = Children[index + 1].CreateBufferVar();
-          _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, leftBufferVar.Item1,
-            leftBufferVar.Item2, leftBufferVar.Item3, Children[index + 1].ID,
-            rightBufferVar.Item1, rightBufferVar.Item2, rightBufferVar.Item3));
           _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index + 1].ID,
             rightBufferVar.Item1, rightBufferVar.Item2, rightBufferVar.Item3,
             Children[index].ID, leftBufferVar.Item1,
             leftBufferVar.Item2, leftBufferVar.Item3));
+          (int, int[], T?[]) bufferVar = CreateBufferVar();
+          _BufferBlock.SendAsync((NodeStatus.UnderFlowParent, ID, bufferVar.Item1,
+            bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
           if (_Children[index] as NonLeafNode<T> != null)
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
             _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index + 1].ID, -1, [], [], 
