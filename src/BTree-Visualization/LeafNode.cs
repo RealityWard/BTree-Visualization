@@ -215,12 +215,12 @@ namespace BTreeVisualization
 
     public override bool CheckMyself(int key)
     {
-      if (key == 590875)
+      if (key == 488382)
         Console.Write("here");
       bool result = true;
       for (int i = 0; i < _NumKeys; i++)
       {
-        if (Keys[i] == 933013)
+        if (Keys[i] == 503049)
           Console.Write("here");
         result = result && _Contents[i] != null;
       }
@@ -320,7 +320,7 @@ namespace BTreeVisualization
       // rightSibiling.LosesToLeft(((NonLeafNode<T>)rightSibiling).ResolveLeadingKey(0));
       int dividerKey;
       T? dividerData;
-      if (_NumKeys + rightSibiling.NumKeys >= 2 * _Degree - 2)
+      if (_NumKeys + rightSibiling.NumKeys > 2 * _Degree - 2)
       {// Must balance keys between nodes
         if (_NumKeys == 0)
         {
@@ -357,7 +357,7 @@ namespace BTreeVisualization
           bufferVarLeft.Item1, bufferVarLeft.Item2, bufferVarLeft.Item3
           , rightSibiling.ID, bufferVarRight.Item1, bufferVarRight.Item2,
           bufferVarRight.Item3));
-        CheckMyself(dividerKey);
+        CheckMyself(0);
         return (dividerKey, dividerData, rightSibiling);
       }
       else
@@ -445,6 +445,7 @@ namespace BTreeVisualization
         _Contents[_NumKeys + i] = sibiling.Contents[i];
       }
       _NumKeys += sibiling.NumKeys;
+      sibiling.LosesToLeft(sibiling.NumKeys);
       (int, int[], T?[]) bufferVar = CreateBufferVar();
       _BufferBlock.SendAsync((NodeStatus.Merge, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, sibiling.ID, -1, [], []));
     }
