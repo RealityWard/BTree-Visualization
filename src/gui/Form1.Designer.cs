@@ -54,9 +54,10 @@
             btnInsert.FlatStyle = FlatStyle.Flat;
             btnInsert.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnInsert.ForeColor = Color.White;
-            btnInsert.Location = new Point(719, 896);
+            btnInsert.Location = new Point(724, 897);
+            btnInsert.Margin = new Padding(2, 3, 2, 3);
             btnInsert.Name = "btnInsert";
-            btnInsert.Size = new Size(150, 40);
+            btnInsert.Size = new Size(149, 40);
             btnInsert.TabIndex = 0;
             btnInsert.Text = "insert";
             btnInsert.TextColor = Color.White;
@@ -74,9 +75,10 @@
             btnDelete.FlatStyle = FlatStyle.Flat;
             btnDelete.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnDelete.ForeColor = Color.White;
-            btnDelete.Location = new Point(875, 896);
+            btnDelete.Location = new Point(877, 896);
+            btnDelete.Margin = new Padding(2, 3, 2, 3);
             btnDelete.Name = "btnDelete";
-            btnDelete.Size = new Size(150, 40);
+            btnDelete.Size = new Size(149, 40);
             btnDelete.TabIndex = 1;
             btnDelete.Text = "delete";
             btnDelete.TextColor = Color.White;
@@ -94,9 +96,10 @@
             btnSearch.FlatStyle = FlatStyle.Flat;
             btnSearch.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnSearch.ForeColor = Color.White;
-            btnSearch.Location = new Point(1031, 896);
+            btnSearch.Location = new Point(1033, 896);
+            btnSearch.Margin = new Padding(2, 3, 2, 3);
             btnSearch.Name = "btnSearch";
-            btnSearch.Size = new Size(150, 40);
+            btnSearch.Size = new Size(149, 40);
             btnSearch.TabIndex = 2;
             btnSearch.Text = "search";
             btnSearch.TextColor = Color.White;
@@ -114,9 +117,10 @@
             btnclear.FlatStyle = FlatStyle.Flat;
             btnclear.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnclear.ForeColor = Color.White;
-            btnclear.Location = new Point(1187, 896);
+            btnclear.Location = new Point(1190, 896);
+            btnclear.Margin = new Padding(2, 3, 2, 3);
             btnclear.Name = "btnclear";
-            btnclear.Size = new Size(150, 40);
+            btnclear.Size = new Size(149, 40);
             btnclear.TabIndex = 3;
             btnclear.Text = "clear";
             btnclear.TextColor = Color.White;
@@ -130,7 +134,8 @@
             cmbxMaxDegree.ForeColor = SystemColors.Window;
             cmbxMaxDegree.FormattingEnabled = true;
             cmbxMaxDegree.Items.AddRange(new object[] { "3", "4", "5", "6", "7" });
-            cmbxMaxDegree.Location = new Point(1343, 902);
+            cmbxMaxDegree.Location = new Point(1343, 901);
+            cmbxMaxDegree.Margin = new Padding(2, 3, 2, 3);
             cmbxMaxDegree.Name = "cmbxMaxDegree";
             cmbxMaxDegree.Size = new Size(130, 30);
             cmbxMaxDegree.TabIndex = 4;
@@ -139,7 +144,8 @@
             // 
             // txtInputData
             // 
-            txtInputData.Location = new Point(506, 907);
+            txtInputData.Location = new Point(509, 904);
+            txtInputData.Margin = new Padding(2, 3, 2, 3);
             txtInputData.Name = "txtInputData";
             txtInputData.Size = new Size(195, 23);
             txtInputData.TabIndex = 5;
@@ -151,7 +157,9 @@
             // 
             panel1.AutoScroll = true;
             panel1.BackColor = SystemColors.ControlDarkDark;
+            panel1.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             panel1.Location = new Point(12, 12);
+            panel1.Margin = new Padding(2, 3, 2, 3);
             panel1.Name = "panel1";
             panel1.Size = new Size(2063, 883);
             panel1.TabIndex = 6;
@@ -160,17 +168,20 @@
             // lblCurrentProcess
             // 
             lblCurrentProcess.AutoSize = true;
+            lblCurrentProcess.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblCurrentProcess.ForeColor = SystemColors.ActiveCaptionText;
-            lblCurrentProcess.Location = new Point(12, 897);
+            lblCurrentProcess.Location = new Point(128, 904);
+            lblCurrentProcess.Margin = new Padding(2, 0, 2, 0);
             lblCurrentProcess.Name = "lblCurrentProcess";
-            lblCurrentProcess.Size = new Size(188, 15);
+            lblCurrentProcess.Size = new Size(0, 22);
             lblCurrentProcess.TabIndex = 11;
-            lblCurrentProcess.Text = "No Tree Currently Being Processed";
+            lblCurrentProcess.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // chkDebugMode
             // 
             chkDebugMode.AutoSize = true;
-            chkDebugMode.Location = new Point(1980, 907);
+            chkDebugMode.Location = new Point(1978, 908);
+            chkDebugMode.Margin = new Padding(2, 3, 2, 3);
             chkDebugMode.Name = "chkDebugMode";
             chkDebugMode.Size = new Size(95, 19);
             chkDebugMode.TabIndex = 7;
@@ -188,9 +199,10 @@
             btnInsertMany.FlatStyle = FlatStyle.Flat;
             btnInsertMany.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnInsertMany.ForeColor = Color.White;
-            btnInsertMany.Location = new Point(1824, 896);
+            btnInsertMany.Location = new Point(1820, 898);
+            btnInsertMany.Margin = new Padding(2, 3, 2, 3);
             btnInsertMany.Name = "btnInsertMany";
-            btnInsertMany.Size = new Size(150, 40);
+            btnInsertMany.Size = new Size(149, 40);
             btnInsertMany.TabIndex = 8;
             btnInsertMany.Text = "insert many";
             btnInsertMany.TextColor = Color.White;
@@ -199,7 +211,8 @@
             // 
             // trbSpeed
             // 
-            trbSpeed.Location = new Point(1714, 896);
+            trbSpeed.Location = new Point(1712, 892);
+            trbSpeed.Margin = new Padding(2, 3, 2, 3);
             trbSpeed.Minimum = 1;
             trbSpeed.Name = "trbSpeed";
             trbSpeed.Size = new Size(104, 45);
@@ -209,7 +222,8 @@
             // lblSpeed
             // 
             lblSpeed.AutoSize = true;
-            lblSpeed.Location = new Point(1720, 927);
+            lblSpeed.Location = new Point(1718, 927);
+            lblSpeed.Margin = new Padding(2, 0, 2, 0);
             lblSpeed.Name = "lblSpeed";
             lblSpeed.Size = new Size(98, 15);
             lblSpeed.TabIndex = 10;
@@ -232,6 +246,8 @@
             Controls.Add(btnSearch);
             Controls.Add(btnDelete);
             Controls.Add(btnInsert);
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            Margin = new Padding(2, 3, 2, 3);
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;
