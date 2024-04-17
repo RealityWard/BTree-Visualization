@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -45,7 +45,6 @@ namespace B_TreeVisualizationGUI
             if (currentNode == null) return; // Null check
 
             var pen = new Pen(Color.MediumSlateBlue, 2); // Pen for drawing
-            var penHighlighted = new Pen(Color.Red, 2); // Pen for highlighted drawings
 
             // Ensures current height is initialized in the dictionary 
             if (!heightNodesDrawn.ContainsKey(height))
@@ -103,14 +102,7 @@ namespace B_TreeVisualizationGUI
                     }
                     else
                     {
-                        try
-                        {
-                            throw new Exception($"Current node with ID: {currentNode.ID} failed to set its leftX");
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        }
+                        //throw new Exception($"Current node: {currentNode} failed to set its leftX");
                     }
 
                     // Log if 'childX' or 'childY' is about to become NaN
@@ -124,8 +116,7 @@ namespace B_TreeVisualizationGUI
                     if (childNode != null)
                     {
                         DrawTree(graphics, childNode, centerX, childX, childY, subtreeWidth, heightNodesDrawn, height); // Draw the child subtree
-                        if (childNode.lineHighlighted) graphics.DrawLine(penHighlighted, x, y + currentNode.NodeHeight, childX, childY); // Draw highlighted line from parent to child
-                        else graphics.DrawLine(pen, x, y + currentNode.NodeHeight, childX, childY); // Draw line from parent to child
+                        graphics.DrawLine(pen, x, y + currentNode.NodeHeight, childX, childY); // Draw line from parent to child
                     }
                 }
             }
@@ -199,7 +190,7 @@ namespace B_TreeVisualizationGUI
                 return;
             }
 
-            if (node.Children != null)
+            if (node.Children != null) 
             {
                 // Decrement height and traverse child nodes
                 for (int i = 0; i < node.Children.Count(); i++)
