@@ -837,12 +837,13 @@ namespace B_TreeVisualizationGUI
                     if (cancellationTokenSource.IsCancellationRequested)
                     {
                         Debug.WriteLine("Operation cancelled due to duplicate key found.");
-                        //await inputBuffer.SendAsync((TreeCommand.Insert, i, new Person(keyToInsert.ToString())));
-                        //int delay = Invoke(new Func<int>(() => animationSpeed));
+                        
                         break; // Exit the loop if cancellation is requested
                     }
-                    inputBuffer.Post((TreeCommand.Insert, i, new Person(keyToInsert.ToString())));
-                    int delay = (int)this.Invoke(new Func<int>(() => animationSpeed));
+                    await inputBuffer.SendAsync((TreeCommand.Insert, i, new Person(keyToInsert.ToString())));
+                    int delay = Invoke(new Func<int>(() => animationSpeed));
+                    //inputBuffer.Post((TreeCommand.Insert, i, new Person(keyToInsert.ToString())));
+                    //int delay = (int)this.Invoke(new Func<int>(() => animationSpeed));
                     await Task.Delay(delay);
                 }
             }
