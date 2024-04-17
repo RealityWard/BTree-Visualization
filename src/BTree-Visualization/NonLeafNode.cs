@@ -457,11 +457,12 @@ namespace BTreeVisualization
       firstKeyIndex += NormalRebalanceReturn(merged, firstKeyIndex);
       NewMethod3(firstKeyIndex, lastIndex);
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-      if (_Children[firstKeyIndex].IsUnderflow())
+      if (_Children[firstKeyIndex].IsUnderflow() && _NumKeys > 0)
       {
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         if (firstKeyIndex == _NumKeys && firstKeyIndex != 0)
           firstKeyIndex--;
+        firstKeyIndex = NewMethod2(firstKeyIndex);
         lastIndex = firstKeyIndex + 1;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
 #pragma warning disable CS8604 // Possible null reference argument.
