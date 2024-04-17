@@ -74,7 +74,9 @@ namespace CustomControls.RJControls
             this.Size = new Size(150, 40);
             this.BackColor = Color.MediumSlateBlue;
             this.ForeColor = Color.White;
+#pragma warning disable CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
             this.Resize += new EventHandler(Button_Resize);
+#pragma warning restore CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
         }
 
         //Methods
@@ -107,6 +109,7 @@ namespace CustomControls.RJControls
             {
                 using (GraphicsPath pathSurface = GetFigurePath(rectSurface, borderRadius))
                 using (GraphicsPath pathBorder = GetFigurePath(rectBorder, borderRadius - borderSize))
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                 using (Pen penSurface = new Pen(this.Parent.BackColor, smoothSize))
                 using (Pen penBorder = new Pen(borderColor, borderSize))
                 {
@@ -121,6 +124,7 @@ namespace CustomControls.RJControls
                         //Draw control border
                         pevent.Graphics.DrawPath(penBorder, pathBorder);
                 }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
             }
             else //Normal button
             {
@@ -141,7 +145,11 @@ namespace CustomControls.RJControls
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
             this.Parent.BackColorChanged += new EventHandler(Container_BackColorChanged);
+#pragma warning restore CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
         }
 
         private void Container_BackColorChanged(object sender, EventArgs e)

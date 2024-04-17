@@ -100,11 +100,23 @@ namespace ThreadCommunication
     /// </summary>
     MergeParent,
     /// <summary>
+    /// Sent once after replacing the root.
+    /// ID,NumKeys,Keys,Contents,AltID
+    /// values will be sent to update existing node.
+    /// AltID refers to old root.
+    /// </summary>
+    MergeRoot,
+    /// <summary>
     /// Sent when a full merge is not possible thus one sibiling takes a
     /// bite out of its sibiling. Alt refers the sibiling node being biten.
     /// ID,NumKeys,Keys,Contents,AltID,AltNumKeys,AltKeys,AltContents
     /// </summary>
     UnderFlow,
+    /// <summary>
+    /// Sent after UnderFlow in children.
+    /// ID,NumKeys,Keys,Contents
+    /// </summary>
+    UnderFlowParent,
     /// <summary>
     /// During both split and merge children will need to update who they point to.
     /// Alt refers to child node.
@@ -155,7 +167,8 @@ namespace ThreadCommunication
     /// Sent if the node had nothing left
     /// during a delete over a range of keys.
     /// Just the ID of the one being deleted.
-    /// ID,-1,[],[]
+    /// ID,-1,[],[],AltID
+    /// Alt refers to parent.
     /// </summary>
     NodeDeleted,
     /// <summary>

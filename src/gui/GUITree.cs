@@ -102,7 +102,7 @@ namespace B_TreeVisualizationGUI
                     }
                     else
                     {
-                        throw new Exception($"Current node: {currentNode} failed to set it's leftX");
+                        //throw new Exception($"Current node: {currentNode} failed to set its leftX");
                     }
 
                     // Log if 'childX' or 'childY' is about to become NaN
