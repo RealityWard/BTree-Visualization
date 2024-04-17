@@ -643,20 +643,25 @@ namespace B_TreeVisualizationGUI
             UnhighlightSearched(); // Unhighlight any previously searched nodes
             Debug.WriteLine("Received NodeDeleted status."); // For debug purposes DELETE LATER
             lblCurrentProcess.Text = ("Deleting node."); // Inform user of what process is currently happening
-            nodeDictionary.Remove(feedback.id);
             // If node is still in the dictionary, delete it
-            if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node))
+            if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? node))
             {
-              nodeDictionary.Remove(feedback.id);
-              nodeDictionary[feedback.altID].Children.Remove(nodeDictionary[feedback.id]);
+              for(int i = 0; i<node.Children.Count; i++)
+              {
+                if(node.Children[i].ID == feedback.id)
+                {
+                  node.Children.RemoveAt(i);
+                }
+              }
             }
+            nodeDictionary.Remove(feedback.id);
             break;
           }
 
         // UNKNOWN STATUS
         default:
           {
-            Debug.WriteLine("Unknown status recieved.");
+            Debug.WriteLine($"Unknown {feedback.status} recieved.");
             break;
           }
       }
@@ -789,8 +794,8 @@ namespace B_TreeVisualizationGUI
 
         for (int i = 1; i < keyToInsert + 1; i++) // Note: This loop condition might need adjustment
         {
-          inputBuffer.Post((TreeCommand.Insert, i, new Person(keyToInsert.ToString())));
-          int delay = (int)this.Invoke(new Func<int>(() => animationSpeed));
+          await inputBuffer.SendAsync((TreeCommand.Insert, i, new Person(keyToInsert.ToString())));
+          int delay = Invoke(new Func<int>(() => animationSpeed));
           await Task.Delay(delay);
         }
       }
