@@ -95,10 +95,26 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public void Delete(int key)
     {
-      _BufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [key], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
       _Root.DeleteKey(key);
+      if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
+      {
+        long temp = _Root.ID;
+        _Root = ((NonLeafNode<T>)_Root).Children[0]
+          ?? throw new NullChildReferenceException(
+            $"Child of child on root node");
+        _BufferBlock.SendAsync((NodeStatus.MergeRoot, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
+      }
+    }
+
+    public void DeleteRange(int key, int endKey)
+    {
+      _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, -1, [key, endKey], [], 0, -1, [], []));
+      if (key == 0 && zeroKeyUsed)
+        zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
+      _Root.DeleteKeys(key, endKey);
       if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
         long temp = _Root.ID;
@@ -118,9 +134,9 @@ namespace BTreeVisualization
     /// <returns>Data object stored under key.</returns>
     public T? Search(int key)
     {
-      _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [key], [], 0, -1, [], []));
       (int key, T content)? result = _Root.SearchKey(key);
-      if(result == null)
+      if (result == null)
       {
         return default;
       }
@@ -139,7 +155,9 @@ namespace BTreeVisualization
     /// <returns>A list of key-value pairs from the matching range in order of found.</returns>
     public List<(int key, T content)> Search(int key, int endKey)
     {
-      _BufferBlock.SendAsync((NodeStatus.SearchRange, 0, -1, [], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.SearchRange, 0, -1, [key, endKey], [], 0, -1, [], []));
+      if (key == endKey)
+        endKey++;
       List<(int key, T value)> result = _Root.SearchKeys(key, endKey);
       if (result.Count > 0)
       {

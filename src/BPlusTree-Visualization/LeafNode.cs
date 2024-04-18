@@ -197,7 +197,7 @@ namespace BPlusTreeVisualization
       }
     }
 
-    public override bool DeleteKeys(int key, int endKey)
+    public override int DeleteKeys(int key, int endKey, bool? leftFork)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [], 0, -1, [], []));
       if (_Keys[_NumKeys - 1] > key && _Keys[0] < endKey && key <= endKey)
@@ -225,12 +225,12 @@ namespace BPlusTreeVisualization
           _NumKeys = 0;
           _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, NumKeys, Keys, Contents, 0, -1, [], []));
         }
-        return true;
+        return 0;
       }
       else
       {
         _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID, -1, [], [], 0, -1, [], []));
-        return false;
+        return 0;
       }
     }
 
@@ -361,7 +361,7 @@ namespace BPlusTreeVisualization
       _Contents[0] = dividerData;
     }
 
-    public override void GainsFromLeft(int diff, BTreeNode<T> sibiling)
+    public override void GainsFromLeftSpecial(int diff, BTreeNode<T> sibiling)
     {
       for (int i = _NumKeys - 1; i >= 0; i--)
       {
@@ -414,6 +414,11 @@ namespace BPlusTreeVisualization
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
       }
       return output + "]\n" + Spacer(x) + "}";
+    }
+
+    public override (int?, T?, BTreeNode<T>?)? RebalanceNodes(BTreeNode<T> sibiling)
+    {
+      throw new NotImplementedException();
     }
   }
 }

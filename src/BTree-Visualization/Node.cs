@@ -11,10 +11,10 @@ namespace BTreeVisualization
   public enum NodeCondition
   {
     Mergeable,
-    KeyAndTwoNodes,
     KeyAndOneNode,
     KeyAndNone,
-    None
+    None,
+    NothingChanged
   }
 
   /// <summary>
@@ -26,16 +26,24 @@ namespace BTreeVisualization
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class Node<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+  public abstract class Node<T,N>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Output Buffer for Status updates to be externally viewed.
     /// </summary>
     protected BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock = bufferBlock;
+    public BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> GetBufferBlock
+    {
+      get { return _BufferBlock; }
+    }
     /// <summary>
     /// Determines the number of keys and children per node.
     /// </summary>
     protected readonly int _Degree = degree;
+    public int Degree
+    {
+      get { return _Degree; }
+    }
     /// <summary>
     /// Identifier to be unique per node for reference on gui side.
     /// </summary>
@@ -60,7 +68,7 @@ namespace BTreeVisualization
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
-    public abstract void LosesToRight();
+    public abstract void LosesToRight(int diff);
     /// <summary>
     /// Checks if this node is at max capacity.
     /// </summary>
@@ -83,7 +91,10 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
     public abstract void DeleteKey(int key);
-    public abstract bool DeleteKeys(int key, int endKey);
+    public abstract void DeleteKeys(int key, int endKey);
+    public abstract bool DeleteKeysSplit(int key, int endKey, N rightSibiling);
+    public abstract void DeleteKeysLeft(int index);
+    public abstract void DeleteKeysRight(int index);
     /// <summary>
     /// Prints out this node and its children.
     /// </summary>
@@ -149,8 +160,9 @@ namespace BTreeVisualization
   /// <param name="degree">Same as parent node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<T>(degree, bufferBlock)
+  public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<T,BTreeNode<T>>(degree, bufferBlock)
   {
+    public abstract bool CheckMyself(int key);
     /// <summary>
     /// Generic typed array parallel to the keys array.
     /// It holds the values associated with the corresponding key.
@@ -201,8 +213,9 @@ namespace BTreeVisualization
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
     /// smaller than all the keys in the called node.)</param>
-    public abstract void GainsFromLeft(int dividerKey, T dividerData, BTreeNode<T> sibiling);
-    public abstract void GainsFromLeft(int diff, BTreeNode<T> sibiling);
+    public abstract void GainsFromLeft(int diff, int dividerKey, T? dividerData, BTreeNode<T> sibiling);
+    public abstract void GainsFromLeftSpecial(int diff, BTreeNode<T> sibiling);
+    public abstract (int?, T?, BTreeNode<T>?) RebalanceNodes(BTreeNode<T> sibiling);
     /// <summary>
     /// Insert new entry to this node or one of its children.
     /// Then recognize if a child split and adjust accordingly.
@@ -222,7 +235,7 @@ namespace BTreeVisualization
     /// Date: 2024-02-23</remarks>
     /// <returns>The key and corresponding content from the right
     /// most leaf node below this node.</returns>
-    public abstract (int, T) ForfeitKey();
+    public abstract (int, T?) ForfeitKey();
     /// <summary>
     /// Find a key in this node or in its children.
     /// </summary>

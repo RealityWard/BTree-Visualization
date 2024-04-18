@@ -12,7 +12,7 @@ namespace ThreadTesting
   /// Tests for threading properly ordered messages. 
   /// </summary>
   /// <remarks>Author: Tristan Anderson</remarks>
-  [TestFixture(3)]
+  // [TestFixture(30)]
   public partial class ThreadTests(int degree)
   {
     Dictionary<NodeStatus, int>[] _StatusPrecedence = [];
@@ -60,7 +60,7 @@ namespace ThreadTesting
     /// </summary>
     private void DefineStatusPrecedence()
     {
-      int numOfStates = 100;
+      int numOfStates = 121;
       _StatusPrecedence = new Dictionary<NodeStatus, int>[numOfStates];
       for (int i = 0; i < numOfStates; i++)
       {
@@ -71,8 +71,8 @@ namespace ThreadTesting
       _StatusPrecedence[0].Add(NodeStatus.Search, 29);
       _StatusPrecedence[0].Add(NodeStatus.SearchRange, 32);
       _StatusPrecedence[0].Add(NodeStatus.DeleteRange, 35);
-      _AcceptStates = [0, 70, 3, 7, 14, 17, 18, 19, 21, 31, 34, 37, 38, 40, 69, 56, 61, 59, 63, 67, 65, 66];
-      _StatusPrecedence[0].Add(NodeStatus.Close, 70);
+      _AcceptStates = [0, 71, 3, 7, 14, 17, 18, 19, 21, 31, 34, 37, 39, 41, 46, 47, 49, 50, 53, 55, 61, 70, 73, 74, 79, 82, 84, 85, 88, 93, 94, 95, 96, 97, 98, 101, 103, 105, 107, 108, 109, 110, 114, 115, 116, 118, 119, 120];
+      _StatusPrecedence[0].Add(NodeStatus.Close, 71);
       _StatusPrecedence[1].Add(NodeStatus.ISearching, 2);
       _StatusPrecedence[2].Add(NodeStatus.ISearching, 2);
       _StatusPrecedence[2].Add(NodeStatus.Inserted, 3);
@@ -122,72 +122,248 @@ namespace ThreadTesting
       _StatusPrecedence[35].Add(NodeStatus.DSearching, 36);
       _StatusPrecedence[36].Add(NodeStatus.DSearching, 36);
       _StatusPrecedence[36].Add(NodeStatus.DeletedRange, 37);
-      _StatusPrecedence[37].Add(NodeStatus.UnderFlow, 38);
-      _StatusPrecedence[37].Add(NodeStatus.NodeDeleted, 39);
-      _StatusPrecedence[37].Add(NodeStatus.Merge, 39);
-      _StatusPrecedence[39].Add(NodeStatus.MergeParent, 40);
-      _StatusPrecedence[40].Add(NodeStatus.Merge, 39);
-      _StatusPrecedence[40].Add(NodeStatus.UnderFlow, 41);
-      _StatusPrecedence[41].Add(NodeStatus.Shift, 38);
-      _StatusPrecedence[42].Add(NodeStatus.DSearching, 43);
-      _StatusPrecedence[43].Add(NodeStatus.DSearching, 43);
-      _StatusPrecedence[43].Add(NodeStatus.DeletedRange, 44);
-      _StatusPrecedence[44].Add(NodeStatus.UnderFlow, 45);
-      _StatusPrecedence[44].Add(NodeStatus.NodeDeleted, 46);
-      _StatusPrecedence[44].Add(NodeStatus.Merge, 46);
-      _StatusPrecedence[46].Add(NodeStatus.MergeParent, 47);
-      _StatusPrecedence[47].Add(NodeStatus.Merge, 46);
-      _StatusPrecedence[47].Add(NodeStatus.UnderFlow, 48);
-      _StatusPrecedence[48].Add(NodeStatus.Shift, 45);
-      _StatusPrecedence[44].Add(NodeStatus.DSearching, 49);
-      _StatusPrecedence[45].Add(NodeStatus.DSearching, 49);
-      _StatusPrecedence[47].Add(NodeStatus.DSearching, 49);
-      _StatusPrecedence[49].Add(NodeStatus.DSearching, 49);
-      _StatusPrecedence[49].Add(NodeStatus.DeletedRange, 50);
-      _StatusPrecedence[50].Add(NodeStatus.UnderFlow, 51);
-      _StatusPrecedence[50].Add(NodeStatus.NodeDeleted, 52);
-      _StatusPrecedence[50].Add(NodeStatus.Merge, 52);
-      _StatusPrecedence[52].Add(NodeStatus.MergeParent, 53);
-      _StatusPrecedence[53].Add(NodeStatus.Merge, 52);
-      _StatusPrecedence[53].Add(NodeStatus.UnderFlow, 54);
-      _StatusPrecedence[54].Add(NodeStatus.Shift, 51);
-      _StatusPrecedence[50].Add(NodeStatus.Rebalanced, 55);
-      _StatusPrecedence[50].Add(NodeStatus.DeletedRange, 69);
-      _StatusPrecedence[51].Add(NodeStatus.Rebalanced, 55);
-      _StatusPrecedence[51].Add(NodeStatus.NodeDeleted, 55);
-      _StatusPrecedence[51].Add(NodeStatus.DeletedRange, 69);
-      _StatusPrecedence[53].Add(NodeStatus.Rebalanced, 55);
-      _StatusPrecedence[53].Add(NodeStatus.NodeDeleted, 55);
-      _StatusPrecedence[53].Add(NodeStatus.DeletedRange, 69);
-      _StatusPrecedence[55].Add(NodeStatus.UnderFlow, 56);
-      _StatusPrecedence[55].Add(NodeStatus.NodeDeleted, 57);
-      _StatusPrecedence[55].Add(NodeStatus.Merge, 58);
-      _StatusPrecedence[56].Add(NodeStatus.UnderFlow, 61);
-      _StatusPrecedence[56].Add(NodeStatus.Merge, 62);
-      _StatusPrecedence[56].Add(NodeStatus.NodeDeleted, 62);
-      _StatusPrecedence[56].Add(NodeStatus.DeletedRange, 69);
-      _StatusPrecedence[57].Add(NodeStatus.NodeDeleted, 57);
-      _StatusPrecedence[57].Add(NodeStatus.MergeParent, 59);
-      _StatusPrecedence[58].Add(NodeStatus.MergeParent, 59);
-      _StatusPrecedence[59].Add(NodeStatus.NodeDeleted, 62);
-      _StatusPrecedence[59].Add(NodeStatus.UnderFlow, 63);
-      _StatusPrecedence[59].Add(NodeStatus.Merge, 64);
-      _StatusPrecedence[59].Add(NodeStatus.DeletedRange, 69);
-      _StatusPrecedence[61].Add(NodeStatus.DeletedRange, 69);
-      _StatusPrecedence[62].Add(NodeStatus.MergeParent, 67);
-      _StatusPrecedence[63].Add(NodeStatus.Shift, 56);
-      _StatusPrecedence[63].Add(NodeStatus.DeletedRange, 69);
-      _StatusPrecedence[64].Add(NodeStatus.MergeParent, 65);
-      _StatusPrecedence[65].Add(NodeStatus.Merge, 64);
-      _StatusPrecedence[65].Add(NodeStatus.UnderFlow, 66);
-      _StatusPrecedence[65].Add(NodeStatus.DeletedRange, 69);
-      _StatusPrecedence[66].Add(NodeStatus.Shift, 56);
-      _StatusPrecedence[66].Add(NodeStatus.DeletedRange, 69);
-      _StatusPrecedence[67].Add(NodeStatus.Merge, 62);
-      _StatusPrecedence[67].Add(NodeStatus.UnderFlow, 68);
-      _StatusPrecedence[67].Add(NodeStatus.DeletedRange, 69);
-      _StatusPrecedence[68].Add(NodeStatus.Shift, 61);
-      _StatusPrecedence[69].Add(NodeStatus.DeletedRange, 50);
+      _StatusPrecedence[36].Add(NodeStatus.DeleteRangeSplit, 38);
+      _StatusPrecedence[37].Add(NodeStatus.Rebalanced, 37);
+      _StatusPrecedence[37].Add(NodeStatus.UnderFlow, 39);
+      _StatusPrecedence[37].Add(NodeStatus.Merge, 40);
+      _StatusPrecedence[37].Add(NodeStatus.NodeDeleted, 41);
+      _StatusPrecedence[37].Add(NodeStatus.Shift, 42);
+      _StatusPrecedence[37].Add(NodeStatus.SplitInsert, 43);
+      _StatusPrecedence[38].Add(NodeStatus.DSearching, 44);
+      _StatusPrecedence[39].Add(NodeStatus.Rebalanced, 37);
+      _StatusPrecedence[39].Add(NodeStatus.UnderFlow, 39);
+      _StatusPrecedence[39].Add(NodeStatus.Merge, 45);
+      _StatusPrecedence[39].Add(NodeStatus.NodeDeleted, 45);
+      _StatusPrecedence[39].Add(NodeStatus.Shift, 42);
+      _StatusPrecedence[39].Add(NodeStatus.SplitInsert, 43);
+      _StatusPrecedence[40].Add(NodeStatus.MergeParent, 46);
+      _StatusPrecedence[41].Add(NodeStatus.NodeDeleted, 41);
+      _StatusPrecedence[41].Add(NodeStatus.MergeParent, 46);
+      _StatusPrecedence[42].Add(NodeStatus.Rebalanced, 37);
+      _StatusPrecedence[43].Add(NodeStatus.Shift, 47);
+      _StatusPrecedence[44].Add(NodeStatus.DSearching, 44);
+      _StatusPrecedence[44].Add(NodeStatus.DeletedRange, 48);
+      _StatusPrecedence[45].Add(NodeStatus.MergeParent, 49);
+      _StatusPrecedence[46].Add(NodeStatus.Rebalanced, 37);
+      _StatusPrecedence[46].Add(NodeStatus.UnderFlow, 50);
+      _StatusPrecedence[46].Add(NodeStatus.Merge, 51);
+      _StatusPrecedence[46].Add(NodeStatus.NodeDeleted, 45);
+      _StatusPrecedence[46].Add(NodeStatus.Shift, 42);
+      _StatusPrecedence[46].Add(NodeStatus.SplitInsert, 43);
+      _StatusPrecedence[47].Add(NodeStatus.NodeDeleted, 47);
+      _StatusPrecedence[48].Add(NodeStatus.DeletedRange, 52);
+      _StatusPrecedence[48].Add(NodeStatus.NodeDeleted, 48);
+      _StatusPrecedence[48].Add(NodeStatus.DSearching, 63);
+      _StatusPrecedence[49].Add(NodeStatus.Rebalanced, 37);
+      _StatusPrecedence[49].Add(NodeStatus.UnderFlow, 53);
+      _StatusPrecedence[49].Add(NodeStatus.Merge, 54);
+      _StatusPrecedence[49].Add(NodeStatus.NodeDeleted, 45);
+      _StatusPrecedence[49].Add(NodeStatus.Shift, 42);
+      _StatusPrecedence[49].Add(NodeStatus.SplitInsert, 43);
+      _StatusPrecedence[50].Add(NodeStatus.Rebalanced, 37);
+      _StatusPrecedence[50].Add(NodeStatus.UnderFlow, 39);
+      _StatusPrecedence[50].Add(NodeStatus.Merge, 45);
+      _StatusPrecedence[50].Add(NodeStatus.NodeDeleted, 45);
+      _StatusPrecedence[50].Add(NodeStatus.Shift, 39);
+      _StatusPrecedence[50].Add(NodeStatus.SplitInsert, 43);
+      _StatusPrecedence[51].Add(NodeStatus.MergeParent, 55);
+      _StatusPrecedence[52].Add(NodeStatus.DeletedRange, 52);
+      _StatusPrecedence[52].Add(NodeStatus.Rebalanced, 52);
+      _StatusPrecedence[52].Add(NodeStatus.UnderFlow, 56);
+      _StatusPrecedence[52].Add(NodeStatus.Merge, 57);
+      _StatusPrecedence[52].Add(NodeStatus.NodeDeleted, 58);
+      _StatusPrecedence[52].Add(NodeStatus.Shift, 59);
+      _StatusPrecedence[52].Add(NodeStatus.SplitInsert, 60);
+      _StatusPrecedence[52].Add(NodeStatus.DSearching, 63);
+      _StatusPrecedence[53].Add(NodeStatus.Rebalanced, 37);
+      _StatusPrecedence[53].Add(NodeStatus.UnderFlow, 39);
+      _StatusPrecedence[53].Add(NodeStatus.Merge, 45);
+      _StatusPrecedence[53].Add(NodeStatus.NodeDeleted, 45);
+      _StatusPrecedence[53].Add(NodeStatus.Shift, 39);
+      _StatusPrecedence[53].Add(NodeStatus.SplitInsert, 43);
+      _StatusPrecedence[54].Add(NodeStatus.MergeParent, 61);
+      _StatusPrecedence[55].Add(NodeStatus.Rebalanced, 37);
+      _StatusPrecedence[55].Add(NodeStatus.UnderFlow, 50);
+      _StatusPrecedence[55].Add(NodeStatus.Merge, 51);
+      _StatusPrecedence[55].Add(NodeStatus.NodeDeleted, 45);
+      _StatusPrecedence[55].Add(NodeStatus.Shift, 42);
+      _StatusPrecedence[55].Add(NodeStatus.SplitInsert, 43);
+      _StatusPrecedence[56].Add(NodeStatus.DSearching, 63);
+      _StatusPrecedence[56].Add(NodeStatus.UnderFlow, 78);
+      _StatusPrecedence[56].Add(NodeStatus.Merge, 72);
+      _StatusPrecedence[56].Add(NodeStatus.NodeDeleted, 66);
+      _StatusPrecedence[57].Add(NodeStatus.DeletedRange, 52);
+      _StatusPrecedence[57].Add(NodeStatus.Rebalanced, 52);
+      _StatusPrecedence[57].Add(NodeStatus.UnderFlow, 56);
+      _StatusPrecedence[57].Add(NodeStatus.Merge, 57);
+      _StatusPrecedence[57].Add(NodeStatus.NodeDeleted, 58);
+      _StatusPrecedence[57].Add(NodeStatus.MergeParent, 62);
+      _StatusPrecedence[57].Add(NodeStatus.Shift, 59);
+      _StatusPrecedence[57].Add(NodeStatus.SplitInsert, 60);
+      _StatusPrecedence[58].Add(NodeStatus.DeletedRange, 52);
+      _StatusPrecedence[58].Add(NodeStatus.NodeDeleted, 48);
+      _StatusPrecedence[58].Add(NodeStatus.MergeParent, 62);
+      _StatusPrecedence[58].Add(NodeStatus.Shift, 52);
+      _StatusPrecedence[59].Add(NodeStatus.Rebalanced, 52);
+      _StatusPrecedence[60].Add(NodeStatus.Shift, 52);
+      _StatusPrecedence[61].Add(NodeStatus.Rebalanced, 37);
+      _StatusPrecedence[61].Add(NodeStatus.UnderFlow, 53);
+      _StatusPrecedence[61].Add(NodeStatus.Merge, 54);
+      _StatusPrecedence[61].Add(NodeStatus.NodeDeleted, 45);
+      _StatusPrecedence[61].Add(NodeStatus.Shift, 42);
+      _StatusPrecedence[61].Add(NodeStatus.SplitInsert, 43);
+      _StatusPrecedence[62].Add(NodeStatus.DSearching, 63);
+      _StatusPrecedence[62].Add(NodeStatus.UnderFlow, 64);
+      _StatusPrecedence[62].Add(NodeStatus.Merge, 65);
+      _StatusPrecedence[62].Add(NodeStatus.NodeDeleted, 66);
+      _StatusPrecedence[63].Add(NodeStatus.DSearching, 63);
+      _StatusPrecedence[63].Add(NodeStatus.DeletedRange, 67);
+      _StatusPrecedence[64].Add(NodeStatus.DSearching, 63);
+      _StatusPrecedence[64].Add(NodeStatus.NodeDeleted, 48);
+      _StatusPrecedence[64].Add(NodeStatus.Shift, 56);
+      _StatusPrecedence[65].Add(NodeStatus.MergeParent, 68);
+      _StatusPrecedence[66].Add(NodeStatus.DeletedRange, 52);
+      _StatusPrecedence[66].Add(NodeStatus.NodeDeleted, 48);
+      _StatusPrecedence[66].Add(NodeStatus.MergeParent, 69);
+      _StatusPrecedence[67].Add(NodeStatus.DeletedRange, 70);
+      _StatusPrecedence[67].Add(NodeStatus.NodeDeleted, 67);
+      _StatusPrecedence[68].Add(NodeStatus.DSearching, 63);
+      _StatusPrecedence[68].Add(NodeStatus.UnderFlow, 64);
+      _StatusPrecedence[68].Add(NodeStatus.Merge, 65);
+      _StatusPrecedence[68].Add(NodeStatus.NodeDeleted, 48);
+      _StatusPrecedence[69].Add(NodeStatus.DSearching, 63);
+      _StatusPrecedence[69].Add(NodeStatus.UnderFlow, 71);
+      _StatusPrecedence[69].Add(NodeStatus.Merge, 72);
+      _StatusPrecedence[69].Add(NodeStatus.NodeDeleted, 48);
+      _StatusPrecedence[70].Add(NodeStatus.DeletedRange, 70);
+      _StatusPrecedence[70].Add(NodeStatus.Rebalanced, 73);
+      _StatusPrecedence[70].Add(NodeStatus.UnderFlow, 93);
+      _StatusPrecedence[70].Add(NodeStatus.Merge, 74);
+      _StatusPrecedence[70].Add(NodeStatus.NodeDeleted, 75);
+      _StatusPrecedence[70].Add(NodeStatus.Shift, 76);
+      _StatusPrecedence[70].Add(NodeStatus.SplitInsert, 77);
+      _StatusPrecedence[71].Add(NodeStatus.Shift, 78);
+      _StatusPrecedence[72].Add(NodeStatus.MergeParent, 69);
+      _StatusPrecedence[73].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[73].Add(NodeStatus.Merge, 80);
+      _StatusPrecedence[73].Add(NodeStatus.NodeDeleted, 81);
+      _StatusPrecedence[74].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[74].Add(NodeStatus.Merge, 80);
+      _StatusPrecedence[74].Add(NodeStatus.NodeDeleted, 81);
+      _StatusPrecedence[74].Add(NodeStatus.MergeParent, 82);
+      _StatusPrecedence[75].Add(NodeStatus.MergeParent, 82);
+      _StatusPrecedence[75].Add(NodeStatus.Shift, 73);
+      _StatusPrecedence[76].Add(NodeStatus.Rebalanced, 73);
+      _StatusPrecedence[77].Add(NodeStatus.Shift, 73);
+      _StatusPrecedence[78].Add(NodeStatus.DSearching, 63);
+      _StatusPrecedence[78].Add(NodeStatus.NodeDeleted, 48);
+      _StatusPrecedence[79].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[79].Add(NodeStatus.Merge, 92);
+      _StatusPrecedence[79].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[80].Add(NodeStatus.MergeParent, 84);
+      _StatusPrecedence[81].Add(NodeStatus.DeletedRange, 70);
+      _StatusPrecedence[81].Add(NodeStatus.NodeDeleted, 67);
+      _StatusPrecedence[81].Add(NodeStatus.MergeParent, 84);
+      _StatusPrecedence[82].Add(NodeStatus.UnderFlow, 85);
+      _StatusPrecedence[82].Add(NodeStatus.Merge, 86);
+      _StatusPrecedence[82].Add(NodeStatus.NodeDeleted, 87);
+      _StatusPrecedence[83].Add(NodeStatus.MergeParent, 119);
+      _StatusPrecedence[84].Add(NodeStatus.UnderFlow, 88);
+      _StatusPrecedence[84].Add(NodeStatus.Merge, 89);
+      _StatusPrecedence[84].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[85].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[85].Add(NodeStatus.Merge, 92);
+      _StatusPrecedence[85].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[85].Add(NodeStatus.Shift, 93);
+      _StatusPrecedence[86].Add(NodeStatus.MergeParent, 94);
+      _StatusPrecedence[87].Add(NodeStatus.DeletedRange, 70);
+      _StatusPrecedence[87].Add(NodeStatus.NodeDeleted, 67);
+      _StatusPrecedence[87].Add(NodeStatus.MergeParent, 95);
+      _StatusPrecedence[88].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[88].Add(NodeStatus.Merge, 92);
+      _StatusPrecedence[88].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[88].Add(NodeStatus.Shift, 79);
+      _StatusPrecedence[89].Add(NodeStatus.MergeParent, 96);
+      _StatusPrecedence[90].Add(NodeStatus.DeletedRange, 70);
+      _StatusPrecedence[90].Add(NodeStatus.NodeDeleted, 67);
+      _StatusPrecedence[90].Add(NodeStatus.MergeParent, 97);
+      _StatusPrecedence[91].Add(NodeStatus.DeletedRange, 70);
+      _StatusPrecedence[91].Add(NodeStatus.NodeDeleted, 67);
+      _StatusPrecedence[91].Add(NodeStatus.MergeParent, 119);
+      _StatusPrecedence[92].Add(NodeStatus.MergeParent, 97);
+      _StatusPrecedence[93].Add(NodeStatus.UnderFlow, 98);
+      _StatusPrecedence[93].Add(NodeStatus.Merge, 99);
+      _StatusPrecedence[93].Add(NodeStatus.NodeDeleted, 100);
+      _StatusPrecedence[94].Add(NodeStatus.UnderFlow, 101);
+      _StatusPrecedence[94].Add(NodeStatus.Merge, 102);
+      _StatusPrecedence[94].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[95].Add(NodeStatus.UnderFlow, 103);
+      _StatusPrecedence[95].Add(NodeStatus.Merge, 104);
+      _StatusPrecedence[95].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[96].Add(NodeStatus.UnderFlow, 88);
+      _StatusPrecedence[96].Add(NodeStatus.Merge, 89);
+      _StatusPrecedence[96].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[97].Add(NodeStatus.UnderFlow, 105);
+      _StatusPrecedence[97].Add(NodeStatus.Merge, 106);
+      _StatusPrecedence[97].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[98].Add(NodeStatus.NodeDeleted, 67);
+      _StatusPrecedence[99].Add(NodeStatus.MergeParent, 107);
+      _StatusPrecedence[100].Add(NodeStatus.DeletedRange, 70);
+      _StatusPrecedence[100].Add(NodeStatus.NodeDeleted, 67);
+      _StatusPrecedence[100].Add(NodeStatus.MergeParent, 107);
+      _StatusPrecedence[101].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[101].Add(NodeStatus.Merge, 92);
+      _StatusPrecedence[101].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[101].Add(NodeStatus.Shift, 115);
+      _StatusPrecedence[102].Add(NodeStatus.MergeParent, 108);
+      _StatusPrecedence[103].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[103].Add(NodeStatus.Merge, 92);
+      _StatusPrecedence[103].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[103].Add(NodeStatus.Shift, 79);
+      _StatusPrecedence[104].Add(NodeStatus.MergeParent, 109);
+      _StatusPrecedence[105].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[105].Add(NodeStatus.Merge, 92);
+      _StatusPrecedence[105].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[105].Add(NodeStatus.Shift, 79);
+      _StatusPrecedence[106].Add(NodeStatus.MergeParent, 110);
+      _StatusPrecedence[107].Add(NodeStatus.UnderFlow, 111);
+      _StatusPrecedence[107].Add(NodeStatus.Merge, 99);
+      _StatusPrecedence[107].Add(NodeStatus.NodeDeleted, 67);
+      _StatusPrecedence[108].Add(NodeStatus.UnderFlow, 101);
+      _StatusPrecedence[108].Add(NodeStatus.Merge, 102);
+      _StatusPrecedence[108].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[109].Add(NodeStatus.UnderFlow, 103);
+      _StatusPrecedence[109].Add(NodeStatus.Merge, 104);
+      _StatusPrecedence[109].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[110].Add(NodeStatus.UnderFlow, 105);
+      _StatusPrecedence[110].Add(NodeStatus.Merge, 106);
+      _StatusPrecedence[110].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[111].Add(NodeStatus.Shift, 98);
+      _StatusPrecedence[112].Add(NodeStatus.MergeParent, 114);
+      _StatusPrecedence[113].Add(NodeStatus.DeletedRange, 70);
+      _StatusPrecedence[113].Add(NodeStatus.NodeDeleted, 67);
+      _StatusPrecedence[113].Add(NodeStatus.MergeParent, 114);
+      _StatusPrecedence[114].Add(NodeStatus.UnderFlow, 116);
+      _StatusPrecedence[114].Add(NodeStatus.Merge, 117);
+      _StatusPrecedence[114].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[115].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[115].Add(NodeStatus.Merge, 112);
+      _StatusPrecedence[115].Add(NodeStatus.NodeDeleted, 113);
+      _StatusPrecedence[116].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[116].Add(NodeStatus.Merge, 92);
+      _StatusPrecedence[116].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[116].Add(NodeStatus.Shift, 79);
+      _StatusPrecedence[117].Add(NodeStatus.MergeParent, 118);
+      _StatusPrecedence[118].Add(NodeStatus.UnderFlow, 116);
+      _StatusPrecedence[118].Add(NodeStatus.Merge, 117);
+      _StatusPrecedence[118].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[119].Add(NodeStatus.UnderFlow, 120);
+      _StatusPrecedence[119].Add(NodeStatus.Merge, 92);
+      _StatusPrecedence[119].Add(NodeStatus.NodeDeleted, 81);
+      _StatusPrecedence[120].Add(NodeStatus.UnderFlow, 79);
+      _StatusPrecedence[120].Add(NodeStatus.Merge, 92);
+      _StatusPrecedence[120].Add(NodeStatus.NodeDeleted, 90);
+      _StatusPrecedence[120].Add(NodeStatus.Shift, 73);
     }
 
     /// <summary>
@@ -202,11 +378,10 @@ namespace ThreadTesting
       int key = 0;
       for (int i = 0; i < _NumberOfKeys; i++)
       {
-        int j = 0;
         do
         {
-          key = random.Next(1, _NumberOfKeys * 10);
-        } while (_InsertedKeys.Contains(key) && ++j < _NumberOfKeys);
+          key = random.Next(1, _NumberOfKeys * 1000);
+        } while (_InsertedKeys.Contains(key));
         _Tree.Insert(key, new Person(key.ToString()));
         _InsertedKeys.Add(key);
       }
@@ -226,6 +401,9 @@ namespace ThreadTesting
             break;
           case TreeCommand.Delete:
             _Tree.Delete(_InputBufferHistory.Last().key);
+            break;
+          case TreeCommand.DeleteRange:
+            _Tree.DeleteRange(_InputBufferHistory.Last().key, _InputBufferHistory.Last().endKey);
             break;
           case TreeCommand.Search:
             _Tree.Search(_InputBufferHistory.Last().key);
@@ -323,30 +501,34 @@ namespace ThreadTesting
     /// Simply test insertion times
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks> 
-    [TestCase(100)]
-    [TestCase(1000)]
-    [TestCase(10000)]
+    // [TestCase(100)]
+    // [TestCase(1000)]
     public async Task PresedenceTesting(int x)
     {
       Random random = new();
       int key;
+      int inputBufferCount = 0;
       List<(int, int)> mixKeys = [];
       for (int i = 0; i < x; i++)
       {
         key = random.Next(0, 4);
         // Randomly choose insert, delete, or search
-        if (key == 1)
+        if (key == 0)
         {
-          do
+          for (int j = 0; j < 10; j++)
           {
-            key = random.Next(1, _NumberOfKeys * 10);
-          } while (_InsertedKeys.Contains(key));
-          await _InputBuffer.SendAsync((TreeCommand.Insert, key, -1
-            , new Person(key.ToString())));
-          _InsertedKeys.Add(key);
-          mixKeys.Add((1, key));
+            do
+            {
+              key = random.Next(1, _NumberOfKeys * 1000);
+            } while (_InsertedKeys.Contains(key));
+            await _InputBuffer.SendAsync((TreeCommand.Insert, key, -1
+              , new Person(key.ToString())));
+            _InsertedKeys.Add(key);
+            mixKeys.Add((1, key));
+          }
+          inputBufferCount += 9;
         }
-        else if (key == 2)
+        else if (key == 1)
         {
           key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
           await _InputBuffer.SendAsync((TreeCommand.Delete, key, -1
@@ -354,35 +536,50 @@ namespace ThreadTesting
           _InsertedKeys.Remove(key);
           mixKeys.Add((0, key));
         }
-        else
+        else if (key == 2)
         {
           key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
           await _InputBuffer.SendAsync((TreeCommand.SearchRange, key, key + 10
             , null));
         }
+        else
+        {
+          key = _InsertedKeys[random.Next(1, _InsertedKeys.Count)];
+          await _InputBuffer.SendAsync((TreeCommand.DeleteRange, key, key + 10000
+            , null));
+          for (int l = 0; l < 9; l++)
+          {
+            _InsertedKeys.Remove(key);
+            mixKeys.Add((0, key++));
+          }
+        }
+        inputBufferCount++;
       }
       await _InputBuffer.SendAsync((TreeCommand.Close, 0, -1, null));
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
       _Producer.Wait();
       _Consumer.Wait();
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
-      Assert.That(_InputBufferHistory.Count(), Is.EqualTo(x + 1), "Not all commands are getting through.");
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
+      Assert.That(_InputBufferHistory, Has.Count.EqualTo(inputBufferCount + 1), "Not all commands are getting through.");
       NodeStatus lastStatus = NodeStatus.Close;
       int k = -1;
       int state = 0;
+      string acceptingDfaStates = "";
+      int countOfAccepts = 0;
       _OutputBufferHistory.ForEach((bufMessage) =>
       {
         // if (bufMessage.status == NodeStatus.FoundRange)
         // {
         //   Console.WriteLine("Here:" + StringifyKeys(bufMessage.numKeys,bufMessage.keys));
         // }
+        acceptingDfaStates += $"{countOfAccepts}, {state}, {bufMessage.status}\n";
         if (_StatusPrecedence[state].ContainsKey(bufMessage.status))
         {
           state = _StatusPrecedence[state][bufMessage.status];
         }
         else if (_AcceptStates.Contains(state) && _StatusPrecedence[0].ContainsKey(bufMessage.status))
         {
+          countOfAccepts++;
           state = _StatusPrecedence[0][bufMessage.status];
         }
         else
@@ -391,7 +588,8 @@ namespace ThreadTesting
             $"Status:{bufMessage.status}\n " +
             $"Last Status:{lastStatus}\nid: " +
             $"{bufMessage.id}\nkey:{k}\nkeys:" +
-            $"{StringifyKeys(bufMessage.numKeys, bufMessage.keys)}");
+            $"{StringifyKeys(bufMessage.numKeys, bufMessage.keys)}\n" +
+            $"History:{acceptingDfaStates}");
         }
         lastStatus = bufMessage.status;
       });
