@@ -154,6 +154,7 @@
             // 
             // btnInsertMany
             // 
+            btnSearch.Anchor = AnchorStyles.Left | AnchorStyles.Bottom;
             btnInsertMany.BackColor = Color.MediumSlateBlue;
             btnInsertMany.BackgroundColor = Color.MediumSlateBlue;
             btnInsertMany.BorderColor = Color.PaleVioletRed;
@@ -163,10 +164,10 @@
             btnInsertMany.FlatStyle = FlatStyle.Flat;
             btnInsertMany.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnInsertMany.ForeColor = Color.White;
-            btnInsertMany.Location = new Point(1820, 898);
+            btnInsertMany.Location = new Point(GetControlLocation(), 1);
             btnInsertMany.Margin = new Padding(2, 3, 2, 3);
             btnInsertMany.Name = "btnInsertMany";
-            btnInsertMany.Size = new Size(149, 40);
+            btnInsertMany.Size = new Size(stdBtnWidth, 40);
             btnInsertMany.TabIndex = tabCount++;
             btnInsertMany.Text = "insert many";
             btnInsertMany.TextColor = Color.White;
@@ -188,32 +189,12 @@
             btnclear.Location = new Point(GetControlLocation(), 1);
             btnclear.Margin = new Padding(2, 3, 2, 3);
             btnclear.Name = "btnclear";
-            btnclear.Size = new Size(149, 40);
+            btnclear.Size = new Size(stdBtnWidth, 40);
             btnclear.TabIndex = tabCount++;
             btnclear.Text = "clear";
             btnclear.TextColor = Color.White;
             btnclear.UseVisualStyleBackColor = false;
             btnclear.Click += btnclear_Click;
-            // 
-            // trbSpeed
-            // 
-            trbSpeed.Location = new Point(1712, 901);
-            trbSpeed.Margin = new Padding(2, 3, 2, 3);
-            trbSpeed.Minimum = 1;
-            trbSpeed.Name = "trbSpeed";
-            trbSpeed.Size = new Size(104, 45);
-            trbSpeed.TabIndex = tabCount++;
-            trbSpeed.Value = 10;
-            // 
-            // lblSpeed
-            // 
-            lblSpeed.AutoSize = true;
-            lblSpeed.Location = new Point(1718, 927);
-            lblSpeed.Margin = new Padding(2, 0, 2, 0);
-            lblSpeed.Name = "lblSpeed";
-            lblSpeed.Size = new Size(98, 15);
-            lblSpeed.TabIndex = tabCount++;
-            lblSpeed.Text = "Animation Speed";
             // 
             // cmbxMaxDegree
             // 
@@ -226,15 +207,35 @@
             cmbxMaxDegree.Location = new Point(GetControlLocation(), 1);
             cmbxMaxDegree.Margin = new Padding(2, 3, 2, 3);
             cmbxMaxDegree.Name = "cmbxMaxDegree";
-            cmbxMaxDegree.Size = new Size(130, 30);
+            cmbxMaxDegree.Size = new Size(stdBtnWidth, 30);
             cmbxMaxDegree.TabIndex = tabCount++;
             cmbxMaxDegree.Text = "max degree";
             cmbxMaxDegree.SelectedIndexChanged += cmbxMaxDegree_SelectedIndexChanged;
             // 
+            // trbSpeed
+            // 
+            trbSpeed.Location = new Point((stdBtnWidth + stdBtnSpacing) * btnCount - 5, 1);
+            trbSpeed.Margin = new Padding(2, 3, 2, 3);
+            trbSpeed.Minimum = 1;
+            trbSpeed.Name = "trbSpeed";
+            trbSpeed.Size = new Size(104, 45);
+            trbSpeed.TabIndex = tabCount++;
+            trbSpeed.Value = 10;
+            // 
+            // lblSpeed
+            // 
+            lblSpeed.AutoSize = true;
+            lblSpeed.Location = new Point(GetControlLocation(), 27);
+            lblSpeed.Margin = new Padding(2, 0, 2, 0);
+            lblSpeed.Name = "lblSpeed";
+            lblSpeed.Size = new Size(98, 15);
+            lblSpeed.TabIndex = tabCount++;
+            lblSpeed.Text = "Animation Speed";
+            // 
             // chkDebugMode
             // 
             chkDebugMode.AutoSize = true;
-            chkDebugMode.Location = new Point(1978, 908);
+            chkDebugMode.Location = new Point(GetControlLocation(), 1);
             chkDebugMode.Margin = new Padding(2, 3, 2, 3);
             chkDebugMode.Name = "chkDebugMode";
             chkDebugMode.Size = new Size(95, 19);

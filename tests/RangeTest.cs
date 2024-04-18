@@ -45,7 +45,7 @@ namespace RangeOperationTesting
 
     private List<int> _OrderOfDeletion = [];
     private List<int> _BeginningTreeState = [];
-    private bool _UseConstant = false;
+    private bool _UseConstant = true;
     private readonly string _Path = ".\\rangeTesting.txt";
 
     /// <summary>

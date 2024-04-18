@@ -64,6 +64,7 @@ namespace B_TreeVisualizationGUI
         panel1.Invalidate();
       });
     }
+
     private Task StartConsumerTask()
     {
       messageQueue = new ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>();
