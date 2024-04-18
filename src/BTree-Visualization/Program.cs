@@ -97,7 +97,6 @@ namespace ThreadCommunication
     /// values will be sent to update existing node and delete sibiling node.
     /// </summary>
     Merge,
-    MergeRoot,
     /// <summary>
     /// Sent once after merging child nodes.
     /// ID,NumKeys,Keys,Contents

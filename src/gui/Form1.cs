@@ -17,7 +17,7 @@ namespace B_TreeVisualizationGUI
     private GUITree _tree;
     Dictionary<long, GUINode> nodeDictionary = new Dictionary<long, GUINode>();
     private System.Windows.Forms.Timer scrollTimer;
-    private bool isFirstNodeEncountered = false;
+    private bool isFirstNodeEncountered = true;
     private int rootHeight = 0; // Temporary to see if this works
     private GUINode oldRoot; // Temporary to see if this works
     private GUINode lastSearched;
@@ -796,11 +796,13 @@ namespace B_TreeVisualizationGUI
         Debug.WriteLine($"Attempting to insert key: {keyToInsert}");
 
         // Check if it's the first node and it has not been processed yet
+        
         if (!isFirstNodeEncountered)
         {
           Debug.WriteLine("Skipping special command for the first node.");
           return;
         }
+        
 
         inputBuffer.Post((TreeCommand.Insert, keyToInsert, new Person(keyToInsert.ToString())));
       }
@@ -1045,7 +1047,7 @@ namespace B_TreeVisualizationGUI
 
     private void InitializeBackend()
     {
-      BPlusTree<Person> _Tree = new BPlusTree<Person>(3, outputBuffer);
+      BTree<Person> _Tree = new BTree<Person>(3, outputBuffer);
       Task producer = Task.Run(async () =>
       {
         Thread.CurrentThread.Name = "Producer";
@@ -1069,7 +1071,7 @@ namespace B_TreeVisualizationGUI
                 inputBuffer.Complete();
                 break;
               case TreeCommand.Tree:
-                _Tree = new BPlusTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
+                _Tree = new BTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
                 Debug.WriteLine("Handling Tree command");
                 isFirstNodeEncountered = false;
                 break;
