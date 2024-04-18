@@ -22,9 +22,10 @@ namespace B_TreeVisualizationGUI
     private GUINode oldRoot; // Temporary to see if this works
     private GUINode lastSearched;
     private ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)> messageQueue;
+#pragma warning disable IDE0052 // Remove unread private members
     private bool isProcessing = false;
+#pragma warning restore IDE0052 // Remove unread private members
     private int animationSpeed;
-    private bool isConsumerTaskRunning = false;
     private long lastHighlightedID;
     private long lastHighlightedAltID;
     private long altShiftHighlightID;
@@ -476,7 +477,7 @@ namespace B_TreeVisualizationGUI
               Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update."); // For debug purposes DELETE LATER
             }
             // Eat sibling node
-            if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? sibling) && sibling != null)
+            if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? sibling) && sibling != null && node != null)
             {
               lblCurrentProcess.Text = ("Eating sibling node"); // Inform user of what process is currently happening
               if (feedback.status == NodeStatus.Merge)
@@ -490,8 +491,7 @@ namespace B_TreeVisualizationGUI
                 {
                   if (node.Children == null)
                   {
-                    List<GUINode> children = new List<GUINode>();
-                    children.AddRange(sibling.Children);
+                    List<GUINode> children = [.. sibling.Children];
                     node.Children = children;
                   }
                   else
