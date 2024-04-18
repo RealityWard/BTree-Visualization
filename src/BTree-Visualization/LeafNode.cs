@@ -219,7 +219,7 @@ namespace BTreeVisualization
 
     public override bool CheckMyself(int key)
     {
-      if (key == 856428)
+      if (key == 342077)
         Console.Write("here");
       bool result = true;
       for (int i = 0; i < _NumKeys; i++)

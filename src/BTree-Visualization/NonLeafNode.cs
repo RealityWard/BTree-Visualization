@@ -255,7 +255,7 @@ namespace BTreeVisualization
       _Keys[_NumKeys] = default;
       _Contents[_NumKeys] = default;
       (int, int[], T?[]) bufferVar = CreateBufferVar();
-      (int, int[], T?[]) newNodeBufferVar = CreateBufferVar();
+      (int, int[], T?[]) newNodeBufferVar = newNode.CreateBufferVar();
       _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, bufferVar.Item1,
         bufferVar.Item2, bufferVar.Item3, parentID, -1, [], []));
       _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID,

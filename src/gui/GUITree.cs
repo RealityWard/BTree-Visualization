@@ -79,10 +79,10 @@ namespace B_TreeVisualizationGUI
                 /// This was modified to be 0 when initialized for testing with NaN errors
                 /// Set this back to non-initialized if errors occur.
                 float nodeSlot = 0; // Initialize nodeSlot aka, the space that a node is going to be centered in
-
+currentNode.Children.Sort();
                 for (int i = 0; i < currentNode.Children.Count; i++)
                 {
-                    GUINode? childNode = i < currentNode.Children.Count ? currentNode.Children[i] : null; // null fixed?
+                    GUINode? childNode = currentNode.Children[i]; // null fixed?
 
                     float childX = 0; // Initialize horizontal spacing, aka center of the node's slot
 

@@ -65,6 +65,7 @@ namespace B_TreeVisualizationGUI
         panel1.Invalidate();
       });
     }
+
     private Task StartConsumerTask()
     {
       messageQueue = new ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>();
@@ -504,9 +505,15 @@ namespace B_TreeVisualizationGUI
               foreach (var kvp in nodeDictionary)
               {
                 GUINode parentNode = kvp.Value;
-                if (parentNode.Children != null && parentNode.Children.Contains(nodeDictionary[feedback.id]))
+                if (parentNode.Children != null)
                 {
-                  parentNode.Children.Remove(nodeDictionary[feedback.id]);
+                  for (int i = 0; i < parentNode.Children.Count; i++)
+                  {
+                    if(parentNode.Children[i].ID == feedback.altID)
+                    {
+                      parentNode.Children.RemoveAt(i);
+                    }
+                  }
                   if (parentNode.Children.Count == 0)
                   {
                     parentNode.IsLeaf = true;
@@ -718,8 +725,10 @@ namespace B_TreeVisualizationGUI
     {
       lastHighlightedID = nodeID; // Sets node to be highlighted for animations
       lastHighlightedAltID = altNodeID;
-      nodeDictionary[nodeID].nodeHighlighted = true;
-      if (lastHighlightedAltID != 0) nodeDictionary[altNodeID].nodeHighlighted = true;
+      if (nodeDictionary.TryGetValue(nodeID, out GUINode? node))
+        node.nodeHighlighted = true;
+      if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out node))
+        node.nodeHighlighted = true;
     }
 
     private void SetHighlightedLine(long nodeID, long altNodeID = 0)
@@ -836,6 +845,9 @@ namespace B_TreeVisualizationGUI
           return;
         }
 
+        Random random = new();
+        int key;
+        List<int> keys = [];
         for (int i = 1; i < keyToInsert + 1; i++)
         {
           if (cancellationTokenSource.IsCancellationRequested)
@@ -845,7 +857,12 @@ namespace B_TreeVisualizationGUI
             //int delay = Invoke(new Func<int>(() => animationSpeed));
             break; // Exit the loop if cancellation is requested
           }
-          await inputBuffer.SendAsync((TreeCommand.Insert, i, new Person(keyToInsert.ToString())));
+          do
+          {
+            key = random.Next(1, 1000);
+          } while (keys.Contains(key));
+          keys.Add(key);
+          await inputBuffer.SendAsync((TreeCommand.Insert, key, new Person(keyToInsert.ToString())));
           int delay = Invoke(new Func<int>(() => animationSpeed));
           await Task.Delay(delay);
         }
