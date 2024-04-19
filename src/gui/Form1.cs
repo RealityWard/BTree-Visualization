@@ -460,8 +460,8 @@ namespace B_TreeVisualizationGUI
                                                                     // Add sibling keys to node
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
             {
-              lblCurrentProcess.Text = ("A merge has occurred"); // Inform user of what process is currently happening
-              lblCurrentProcess.Text = ("Updating merged node"); // Inform user of what process is currently happening
+              lblCurrentProcess.Text = "A merge has occurred"; // Inform user of what process is currently happening
+              lblCurrentProcess.Text = "Updating merged node"; // Inform user of what process is currently happening
                                                                  // Update node
               node.Keys = feedback.keys;
               node.NumKeys = feedback.numKeys;
@@ -1064,7 +1064,7 @@ namespace B_TreeVisualizationGUI
 
     private void InitializeBackend()
     {
-      BTree<Person> _Tree = new BTree<Person>(3, outputBuffer);
+      BPlusTree<Person> _Tree = new BPlusTree<Person>(3, outputBuffer);
       Task producer = Task.Run(async () =>
       {
         Thread.CurrentThread.Name = "Producer";
@@ -1088,7 +1088,7 @@ namespace B_TreeVisualizationGUI
                 inputBuffer.Complete();
                 break;
               case TreeCommand.Tree:
-                _Tree = new BTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
+                _Tree = new BPlusTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
                 Debug.WriteLine("Handling Tree command");
                 isFirstNodeEncountered = false;
                 break;

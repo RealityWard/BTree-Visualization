@@ -65,6 +65,7 @@
             groupBox1.Controls.Add(trbSpeed);
             groupBox1.Controls.Add(btnInsertMany);
             groupBox1.Controls.Add(chkDebugMode);
+            groupBox1.Controls.Add(lblCurrentProcess);
             groupBox1.Anchor = AnchorStyles.Left | AnchorStyles.Bottom;
             groupBox1.Location = new Point(1, 430);
             groupBox1.Dock = DockStyle.Bottom;
@@ -260,7 +261,7 @@
             lblCurrentProcess.AutoSize = true;
             lblCurrentProcess.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblCurrentProcess.ForeColor = SystemColors.ActiveCaptionText;
-            lblCurrentProcess.Location = new Point(128, 904);
+            lblCurrentProcess.Location = new Point(GetControlLocation(), 1);//128, 904
             lblCurrentProcess.Margin = new Padding(2, 0, 2, 0);
             lblCurrentProcess.Name = "lblCurrentProcess";
             lblCurrentProcess.Size = new Size(0, 22);
@@ -273,7 +274,7 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1924, 947);
             Controls.Add(groupBox1);
-            Controls.Add(lblCurrentProcess);
+            //Controls.Add(lblCurrentProcess);
             Controls.Add(panel1);
             Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             Margin = new Padding(2, 3, 2, 3);
