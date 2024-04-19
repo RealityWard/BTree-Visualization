@@ -158,7 +158,7 @@ namespace BPlusTreeVisualization
             $"Child at index:{i + dividerIndex} within node:{ID}");
         _Children[i + dividerIndex] = default;
         _Keys[i + dividerIndex] = default;
-        _BufferBlock.SendAsync((NodeStatus.Shift, newChildren[i-1].ID, -1, [], [], ID, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.Shift, ID , -1, [], [], newChildren[i-1].ID, -1, [], []));
       }
       newChildren[i -1] = _Children[i + dividerIndex]
         ?? throw new NullChildReferenceException(
