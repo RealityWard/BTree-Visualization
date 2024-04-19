@@ -200,7 +200,7 @@ namespace BTreeVisualization
       int i = Search(this, key);
       if (i != -1 && _Keys[i] == key)
       {
-        for (; i < _NumKeys; i++)
+        for (; i < _NumKeys - 1; i++)
         {
           _Keys[i] = _Keys[i + 1];
           _Contents[i] = _Contents[i + 1];
@@ -224,7 +224,7 @@ namespace BTreeVisualization
       bool result = true;
       for (int i = 0; i < _NumKeys; i++)
       {
-        if (Keys[i] == 503049)
+        if (Keys[i] == 366013)
           Console.Write("here");
         result = result && _Contents[i] != null;
       }
@@ -233,7 +233,7 @@ namespace BTreeVisualization
       return result;
     }
 
-    public override bool DeleteKeysSplit(int key, int endKey,
+    public override void DeleteKeysSplit(int key, int endKey,
       BTreeNode<T> rightSibiling)
     {
       CheckMyself(key);
@@ -247,10 +247,9 @@ namespace BTreeVisualization
         firstKeyIndex = _NumKeys;
       DeleteKeysLeft(firstKeyIndex);
       rightSibiling.DeleteKeysRight(lastIndex);
-      return false;
     }
 
-    public override void DeleteKeys(int key, int endKey)
+    public override void DeleteKeysMain(int key, int endKey)
     {
       CheckMyself(key);
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [],
@@ -319,73 +318,14 @@ namespace BTreeVisualization
       }
     }
 
-    public override (int?, T?, BTreeNode<T>?) RebalanceNodes(BTreeNode<T> rightSibiling)
+    public override bool RestoreRight()
     {
-      // rightSibiling.LosesToLeft(((NonLeafNode<T>)rightSibiling).ResolveLeadingKey(0));
-      int dividerKey;
-      T? dividerData;
-      if (_NumKeys + rightSibiling.NumKeys > 2 * _Degree - 2)
-      {// Must balance keys between nodes
-        if (_NumKeys == 0)
-        {
-          CheckMyself(0);
-          return (null, default, rightSibiling);
-        }
-        int diff = ((_NumKeys + rightSibiling.NumKeys - 1) / 2) + 1 - _NumKeys;
-        if (diff > 0)
-        {// Not enough keys in this node
-          for (int j = _NumKeys, i = 0; i < diff; i++, j++)
-          {
-            _Keys[j] = rightSibiling.Keys[i];
-            _Contents[j] = rightSibiling.Contents[i];
-          }
-          _NumKeys += diff - 1;
-          UpdateDivider(out dividerKey, out dividerData);
-          rightSibiling.LosesToLeft(diff);
-        }
-        else if (diff < 0)
-        {// Not enough keys in sibiling
-          rightSibiling.GainsFromLeftSpecial(-diff, this);
-          LosesToRight(-diff);
-          _NumKeys--;
-          UpdateDivider(out dividerKey, out dividerData);
-        }
-        else
-        {
-          _NumKeys--;
-          UpdateDivider(out dividerKey, out dividerData);
-        }
-        (int, int[], T?[]) bufferVarLeft = CreateBufferVar();
-        (int, int[], T?[]) bufferVarRight = rightSibiling.CreateBufferVar();
-        _BufferBlock.SendAsync((NodeStatus.Rebalanced, ID,
-          bufferVarLeft.Item1, bufferVarLeft.Item2, bufferVarLeft.Item3
-          , rightSibiling.ID, bufferVarRight.Item1, bufferVarRight.Item2,
-          bufferVarRight.Item3));
-        CheckMyself(0);
-        return (dividerKey, dividerData, rightSibiling);
-      }
-      else
-      {// Not enough keys for two nodes
-        if (_NumKeys == 0)
-        {
-          CheckMyself(0);
-          return (null, default, rightSibiling);
-        }
-        else
-        {
-          Merge(rightSibiling);
-          CheckMyself(0);
-          return (null, default, default);
-        }
-      }
+      return false;
+    }
 
-      void UpdateDivider(out int dividerKey, out T? dividerData)
-      {
-        dividerKey = _Keys[_NumKeys];
-        dividerData = _Contents[_NumKeys];
-        _Keys[_NumKeys] = default;
-        _Contents[_NumKeys] = default;
-      }
+    public override bool RestoreLeft()
+    {
+      return false;
     }
 
     /// <summary>
@@ -441,19 +381,6 @@ namespace BTreeVisualization
       _BufferBlock.SendAsync((NodeStatus.Merge, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, sibiling.ID, -1, [], []));
     }
 
-    public override void Merge(BTreeNode<T> sibiling)
-    {
-      for (int i = 0; i < sibiling.NumKeys; i++)
-      {
-        _Keys[_NumKeys + i] = sibiling.Keys[i];
-        _Contents[_NumKeys + i] = sibiling.Contents[i];
-      }
-      _NumKeys += sibiling.NumKeys;
-      sibiling.LosesToLeft(sibiling.NumKeys);
-      (int, int[], T?[]) bufferVar = CreateBufferVar();
-      _BufferBlock.SendAsync((NodeStatus.Merge, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, sibiling.ID, -1, [], []));
-    }
-
     /// <summary>
     /// Appends the given key and data of the sibiling.
     /// </summary>
@@ -463,11 +390,21 @@ namespace BTreeVisualization
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to right. (Sibiling's Keys
     /// should be greater than all the keys in the called node.)</param>
-    public override void GainsFromRight(int dividerKey, T dividerData, BTreeNode<T> sibiling)
+    public override void GainsFromRight(int diff, int dividerKey, T? dividerData, BTreeNode<T> sibiling)
     {
-      _Keys[_NumKeys] = dividerKey;
-      _Contents[_NumKeys] = dividerData;
-      _NumKeys++;
+      if (dividerData != null)
+      {
+        _Keys[_NumKeys] = dividerKey;
+        _Contents[_NumKeys] = dividerData;
+        _NumKeys++;
+        diff--;
+        for (int i = 0; i < diff; i++)
+        {
+          _Keys[_NumKeys] = sibiling.Keys[i];
+          _Contents[_NumKeys] = sibiling.Contents[i];
+          _NumKeys++;
+        }
+      }
     }
 
     /// <summary>
@@ -476,18 +413,6 @@ namespace BTreeVisualization
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-18</remarks>
-    public override void LosesToLeft()
-    {
-      for (int i = 0; i < _NumKeys - 1; i++)
-      {
-        _Keys[i] = _Keys[i + 1];
-        _Contents[i] = _Contents[i + 1];
-      }
-      _NumKeys--;
-      _Keys[_NumKeys] = default;
-      _Contents[_NumKeys] = default;
-    }
-
     public override void LosesToLeft(int diff)
     {
       if (diff > 0)
@@ -520,35 +445,23 @@ namespace BTreeVisualization
     /// smaller than all the keys in the called node.)</param>
     public override void GainsFromLeft(int diff, int dividerKey, T? dividerData, BTreeNode<T> sibiling)
     {
-      for (int i = _NumKeys - 1; i >= 0; i--)
+      if (dividerData != null)
       {
-        _Keys[i + diff] = _Keys[i];
-        _Contents[i + diff] = _Contents[i];
-      }
-      _NumKeys += diff;
-      diff--;
-      _Keys[diff] = dividerKey;
-      _Contents[diff] = dividerData;
-      diff--;
-      for (int j = sibiling.NumKeys - 1; diff >= 0; diff--)
-      {
-        _Keys[diff] = sibiling.Keys[j];
-        _Contents[diff] = sibiling.Contents[j];
-      }
-    }
-
-    public override void GainsFromLeftSpecial(int diff, BTreeNode<T> sibiling)
-    {
-      for (int i = _NumKeys - 1; i >= 0; i--)
-      {
-        _Keys[i + diff] = _Keys[i];
-        _Contents[i + diff] = _Contents[i];
-      }
-      _NumKeys += diff;
-      for (int j = sibiling.NumKeys - diff, i = 0; i < diff; i++, j++)
-      {
-        _Keys[i] = sibiling.Keys[j];
-        _Contents[i] = sibiling.Contents[j];
+        for (int i = _NumKeys - 1; i >= 0; i--)
+        {
+          _Keys[i + diff] = _Keys[i];
+          _Contents[i + diff] = _Contents[i];
+        }
+        _NumKeys += diff;
+        diff--;
+        _Keys[diff] = dividerKey;
+        _Contents[diff] = dividerData;
+        diff--;
+        for (int j = sibiling.NumKeys - 1; diff >= 0; diff--, j--)
+        {
+          _Keys[diff] = sibiling.Keys[j];
+          _Contents[diff] = sibiling.Contents[j];
+        }
       }
     }
 

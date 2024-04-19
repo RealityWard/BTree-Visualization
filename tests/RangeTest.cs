@@ -45,7 +45,7 @@ namespace RangeOperationTesting
 
     private List<int> _OrderOfDeletion = [];
     private List<int> _BeginningTreeState = [];
-    private bool _UseConstant = true;
+    private readonly bool _UseConstant = true;
     private readonly string _Path = ".\\rangeTesting.txt";
 
     /// <summary>
@@ -266,18 +266,49 @@ namespace RangeOperationTesting
       }
     }
 
-    /// <summary>
-    /// Read out just the portion of the keys[] currently in use.
-    /// </summary>
-    /// <param name="numKeys">Index to stop at.</param>
-    /// <param name="keys">Array of ints</param>
-    /// <returns>String of the keys seperated by a ','</returns>
-    private static string StringifyKeys(int numKeys, int[] keys)
+    // [TestCase(1000)]
+    public void DeleteKeyTest(int deleteCount)
     {
-      string result = "";
-      for (int i = 0; i < numKeys; i++)
-        result += keys[i] + (i + 1 == numKeys ? "" : ",");
-      return result;
+      Random random = new();
+      int key, index;
+      List<int> history = [], keyHistory = [];
+      string insertionOrder = string.Join(',', keys);
+      keys.Sort();
+      string deleteHstory = "";
+      while (deleteCount-- > 0)
+      {
+        if (_UseConstant)
+        {
+          key = _OrderOfDeletion[0];
+          _OrderOfDeletion.RemoveAt(0);
+        }
+        else
+        {
+          if (keys.Count - 1 == 0)
+            index = 0;
+          else
+            index = random.Next(1, keys.Count - 1);
+          key = keys[index];
+        }
+        keyHistory.Add(key);
+        keys.Remove(key);
+        history.Add(key);
+        deleteHstory += (deleteHstory.Length > 0 ? "," : "") + key;
+        for (int k = 0; k < keys.Count; k++)
+        {
+          var entry = _Tree.Search(keys[k]);
+          if (entry == null)
+          {
+            if (!_UseConstant)
+              SetConstantSetup(_Path, insertionOrder, deleteHstory);
+            Assert.Fail($"The delete cycles started with {string.Join(',', keyHistory)}\nSearch turned up bogus for {keys[k]}\n");
+          }
+        }
+        if (_OrderOfDeletion.Count == 4402)
+          Console.WriteLine("here");
+        _Tree.Delete(key);
+        Assert.That(_Tree.Search(key), Is.Null, $"The delete cycles started with {string.Join(',', keyHistory)}\nSearch shouldnt exist for {key}\n{deleteHstory}\n\n{insertionOrder}");
+      }
     }
 
     [GeneratedRegex("Deletion:.+?$")]

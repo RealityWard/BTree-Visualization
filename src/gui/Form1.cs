@@ -79,18 +79,18 @@ namespace B_TreeVisualizationGUI
                     {
                         var feedback = await outputBuffer.ReceiveAsync();
 
-                        // Create a deep copy of the keys and altKeys arrays to ensure they are not modified elsewhere
-                        var feedbackCopy = (
-                          feedback.status,
-                          feedback.id,
-                          feedback.numKeys,
-                          feedback.keys.Clone() as int[],
-                          feedback.contents,
-                          feedback.altID,
-                          feedback.altNumKeys,
-                          feedback.altKeys.Clone() as int[],
-                          feedback.altContents
-                      );
+            // Create a deep copy of the keys and altKeys arrays to ensure they are not modified elsewhere
+            var feedbackCopy = (
+              feedback.status,
+              feedback.id,
+              feedback.numKeys,
+              feedback.keys.Clone() as int[],
+              feedback.contents,
+              feedback.altID,
+              feedback.altNumKeys,
+              feedback.altKeys.Clone() as int[],
+              feedback.altContents
+            );
 
                         messageQueue.Enqueue(feedbackCopy);
 
@@ -831,7 +831,7 @@ namespace B_TreeVisualizationGUI
                     return;
                 }
 
-                for (int i = 1; i < keyToInsert + 1; i++)
+                for (int i = 0; i < keyToInsert; i++)
                 {
                     if (cancellationTokenSource.IsCancellationRequested)
                     {
@@ -840,7 +840,8 @@ namespace B_TreeVisualizationGUI
                         //int delay = Invoke(new Func<int>(() => animationSpeed));
                         break; // Exit the loop if cancellation is requested
                     }
-                    await inputBuffer.SendAsync((TreeCommand.Insert, i, new Person(keyToInsert.ToString())));
+                    Random random = new();
+                    await inputBuffer.SendAsync((TreeCommand.Insert, random.Next(1000), new Person(keyToInsert.ToString())));
                     int delay = Invoke(new Func<int>(() => animationSpeed));
                     await Task.Delay(delay);
                 }

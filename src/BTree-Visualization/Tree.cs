@@ -114,7 +114,7 @@ namespace BTreeVisualization
       _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, -1, [key, endKey], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
-      _Root.DeleteKeys(key, endKey);
+      _Root.DeleteKeysMain(key, endKey);
       if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
         long temp = _Root.ID;
