@@ -5,6 +5,7 @@ iteration due to no children.
 using System.Collections.Generic;
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
+using BTreeVisualizationNode;
 
 namespace BTreeVisualization
 {

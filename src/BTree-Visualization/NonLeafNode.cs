@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
+using BTreeVisualizationNode;
 
 
 namespace BTreeVisualization

@@ -6,6 +6,8 @@ using System.Xml.Linq;
 using BPlusTreeVisualization;
 using BTreeVisualization;
 using ThreadCommunication;
+using BPlusTreeVisualization;
+using BTreeVisualizationNode;
 
 namespace B_TreeVisualizationGUI
 {
@@ -17,7 +19,7 @@ namespace B_TreeVisualizationGUI
     private GUITree _tree;
     Dictionary<long, GUINode> nodeDictionary = new Dictionary<long, GUINode>();
     private System.Windows.Forms.Timer scrollTimer;
-    private bool isFirstNodeEncountered = false;
+    private bool isFirstNodeEncountered = true;
     private int rootHeight = 0; // Temporary to see if this works
     private GUINode oldRoot; // Temporary to see if this works
     private GUINode lastSearched;

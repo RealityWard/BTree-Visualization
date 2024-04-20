@@ -22,20 +22,19 @@ namespace BPlusTreeVisualization
     /// </summary>
     private readonly int _Degree = degree;
     /// <summary>
-    /// Tracks whether a key of zero is in use in the tree.
-    /// </summary>
-    private bool zeroKeyUsed = false;
-
-    /// <summary>
     /// Takes a node and the key and data to place into root.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="rNode">Value returned from InsertKey on _Root node.</param>
     private void Split(((int, T), BPlusTreeNode<T>) rNode)
     {
-      
       _Root = new BPlusNonLeafNode<T>(_Degree, [rNode.Item1.Item1]
         , [_Root, rNode.Item2], bufferBlock);
+      bufferBlock.SendAsync((NodeStatus.NewRoot,_Root.ID,_Root.NumKeys,_Root.Keys,[],0,-1,[],[]));
+      bufferBlock.SendAsync((NodeStatus.Shift, _Root.ID, -1, [], [], (((BPlusNonLeafNode<T>)_Root).Children[0]
+        ?? throw new NullChildReferenceException($"Child of new root node at index:0")).ID, -1, [], []));
+      bufferBlock.SendAsync((NodeStatus.Shift, _Root.ID, -1, [], [], (((BPlusNonLeafNode<T>)_Root).Children[1]
+        ?? throw new NullChildReferenceException($"Child of new root node at index:1")).ID, -1, [], []));
     }
 
     /// <summary>
@@ -48,25 +47,13 @@ namespace BPlusTreeVisualization
     /// <param name="data">Coresponding data belonging to key.</param>
     public void Insert(int key, T data)
     {
-      if ((key == 0 && !zeroKeyUsed) || key != 0)
+      bufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [], [], 0, -1, [], []));
+      ((int, T?), BPlusTreeNode<T>?) result = _Root.InsertKey(key, data, 0);
+      if (result.Item2 != null || result.Item1.Item2 != null)
       {
-        /** Due to initializing all int[] entries as zero instead of null
-          We must use a boolean to detect whether or not to 
-          allow a zero key insertion*/
-        if (key == 0)
-          zeroKeyUsed = true;
-        bufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [], [], 0, -1, [], []));
-        ((int, T?), BPlusTreeNode<T>?) result = _Root.InsertKey(key, data);
-        if (result.Item2 != null || result.Item1.Item2 != null)
-        {
-            #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-          Split(result);
-            #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-        }
-      }
-      else
-      {
-        bufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
+          #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
+        Split(result);
+          #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
       }
     }
 
@@ -84,8 +71,6 @@ namespace BPlusTreeVisualization
     public void Delete(int key)
     {
       bufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [], [], 0, -1, [], []));
-      if (key == 0 && zeroKeyUsed)
-        zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
       Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack = new Stack<Tuple<BPlusNonLeafNode<T>,int>>();
       _Root.DeleteKey(key, pathStack);
       if (_Root.NumKeys == 0 && _Root as BPlusNonLeafNode<T> != null)
@@ -93,6 +78,7 @@ namespace BPlusTreeVisualization
         _Root = ((BPlusNonLeafNode<T>)_Root).Children[0]
         ?? throw new NullChildReferenceException(
             $"Child of child on root node");;
+        //merge root status update
       }
     }
     

@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BTree-Visualization\BTree-Visualization.csproj" />
+    <ProjectReference Include="..\BPlusTree-Visualization\BPlusTree-Visualization.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

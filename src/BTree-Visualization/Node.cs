@@ -6,7 +6,7 @@ Desc: Base class for all the node objects used in the BTree and B+Tree.
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
 
-namespace BTreeVisualization
+namespace BTreeVisualizationNode
 {
   public enum NodeCondition
   {
@@ -56,46 +56,6 @@ namespace BTreeVisualization
     /// Holds key entries for this node.
     /// </summary>
     protected int[] _Keys = new int[2 * degree - 1];
-    /// <summary>
-    /// Removes the beginning entry of this node.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    public abstract void LosesToLeft(int diff);
-    /// <summary>
-    /// Removes the last entry of this node.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
-    public abstract void LosesToRight(int diff);
-    /// <summary>
-    /// Checks if this node is at max capacity.
-    /// </summary>
-    /// <returns>True if it is full.</returns>
-    public bool IsFull()
-    {
-      return _NumKeys == 2 * _Degree - 1;
-    }
-    /// <summary>
-    /// Checks if this node is below minimum capacity.
-    /// </summary>
-    /// <returns>True if it is below.</returns>
-    public bool IsUnderflow()
-    {
-      return _NumKeys < _Degree - 1;
-    }
-    /// <summary>
-    /// Delete an entry matching key from this node or child node.
-    /// </summary>
-    /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
-    /// <param name="key">Integer to search for and delete if found.</param>
-    public abstract void DeleteKey(int key);
-    public abstract void DeleteKeysMain(int key, int endKey);
-    public abstract void DeleteKeysSplit(int key, int endKey, N rightSibiling);
-    public abstract void DeleteKeysLeft(int index);
-    public abstract void DeleteKeysRight(int index);
-    public abstract int RestoreRight();
-    public abstract int RestoreLeft();
     /// <summary>
     /// Prints out this node and its children.
     /// </summary>
@@ -177,6 +137,46 @@ namespace BTreeVisualization
     {
       get { return _Contents; }
     }
+    /// <summary>
+    /// Checks if this node is at max capacity.
+    /// </summary>
+    /// <returns>True if it is full.</returns>
+    public bool IsFull()
+    {
+      return _NumKeys == 2 * _Degree - 1;
+    }
+    /// <summary>
+    /// Checks if this node is below minimum capacity.
+    /// </summary>
+    /// <returns>True if it is below.</returns>
+    public bool IsUnderflow()
+    {
+      return _NumKeys < _Degree - 1;
+    }
+    /// <summary>
+    /// Delete an entry matching key from this node or child node.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
+    /// <param name="key">Integer to search for and delete if found.</param>
+    public abstract void DeleteKey(int key);
+    public abstract void DeleteKeysMain(int key, int endKey);
+    public abstract void DeleteKeysSplit(int key, int endKey, BTreeNode<T> rightSibiling);
+    public abstract void DeleteKeysLeft(int index);
+    public abstract void DeleteKeysRight(int index);
+    public abstract int RestoreRight();
+    public abstract int RestoreLeft();
+    /// <summary>
+    /// Removes the beginning entry of this node.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-18</remarks>
+    public abstract void LosesToLeft(int diff);
+    /// <summary>
+    /// Removes the last entry of this node.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson,
+    /// Date: 2024-02-18</remarks>
+    public abstract void LosesToRight(int diff);
     /// <summary>
     /// Split this node into two.
     /// </summary>
