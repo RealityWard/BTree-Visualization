@@ -43,6 +43,7 @@ namespace B_TreeVisualizationGUI
             btnInsert = new CustomControls.RJControls.RJButton();
             lblCurrentProcess = new Label();
             panel2 = new Panel();
+            chkBTreeTrue = new CheckBox();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trbSpeed).BeginInit();
             panel2.SuspendLayout();
@@ -247,15 +248,16 @@ namespace B_TreeVisualizationGUI
             // 
             lblCurrentProcess.Anchor = AnchorStyles.Bottom;
             lblCurrentProcess.AutoSize = true;
-            lblCurrentProcess.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblCurrentProcess.ForeColor = SystemColors.ActiveCaptionText;
-            lblCurrentProcess.Location = new Point(361, 64);
+            lblCurrentProcess.Location = new Point(360, 67);
             lblCurrentProcess.Name = "lblCurrentProcess";
-            lblCurrentProcess.Size = new Size(0, 21);
+            lblCurrentProcess.Size = new Size(188, 15);
             lblCurrentProcess.TabIndex = 11;
+            lblCurrentProcess.Text = "No Tree Currently Being Processed";
             // 
             // panel2
             // 
+            panel2.Controls.Add(chkBTreeTrue);
             panel2.Controls.Add(lblCurrentProcess);
             panel2.Controls.Add(cmbxMaxDegree);
             panel2.Controls.Add(btnclear);
@@ -271,6 +273,18 @@ namespace B_TreeVisualizationGUI
             panel2.Name = "panel2";
             panel2.Size = new Size(905, 100);
             panel2.TabIndex = 12;
+            // 
+            // chkBTreeTrue
+            // 
+            chkBTreeTrue.Anchor = AnchorStyles.Bottom;
+            chkBTreeTrue.AutoSize = true;
+            chkBTreeTrue.Location = new Point(777, 66);
+            chkBTreeTrue.Name = "chkBTreeTrue";
+            chkBTreeTrue.Size = new Size(82, 19);
+            chkBTreeTrue.TabIndex = 8;
+            chkBTreeTrue.Text = "B Plus Tree";
+            chkBTreeTrue.UseVisualStyleBackColor = true;
+            chkBTreeTrue.CheckedChanged += chkBTreeTrue_CheckedChanged;
             // 
             // Form1
             // 
@@ -307,5 +321,6 @@ namespace B_TreeVisualizationGUI
         private CustomControls.RJControls.RJButton btnInsert;
         private Label lblCurrentProcess;
         private Panel panel2;
+        private CheckBox chkBTreeTrue;
     }
 }

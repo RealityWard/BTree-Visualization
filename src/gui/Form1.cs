@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks.Dataflow;
 using System.Xml.Linq;
+using BPlusTreeVisualization;
 using BTreeVisualization;
 using ThreadCommunication;
 
@@ -41,7 +42,11 @@ namespace B_TreeVisualizationGUI
             NodeStatus.UnderFlow,
             NodeStatus.Merge,
             NodeStatus.Shift,
-            NodeStatus.SSearching
+            NodeStatus.SSearching,
+            NodeStatus.FSearching,
+            NodeStatus.Delete,
+            NodeStatus.ISearching,
+            NodeStatus.DSearching
         };
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -107,10 +112,16 @@ namespace B_TreeVisualizationGUI
           EnableButtonEvents();
         });
 
-        if (nodeDictionary.TryGetValue(lastHighlightedID, out GUINode? node))
-          node.lineHighlighted = false;
-        if (nodeDictionary.TryGetValue(lastHighlightedAltID, out node))
-          node.lineHighlighted = false;
+                                if (nodeDictionary.TryGetValue(lastHighlightedID, out GUINode? node))
+                                {
+                                    node.nodeHighlighted = false;
+                                    node.lineHighlighted = false;
+                                }
+                                if (nodeDictionary.TryGetValue(lastHighlightedAltID, out node))
+                                {
+                                    node.nodeHighlighted = false;
+                                    node.lineHighlighted = false;
+                                }
 
         UpdateGUITreeFromNodes();
       }
@@ -174,6 +185,12 @@ namespace B_TreeVisualizationGUI
         case NodeStatus.ISearching:
           {
             Debug.WriteLine("Received ISearching status."); // For debug purposes DELETE LATER
+                                    if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node))
+                        {
+                            SetHighlightedNode(feedback.id); // Highlights node for animations
+                            SetHighlightedLine(feedback.id); // Highlights node for animations
+                            UpdateVisuals(); // Update the panel to show changes
+                        }
             lblCurrentProcess.Text = ($"Searching for an adaquate node to add input key to"); // Inform user of what process is currently happening                                                                                //UpdateVisuals(); // Update the panel to show changes FIX
             break;
           }
@@ -327,6 +344,9 @@ namespace B_TreeVisualizationGUI
         case NodeStatus.DSearching:
           {
             Debug.WriteLine("Received DSearching status."); // For debug purposes DELETE LATER
+                                    SetHighlightedNode(feedback.id); // Highlights node for animations
+                        SetHighlightedLine(feedback.id); // Highlights node for animations
+                        UpdateVisuals(); // Update the panel to show changes
             break;
           }
         // DELETED
@@ -377,6 +397,9 @@ namespace B_TreeVisualizationGUI
         case NodeStatus.FSearching:
           {
             Debug.WriteLine("Received FSearching status."); // For debug purposes DELETE LATER
+                                    SetHighlightedNode(feedback.id); // Highlights node for animations
+                        SetHighlightedLine(feedback.id); // Highlights node for animations
+                        UpdateVisuals(); // Update the panel to show changes
             break;
           }
         // FORFEIT
@@ -655,42 +678,51 @@ namespace B_TreeVisualizationGUI
       panel1.Invalidate();
     }
 
-    private void SetHighlightedNode(long nodeID, long altNodeID = 0)
-    {
-      lastHighlightedID = nodeID; // Sets node to be highlighted for animations
-      lastHighlightedAltID = altNodeID;
-      nodeDictionary[nodeID].nodeHighlighted = true;
-      if (lastHighlightedAltID != 0) nodeDictionary[altNodeID].nodeHighlighted = true;
-    }
+        private void SetHighlightedNode(long nodeID, long altNodeID = 0)
+        {
+            lastHighlightedID = nodeID; // Sets node to be highlighted for animations
+            lastHighlightedAltID = altNodeID;
+            nodeDictionary[nodeID].nodeHighlighted = true;
+            //if (lastHighlightedAltID != 0) nodeDictionary[altNodeID].nodeHighlighted = true;
+            if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out GUINode? altNode)) nodeDictionary[altNode.ID].nodeHighlighted = true;
+            if (nodeDictionary.TryGetValue(nodeID, out GUINode? node))
+                node.nodeHighlighted = true;
+            if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out node))
+                node.nodeHighlighted = true;
+        }
 
-    private void SetHighlightedLine(long nodeID, long altNodeID = 0)
-    {
-      lastHighlightedID = nodeID; // Sets node to be highlighted for animations
-      lastHighlightedAltID = altNodeID;
-      nodeDictionary[nodeID].lineHighlighted = true;
-      if (lastHighlightedAltID != 0) nodeDictionary[altNodeID].lineHighlighted = true;
-    }
+        private void SetHighlightedLine(long nodeID, long altNodeID = 0)
+        {
+            lastHighlightedID = nodeID; // Sets node to be highlighted for animations
+            lastHighlightedAltID = altNodeID;
+            nodeDictionary[nodeID].lineHighlighted = true;
+            if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out GUINode? altNode)) nodeDictionary[altNode.ID].lineHighlighted = true;
+        }
 
-    private void Form1_Resize(object sender, EventArgs e)
-    {
-      PositionPanels();
-    }
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            PositionPanels();
+        }
 
-    private void PositionPanels()
-    {
-      // // Positioning the buttonsPanel
-      // panel2.Height = 100;
-      // panel2.Width = this.ClientSize.Width; // Make buttonsPanel width equal to the form's client width
-      // panel2.Location = new Point(0, this.ClientSize.Height - panel2.Height); // Align to bottom
+        private void PositionPanels()
+        {
+            // Positioning the buttonsPanel
+            panel2.Height = 100;
+            panel2.Width = this.ClientSize.Width; // Make buttonsPanel width equal to the form's client width
+            panel2.Location = new Point(0, this.ClientSize.Height - panel2.Height); // Align to bottom
 
-      // // Positioning the visualsPanel
-      // panel1.Location = new Point(0, 0); // Start at top-left corner
-      // panel1.Size = new Size(this.ClientSize.Width, this.ClientSize.Height - panel2.Height); // Fill the space above buttonsPanel
+            // Positioning the visualsPanel
+            panel1.Location = new Point(0, 0); // Start at top-left corner
+            panel1.Size = new Size(this.ClientSize.Width, this.ClientSize.Height - panel2.Height); // Fill the space above buttonsPanel
 
-      scrollableWidth = panel1.Width + 5000;
-      scrollableHeight = panel1.Height + 5000;
-      panel1.Invalidate();
-    }
+            scrollableWidth = panel1.Width + 5000;
+            scrollableHeight = panel1.Height + 5000;
+
+            panel1.AutoScrollMinSize = new Size(scrollableWidth, scrollableHeight);
+            //panel1.AutoScrollPosition = new Point((panel1.AutoScrollMinSize.Width - panel1.ClientSize.Width) / 2, 0);
+
+            panel1.Invalidate();
+        }
 
     private void Form1_Load(object sender, EventArgs e)
     {
@@ -744,11 +776,11 @@ namespace B_TreeVisualizationGUI
       // Initialize dictionary
       Dictionary<int, int> heightNodesDrawn = new Dictionary<int, int>();
 
-      // Use the stored tree for drawing
-      panel1.SuspendLayout();
-      _tree.DrawTree(e.Graphics, _tree.root, adjustedCenterX, adjustedCenterX, adjustedCenterY, width, heightNodesDrawn, _tree.root.height);
-      panel1.ResumeLayout(true);
-    }
+            // Use the stored tree for drawing
+            panel1.SuspendLayout();
+            _tree.DrawTree(e.Graphics, _tree.root, adjustedCenterX, adjustedCenterX, adjustedCenterY, width, heightNodesDrawn, _tree.root.height);
+            panel1.ResumeLayout(true);
+        }
 
     private void btnInsert_Click(object sender, EventArgs e)
     {
@@ -857,37 +889,10 @@ namespace B_TreeVisualizationGUI
       txtInputData.Text = "Insert Data Here...";
     }
 
-    private void btnclear_Click(object sender, EventArgs e)
-    {
-      isProcessing = true;
-      messageQueue = new ConcurrentQueue<(NodeStatus, long, int, int[], Person?[], long, int, int[], Person?[])>();
-      Task.Run(() =>
-      {
-        Thread.Sleep(100);
-        isProcessing = false;
-      });
-
-      EnableButtonEvents();
-
-      // THIS BELOW COULD BE NULLABLE STILL
-      _tree = null!;
-      int degree = 3; // Default value
-      bool parseSuccess = false;
-      if (cmbxMaxDegree.SelectedItem != null)
-      {
-        parseSuccess = Int32.TryParse(cmbxMaxDegree.SelectedItem.ToString(), out degree);
-      }
-      degree = parseSuccess ? degree : 3;
-      nodeDictionary = new Dictionary<long, GUINode>();
-      inputBuffer.Post((TreeCommand.Tree, degree, default(Person?)));
-      panel1.Invalidate();
-      rootHeight = 0; // Temporary to see if this works
-
-      // Clear input textbox
-      txtInputData.ForeColor = Color.Black;
-      txtInputData.Text = "Insert Data Here...";
-      lblCurrentProcess.Text = "";
-    }
+        private void btnclear_Click(object sender, EventArgs e)
+        {
+            ResetTreeAndForm();
+        }
 
     private void txt_txtInputData_Enter(object sender, EventArgs e)
     {
@@ -941,60 +946,92 @@ namespace B_TreeVisualizationGUI
       }
     }
 
-    private void cmbxMaxDegree_SelectedIndexChanged(object sender, EventArgs e)
-    {
-      _tree = null!;
-      int degree = 3; // Default value
-      bool parseSuccess = false;
-      if (cmbxMaxDegree.SelectedItem != null)
-      {
-        parseSuccess = Int32.TryParse(cmbxMaxDegree.SelectedItem.ToString(), out degree);
-      }
-      degree = parseSuccess ? degree : 3;
-      nodeDictionary = new Dictionary<long, GUINode>();
-      inputBuffer.Post((TreeCommand.Tree, degree, default(Person?)));
-      panel1.Invalidate();
-      rootHeight = 0; // Temporary to see if this works
-      oldRoot = null; // Temporary to see if this works
-      lblCurrentProcess.Text = "";
-    }
-
-    private void DisableButtonEvents()
-    {
-      btnSearch.Enabled = false;
-      btnDelete.Enabled = false;
-      btnInsert.Enabled = false;
-      btnInsertMany.Enabled = false;
-    }
-
-    private void EnableButtonEvents()
-    {
-      btnSearch.Enabled = true;
-      btnDelete.Enabled = true;
-      btnInsert.Enabled = true;
-      btnInsertMany.Enabled = true;
-    }
-
-    private void UpdateGUITreeFromNodes()
-    {
-      GUINode rootNode = DetermineRootNode();
-      _tree = new GUITree(rootNode, panel1);
-      //_tree.ResetAndInitializeLeafStart();
-      panel1.Invalidate();
-    }
-
-    private GUINode DetermineRootNode()
-    {
-      foreach (var node in nodeDictionary)
-      {
-        if (node.Value.IsRoot)
+        private void cmbxMaxDegree_SelectedIndexChanged(object sender, EventArgs e)
         {
-          return node.Value;
+            ResetTreeAndForm();
         }
-      }
-      throw new InvalidOperationException("No root node found.");
-      //return null;
-    }
+
+        private void ResetTreeAndForm()
+        {
+            isProcessing = true;
+            messageQueue = new ConcurrentQueue<(NodeStatus, long, int, int[], Person?[], long, int, int[], Person?[])>();
+            Task.Run(() =>
+            {
+                Thread.Sleep(100);
+                isProcessing = false;
+            });
+
+            EnableButtonEvents();
+
+            // THIS BELOW COULD BE NULLABLE STILL
+            _tree = null!;
+            int degree = 3; // Default value
+            bool parseSuccess = false;
+            if (cmbxMaxDegree.SelectedItem != null)
+            {
+                parseSuccess = Int32.TryParse(cmbxMaxDegree.SelectedItem.ToString(), out degree);
+            }
+            degree = parseSuccess ? degree : 3;
+            nodeDictionary = new Dictionary<long, GUINode>();
+            inputBuffer.Post((TreeCommand.Tree, degree, default(Person?)));
+            panel1.Invalidate();
+            rootHeight = 0; // Temporary to see if this works
+            oldRoot = null; // Temporary to see if this works
+            isFirstNodeEncountered = false;
+
+            // Clear input textbox
+            txtInputData.ForeColor = Color.Black;
+            txtInputData.Text = "Insert Data Here...";
+            lblCurrentProcess.Text = "";
+        }
+
+        private void chkBTreeTrue_CheckedChanged(object sender, EventArgs e)
+        {
+            ResetTreeAndForm();
+            InitializeBackend();
+        }
+
+        private void DisableButtonEvents()
+        {
+            btnSearch.Enabled = false;
+            btnDelete.Enabled = false;
+            btnInsert.Enabled = false;
+            btnInsertMany.Enabled = false;
+            btnclear.Enabled = false;
+        }
+
+        private void EnableButtonEvents()
+        {
+            btnSearch.Enabled = true;
+            btnDelete.Enabled = true;
+            btnInsert.Enabled = true;
+            btnInsertMany.Enabled = true;
+            btnclear.Enabled = true;
+        }
+
+        private void UpdateGUITreeFromNodes()
+        {
+            GUINode? rootNode = DetermineRootNode();
+            if (rootNode != null)
+            {
+                _tree = new GUITree(rootNode, panel1);
+                //_tree.ResetAndInitializeLeafStart();
+                panel1.Invalidate();
+            }
+        }
+
+        private GUINode? DetermineRootNode()
+        {
+            foreach (var node in nodeDictionary)
+            {
+                if (node.Value.IsRoot)
+                {
+                    return node.Value;
+                }
+            }
+            return null;
+            //return null;
+        }
 
     // Define the Person class
     public class Person
