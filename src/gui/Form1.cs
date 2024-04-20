@@ -6,7 +6,6 @@ using System.Xml.Linq;
 using BPlusTreeVisualization;
 using BTreeVisualization;
 using ThreadCommunication;
-using BPlusTreeVisualization;
 using BTreeVisualizationNode;
 
 namespace B_TreeVisualizationGUI
@@ -95,19 +94,19 @@ namespace B_TreeVisualizationGUI
           ProcessFeedback(messageToProcess);
         });
 
-        if (_delayRequiringStatuses.Contains(messageToProcess.status))
-        {
-          if (messageToProcess.status == NodeStatus.Shift && seenShift == false)
-          {
-            seenShift = true;
-          }
-          else
-          {
-            int delay = Invoke(new Func<int>(() => animationSpeed));
-            seenShift = false;
-            await Task.Delay(delay);
-          }
-        }
+        // if (_delayRequiringStatuses.Contains(messageToProcess.status))
+        // {
+        //   if (messageToProcess.status == NodeStatus.Shift && seenShift == false)
+        //   {
+        //     seenShift = true;
+        //   }
+        //   else
+        //   {
+        //     int delay = Invoke(new Func<int>(() => animationSpeed));
+        //     seenShift = false;
+        //     await Task.Delay(delay);
+        //   }
+        // }
         // Disable the button on the UI thread
         Invoke((MethodInvoker)delegate
         {

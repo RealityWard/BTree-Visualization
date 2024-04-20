@@ -9,6 +9,7 @@ using System.Threading.Tasks.Dataflow;
 using BTreeVisualization;
 using NodeData;
 using ThreadCommunication;
+using BTreeVisualizationNode;
 namespace BPlusTreeVisualization
 {
   public class BPlusTree<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
