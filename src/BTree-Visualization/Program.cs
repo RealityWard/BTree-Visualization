@@ -2,6 +2,7 @@ using BTreeVisualization;
 using NodeData;
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
+using BTreeVisualizationNode;
 
 namespace ThreadCommunication
 {
