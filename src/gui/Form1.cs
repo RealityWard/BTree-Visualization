@@ -3,34 +3,36 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks.Dataflow;
 using System.Xml.Linq;
+using BPlusTreeVisualization;
 using BTreeVisualization;
 using ThreadCommunication;
 
 namespace B_TreeVisualizationGUI
 {
-  public partial class Form1 : Form
-  {
-    // Global variables
-    int scrollableWidth = 5000;
-    int scrollableHeight = 5000;
-    private GUITree _tree;
-    Dictionary<long, GUINode> nodeDictionary = [];
-    private System.Windows.Forms.Timer scrollTimer;
-    private int rootHeight = 0; // Temporary to see if this works
-    private GUINode oldRoot; // Temporary to see if this works
-    private GUINode lastSearched;
-    private ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)> messageQueue;
-    private bool isProcessing = false;
-    private int animationSpeed;
-    private bool isConsumerTaskRunning = false;
-    private long lastHighlightedID;
-    private long lastHighlightedAltID;
-    private long altShiftHighlightID;
-    private bool seenShift = false;
-    private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+    public partial class Form1 : Form
+    {
+        // Global variables
+        int scrollableWidth = 5000;
+        int scrollableHeight = 5000;
+        private GUITree _tree;
+        Dictionary<long, GUINode> nodeDictionary = new Dictionary<long, GUINode>();
+        private System.Windows.Forms.Timer scrollTimer;
+        private bool isFirstNodeEncountered = false;
+        private int rootHeight = 0; // Temporary to see if this works
+        private GUINode oldRoot; // Temporary to see if this works
+        private GUINode lastSearched;
+        private ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)> messageQueue;
+        private bool isProcessing = false;
+        private int animationSpeed;
+        private bool isConsumerTaskRunning = false;
+        private long lastHighlightedID;
+        private long lastHighlightedAltID;
+        private long altShiftHighlightID;
+        private bool seenShift = false;
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
-    // Statuses we don't want to delay the animations
-    private readonly HashSet<NodeStatus> _delayRequiringStatuses = new HashSet<NodeStatus>
+        // Statuses we want to delay the animations
+        private readonly HashSet<NodeStatus> _delayRequiringStatuses = new HashSet<NodeStatus>
         {
             NodeStatus.Inserted,
             NodeStatus.SplitInsert,
@@ -39,99 +41,146 @@ namespace B_TreeVisualizationGUI
             NodeStatus.MergeParent,
             NodeStatus.UnderFlow,
             NodeStatus.Merge,
-            NodeStatus.Shift
+            NodeStatus.Shift,
+            NodeStatus.SSearching,
+            NodeStatus.FSearching,
+            NodeStatus.Delete,
+            NodeStatus.ISearching,
+            NodeStatus.DSearching
         };
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    public Form1()
+        public Form1()
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    {
-      InitializeComponent();
-      SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
-      scrollTimer = new System.Windows.Forms.Timer();
-      scrollTimer.Interval = 200;
-      scrollTimer.Tick += ScrollTimer_Tick;
-
-      this.Resize += new EventHandler(Form1_Resize); // Subscribe to the resize event
-      PositionPanels(); // Initial positioning of the panels
-    }
-
-    private async void ScrollTimer_Tick(object? sender, EventArgs e)
-    {
-      scrollTimer.Stop();
-
-      await Task.Run(() =>
-      {
-        panel1.Invalidate();
-      });
-    }
-
-    private async Task StartConsumerTask()
-    {
-      while (messageQueue.TryDequeue(out var messageToProcess))
-      {
-        Invoke((MethodInvoker)delegate
         {
-          // Disable the button on the UI thread
-          this.Invoke((MethodInvoker)delegate
-          {
-            // Below are min and max values for the animation speeds and are in milliseconds
-            int minValue = 1000;
-            int maxValue = 10;
+            InitializeComponent();
+            SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
+            scrollTimer = new System.Windows.Forms.Timer();
+            scrollTimer.Interval = 200;
+            scrollTimer.Tick += ScrollTimer_Tick;
 
-            // Calculate the linear scale factor
-            animationSpeed = minValue + (int)((maxValue - minValue) * (trbSpeed.Value - 1) / (10 - 1));
-            DisableButtonEvents();
-          });
-          ProcessFeedback(messageToProcess);
-        });
-
-        if (_delayRequiringStatuses.Contains(messageToProcess.status))
-        {
-          if (messageToProcess.status == NodeStatus.Shift && seenShift == false)
-          {
-            seenShift = true;
-          }
-          else
-          {
-            int delay = Invoke(new Func<int>(() => animationSpeed));
-            seenShift = false;
-            await Task.Delay(delay);
-          }
+            PositionPanels(); // Initial positioning of the panels
         }
-        // Disable the button on the UI thread
-        Invoke((MethodInvoker)delegate
+
+        private async void ScrollTimer_Tick(object? sender, EventArgs e)
         {
-          EnableButtonEvents();
-        });
+            scrollTimer.Stop();
 
-        if (nodeDictionary.TryGetValue(lastHighlightedID, out GUINode? node))
-          node.lineHighlighted = false;
-        if (nodeDictionary.TryGetValue(lastHighlightedAltID, out node))
-          node.lineHighlighted = false;
+            await Task.Run(() =>
+            {
+                panel1.Invalidate();
+            });
+        }
+        private Task StartConsumerTask()
+        {
+            messageQueue = new ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>();
+            bool isProcessing = false;
+            _ = Task.Run(async () =>
+            {
+                while (true) // Maybe should use a cancellation token for a graceful shutdown
+                {
+                    if (await outputBuffer.OutputAvailableAsync())
+                    {
+                        var feedback = await outputBuffer.ReceiveAsync();
 
-        UpdateGUITreeFromNodes();
-      }
-      return;
-    }
+                        // Ensure non-null arrays; provide empty arrays as defaults if original arrays are null
+                        var safeKeys = feedback.keys ?? new int[0];
+                        var safeAltKeys = feedback.altKeys ?? new int[0];
+                        var feedbackCopy = (
+                            feedback.status,
+                            feedback.id,
+                            feedback.numKeys,
+                            safeKeys,
+                            feedback.contents as Form1.Person?[],
+                            feedback.altID,
+                            feedback.altNumKeys,
+                            safeAltKeys,
+                            feedback.altContents as Form1.Person?[]
+                                          );
+                        messageQueue.Enqueue(feedbackCopy);
+                        if (!isProcessing)
+                        {
+                            isProcessing = true;
+                            _ = Task.Run(async () =>
+                            {
+                                while (messageQueue.TryDequeue(out var messageToProcess))
+                                {
+                                    Invoke((MethodInvoker)delegate
+                                    {
+                                        if (!isFirstNodeEncountered && messageToProcess.status == NodeStatus.Inserted)
+                                        {
+                                            Debug.WriteLine($"First node encountered: ID={messageToProcess.id}, Keys={string.Join(", ", messageToProcess.keys)}");
+                                            isFirstNodeEncountered = true;
+                                            return; // Skip further processing for this message
+                                        }
+                                        // Disable the button on the UI thread
+                                        this.Invoke((MethodInvoker)delegate
+                                        {
+                                            // Below are min and max values for the animation speeds and are in milliseconds
+                                            int minValue = 1000;
+                                            int maxValue = 10;
+                                            // Calculate the linear scale factor
+                                            animationSpeed = minValue + (int)((maxValue - minValue) * (trbSpeed.Value - 1) / (10 - 1));
+                                            DisableButtonEvents();
+                                        });
+                                        ProcessFeedback(messageToProcess);
+                                    });
+                                    if (_delayRequiringStatuses.Contains(messageToProcess.status))
+                                    {
+                                        if (messageToProcess.status == NodeStatus.Shift && seenShift == false)
+                                        {
+                                            seenShift = true;
+                                        }
+                                        else
+                                        {
+                                            int delay = (int)this.Invoke(new Func<int>(() => animationSpeed));
+                                            seenShift = false;
+                                            await Task.Delay(delay);
+                                        }
+                                    }
+                                }
+                                // Disable the button on the UI thread
+                                this.Invoke((MethodInvoker)delegate
+                                {
+                                    EnableButtonEvents();
+                                });
+                                isProcessing = false;
+                                if (nodeDictionary.TryGetValue(lastHighlightedID, out GUINode? node))
+                                {
+                                    node.nodeHighlighted = false;
+                                    node.lineHighlighted = false;
+                                }
+                                if (nodeDictionary.TryGetValue(lastHighlightedAltID, out node))
+                                {
+                                    node.nodeHighlighted = false;
+                                    node.lineHighlighted = false;
+                                }
+                                UpdateGUITreeFromNodes();
+                            });
+                        }
+                    }
+                }
+            });
+            return Task.CompletedTask;
+        }
 
-    private void ShowNodesMessageBox()
-    {
-      StringBuilder message = new StringBuilder();
-      message.AppendLine("Node Dictionary Contents:");
-      foreach (var nodePair in nodeDictionary)
-      {
-        var node = nodePair.Value;
-        // Keys of the current node
-        string keysString = string.Join(", ", node.Keys);
-        // IDs of children
-        string childrenIds = node.Children != null ? string.Join(", ", node.Children.Select(child => child.GetHashCode().ToString())) : "None";
+        private void ShowNodesMessageBox()
+        {
+            StringBuilder message = new StringBuilder();
+            message.AppendLine("Node Dictionary Contents:");
+            foreach (var nodePair in nodeDictionary)
+            {
+                var node = nodePair.Value;
+                // Keys of the current node
+                string keysString = string.Join(", ", node.Keys);
+                // IDs of children
+                string childrenIds = node.Children != null ? string.Join(", ", node.Children.Select(child => child.GetHashCode().ToString())) : "None";
 
-        message.AppendLine($"ID: {nodePair.Key}, Keys: [{keysString}], IsLeaf: {node.IsLeaf}, IsRoot: {node.IsRoot}, Children: [{childrenIds}], Node Height: {node.height}");
-        message.AppendLine(); // Add a new line between each printed node for easier reading
-      }
-      MessageBox.Show(message.ToString(), "Node Dictionary", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
+                message.AppendLine($"ID: {nodePair.Key}, Keys: [{keysString}], IsLeaf: {node.IsLeaf}, IsRoot: {node.IsRoot}, Children: [{childrenIds}], Node Height: {node.height}");
+                message.AppendLine(); // Add a new line between each printed node for easier reading
+            }
+            MessageBox.Show(message.ToString(), "Node Dictionary", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
 
         private void ProcessFeedback((NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) feedback)
         {
@@ -139,16 +188,6 @@ namespace B_TreeVisualizationGUI
             if (lastSearched != null)
             {
                 lastSearched.Searched = false;
-            }
-            if (nodeDictionary.Count == 0 && feedback.status == NodeStatus.Inserted)
-            {
-                Debug.WriteLine($"Node not found. Creating new root. ID={feedback.id}");
-                bool isRoot = nodeDictionary.Count == 0;
-                GUINode node = new(feedback.id, feedback.keys, true, isRoot, 0, 0);
-                nodeDictionary[feedback.id] = node;
-                if (chkDebugMode.Checked == true) ShowNodesMessageBox(); // For debug purposes DELETE LATER
-                SetHighlightedNode(feedback.id); // Highlights node for animations
-                UpdateVisuals(); // Update the panel to show changes
             }
             if (nodeDictionary.TryGetValue(lastHighlightedID, out GUINode? highlightedNode) && highlightedNode != null)
             {
@@ -172,6 +211,12 @@ namespace B_TreeVisualizationGUI
                 case NodeStatus.ISearching:
                     {
                         Debug.WriteLine("Received ISearching status."); // For debug purposes DELETE LATER
+                        if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node))
+                        {
+                            SetHighlightedNode(feedback.id); // Highlights node for animations
+                            SetHighlightedLine(feedback.id); // Highlights node for animations
+                            UpdateVisuals(); // Update the panel to show changes
+                        }
                         lblCurrentProcess.Text = ($"Searching for an adaquate node to add input key to"); // Inform user of what process is currently happening                                                                                //UpdateVisuals(); // Update the panel to show changes FIX
                         break;
                     }
@@ -202,7 +247,7 @@ namespace B_TreeVisualizationGUI
                                 Debug.WriteLine($"Node found. Updating ID={feedback.id}"); // For debug purposes DELETE LATER
                                                                                            // Update node
                                 node.Keys = feedback.keys;
-                                node.NumKeys = feedback.numKeys;
+                                node.NumKeys++;
                                 node.NodeWidth = 40 * node.NumKeys;
                             }
                             else
@@ -243,13 +288,13 @@ namespace B_TreeVisualizationGUI
                         lblCurrentProcess.Text = ("Creating new root as a consequence of the split"); // Inform user of what process is currently happening
                         Debug.WriteLine($"Creating new root GUINode. ID={feedback.id}, Keys={String.Join(", ", feedback.keys)}"); // For debug purposes DELETE LATER
                         rootHeight++; // Update global root height
-                                      // Create new node 
+                        // Create new node 
                         bool isLeaf = false;
                         bool isRoot = true;
                         nodeDictionary[feedback.id] = new GUINode(feedback.id, feedback.keys, isLeaf, isRoot, rootHeight, feedback.numKeys);
                         oldRoot.IsRoot = false; // Update the old root to not say it's a root anymore
                         if (chkDebugMode.Checked == true) ShowNodesMessageBox(); // For debug purposes DELETE LATER
-                                                                                 //UpdateVisuals(); // Update the panel to show changes
+                        //UpdateVisuals(); // Update the panel to show changes
                         break;
                     }
                 // SPLIT
@@ -276,7 +321,7 @@ namespace B_TreeVisualizationGUI
                             if (node != null) // Null check
                             {
                                 lblCurrentProcess.Text = ("Updating the node that is being split"); // Inform user of what process is currently happening
-                                                                                                    // Update node
+                                // Update node
                                 node.Keys = feedback.keys;
                                 node.NumKeys = feedback.numKeys;
                                 node.NodeWidth = 40 * node.NumKeys;
@@ -288,7 +333,7 @@ namespace B_TreeVisualizationGUI
                             Debug.WriteLine($"Node not found. Creating new node. ID={feedback.id}"); // For debug purposes DELETE LATER
                             lblCurrentProcess.Text = ("Creating a new node"); // Inform user of what process is currently happening
                             SetHighlightedNode(lastHighlightedID); // Highlights node for animations
-                                                                   // Create new node
+                            // Create new node
                             bool isLeaf = true;
                             bool isRoot = false;
                             int height = 0;
@@ -312,7 +357,6 @@ namespace B_TreeVisualizationGUI
                 case NodeStatus.Delete:
                     {
                         Debug.WriteLine("Received Delete status."); // For debug purposes DELETE LATER
-                                                                    // ADD ANIMATION HERE?
                         break;
                     }
                 // DELETED RANGE
@@ -325,6 +369,9 @@ namespace B_TreeVisualizationGUI
                 case NodeStatus.DSearching:
                     {
                         Debug.WriteLine("Received DSearching status."); // For debug purposes DELETE LATER
+                        SetHighlightedNode(feedback.id); // Highlights node for animations
+                        SetHighlightedLine(feedback.id); // Highlights node for animations
+                        UpdateVisuals(); // Update the panel to show changes
                         break;
                     }
                 // DELETED
@@ -343,7 +390,7 @@ namespace B_TreeVisualizationGUI
                             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
                             {
                                 lblCurrentProcess.Text = ("Deleting input key"); // Inform user of what process is currently happening
-                                                                                 // Update node
+                                // Update node
                                 node.Keys = feedback.keys;
                                 node.NumKeys = feedback.numKeys;
                                 node.UpdateNodeWidth();
@@ -375,6 +422,9 @@ namespace B_TreeVisualizationGUI
                 case NodeStatus.FSearching:
                     {
                         Debug.WriteLine("Received FSearching status."); // For debug purposes DELETE LATER
+                        SetHighlightedNode(feedback.id); // Highlights node for animations
+                        SetHighlightedLine(feedback.id); // Highlights node for animations
+                        UpdateVisuals(); // Update the panel to show changes
                         break;
                     }
                 // FORFEIT
@@ -404,12 +454,12 @@ namespace B_TreeVisualizationGUI
                 case NodeStatus.MergeRoot:
                     {
                         Debug.WriteLine("Received Merge or MergeRoot status."); // For debug purposes DELETE LATER
-                                                                                // Add sibling keys to node
+                        // Add sibling keys to node
                         if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
                         {
                             lblCurrentProcess.Text = ("A merge has occurred"); // Inform user of what process is currently happening
                             lblCurrentProcess.Text = ("Updating merged node"); // Inform user of what process is currently happening
-                                                                               // Update node
+                            // Update node
                             node.Keys = feedback.keys;
                             node.NumKeys = feedback.numKeys;
                             if (feedback.status == NodeStatus.MergeRoot)
@@ -437,9 +487,9 @@ namespace B_TreeVisualizationGUI
                                 }
                                 if (sibling.Children != null)
                                 {
-                                    if (node != null && node.Children == null)
+                                    if (node.Children == null)
                                     {
-                                        List<GUINode> children = [];
+                                        List<GUINode> children = new List<GUINode>();
                                         children.AddRange(sibling.Children);
                                         node.Children = children;
                                     }
@@ -453,9 +503,9 @@ namespace B_TreeVisualizationGUI
                             foreach (var kvp in nodeDictionary)
                             {
                                 GUINode parentNode = kvp.Value;
-                                if (parentNode.Children != null && parentNode.Children.Contains(nodeDictionary[feedback.id]))
+                                if (parentNode.Children != null && parentNode.Children.Contains(nodeDictionary[feedback.altID]))
                                 {
-                                    parentNode.Children.Remove(nodeDictionary[feedback.id]);
+                                    parentNode.Children.Remove(nodeDictionary[feedback.altID]);
                                     if (parentNode.Children.Count == 0)
                                     {
                                         parentNode.IsLeaf = true;
@@ -586,7 +636,9 @@ namespace B_TreeVisualizationGUI
                     {
                         Debug.WriteLine("Received SSearching status."); // For debug purposes DELETE LATER
                         lblCurrentProcess.Text = ("Looking for key."); // Inform user of what process is currently happening
-                                                                       // IMPLEMENT?
+                        SetHighlightedNode(feedback.id); // Highlights node for animations
+                        SetHighlightedLine(feedback.id); // Highlights node for animations
+                        UpdateVisuals(); // Update the panel to show changes
                         break;
                     }
                 // FOUND
@@ -622,7 +674,7 @@ namespace B_TreeVisualizationGUI
                     {
                         Debug.WriteLine("Received NodeDeleted status."); // For debug purposes DELETE LATER
                         lblCurrentProcess.Text = ("Deleting node."); // Inform user of what process is currently happening
-                                                                     // If node is still in the dictionary, delete it
+                        // If node is still in the dictionary, delete it
                         if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? node))
                         {
                             for (int i = 0; i < node.Children.Count; i++)
@@ -646,428 +698,465 @@ namespace B_TreeVisualizationGUI
         }
 
         private void UpdateVisuals()
-    {
-      UpdateGUITreeFromNodes();
-      panel1.Invalidate();
-    }
-
-    private void SetHighlightedNode(long nodeID, long altNodeID = 0)
-    {
-      lastHighlightedID = nodeID; // Sets node to be highlighted for animations
-      lastHighlightedAltID = altNodeID;
-      nodeDictionary[nodeID].nodeHighlighted = true;
-      if (lastHighlightedAltID != 0) nodeDictionary[altNodeID].nodeHighlighted = true;
-    }
-
-    private void SetHighlightedLine(long nodeID, long altNodeID = 0)
-    {
-      lastHighlightedID = nodeID; // Sets node to be highlighted for animations
-      lastHighlightedAltID = altNodeID;
-      nodeDictionary[nodeID].lineHighlighted = true;
-      if (lastHighlightedAltID != 0) nodeDictionary[altNodeID].lineHighlighted = true;
-    }
-
-    private void Form1_Resize(object sender, EventArgs e)
-    {
-      PositionPanels();
-    }
-
-    private void PositionPanels()
-    {
-      // // Positioning the buttonsPanel
-      // panel2.Height = 100;
-      // panel2.Width = this.ClientSize.Width; // Make buttonsPanel width equal to the form's client width
-      // panel2.Location = new Point(0, this.ClientSize.Height - panel2.Height); // Align to bottom
-
-      // // Positioning the visualsPanel
-      // panel1.Location = new Point(0, 0); // Start at top-left corner
-      // panel1.Size = new Size(this.ClientSize.Width, this.ClientSize.Height - panel2.Height); // Fill the space above buttonsPanel
-
-      scrollableWidth = panel1.Width + 5000;
-      scrollableHeight = panel1.Height + 5000;
-      panel1.Invalidate();
-    }
-
-    private void Form1_Load(object sender, EventArgs e)
-    {
-      InitializeBackend();
-      messageQueue = new ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>();
-      StartConsumerTask();
-
-      // Create horizontal scroll bar
-      System.Windows.Forms.ScrollBar hScrollBar1 = new HScrollBar();
-      hScrollBar1.Dock = DockStyle.Bottom;
-
-      hScrollBar1.Scroll += (s, ea) =>
-      {
-        panel1.HorizontalScroll.Value = hScrollBar1.Value;
-        scrollTimer.Start(); // Start the timer when scrolling occurs
-      };
-
-      System.Windows.Forms.ScrollBar vScrollBar1 = new VScrollBar();
-      vScrollBar1.Dock = DockStyle.Right;
-
-      vScrollBar1.Scroll += (s, ea) =>
-      {
-        panel1.VerticalScroll.Value = vScrollBar1.Value;
-        scrollTimer.Start(); // Start the timer when scrolling occurs
-      };
-
-      panel1.AutoScrollMinSize = new Size(scrollableWidth, scrollableHeight);
-      panel1.AutoScrollPosition = new Point((panel1.AutoScrollMinSize.Width - panel1.ClientSize.Width) / 2, 0);
-
-      scrollableWidth = panel1.Width + 5000;
-      scrollableHeight = panel1.Height + 5000;
-
-      //InitializeTree(); // Initialize the test tree when the form loads
-    }
-
-    private void panel1_Paint(object sender, PaintEventArgs e)
-    {
-      if (_tree == null) return; // Check if the tree is initialized
-
-      // Adjustments for drawing
-      float adjustedCenterX = scrollableWidth / 2 - panel1.HorizontalScroll.Value;
-      float adjustedCenterY = 10 - panel1.VerticalScroll.Value;
-
-      // Calculate tree width
-      float width = _tree.CalculateSubtreeWidth(_tree.root);
-
-      // Reset and initialize leafStart before drawing
-      _tree.ResetAndInitializeLeafStart();
-
-      // Initialize dictionary
-      Dictionary<int, int> heightNodesDrawn = new Dictionary<int, int>();
-
-      // Use the stored tree for drawing
-      panel1.SuspendLayout();
-      _tree.DrawTree(e.Graphics, _tree.root, adjustedCenterX, adjustedCenterX, adjustedCenterY, width, heightNodesDrawn, _tree.root.height);
-      panel1.ResumeLayout(true);
-    }
-
-    private void btnInsert_Click(object sender, EventArgs e)
-    {
-      if (string.IsNullOrWhiteSpace(txtInputData.Text))
-      {
-        MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        return;
-      }
-
-      if (int.TryParse(txtInputData.Text, out int keyToInsert))
-      {
-        Debug.WriteLine($"Attempting to insert key: {keyToInsert}");
-        inputBuffer.Post((TreeCommand.Insert, keyToInsert, new Person(keyToInsert.ToString())));
-      }
-      else
-      {
-        MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-      }
-
-      // Clear input textbox
-      txtInputData.ForeColor = Color.Black;
-      txtInputData.Text = "Insert Data Here...";
-    }
-
-    private async void btnInsertMany_Click(object sender, EventArgs e)
-    {
-      cancellationTokenSource = new CancellationTokenSource(); // Reset the token source for a new operation
-      if (string.IsNullOrWhiteSpace(txtInputData.Text))
-      {
-        MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        return;
-      }
-
-      if (int.TryParse(txtInputData.Text, out int keyToInsert))
-      {
-        Debug.WriteLine($"Attempting to insert key: {keyToInsert}");
-
-        for (int i = 0; i < keyToInsert; i++)
         {
-          if (cancellationTokenSource.IsCancellationRequested)
-          {
-            Debug.WriteLine("Operation cancelled due to duplicate key found.");
-            //await inputBuffer.SendAsync((TreeCommand.Insert, i, new Person(keyToInsert.ToString())));
-            //int delay = Invoke(new Func<int>(() => animationSpeed));
-            break; // Exit the loop if cancellation is requested
-          }
-          Random random = new();
-          await inputBuffer.SendAsync((TreeCommand.Insert, random.Next(1000), new Person(keyToInsert.ToString())));
-          int delay = Invoke(new Func<int>(() => animationSpeed));
-          await Task.Delay(delay);
-        }
-      }
-      else
-      {
-        MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-      }
-
-      // Clear input textbox
-      txtInputData.ForeColor = Color.Black;
-      txtInputData.Text = "Insert Data Here...";
-    }
-
-    private void btnDelete_Click(object sender, EventArgs e)
-    {
-      if (string.IsNullOrWhiteSpace(txtInputData.Text))
-      {
-        MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        return;
-      }
-
-      if (int.TryParse(txtInputData.Text, out int keyToDelete))
-      {
-        Debug.WriteLine($"Attempting to delete key: {keyToDelete}");
-        inputBuffer.Post((TreeCommand.Delete, keyToDelete, null));
-      }
-      else
-      {
-        MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-      }
-
-      // Clear input textbox
-      txtInputData.ForeColor = Color.Black;
-      txtInputData.Text = "Insert Data Here...";
-    }
-
-    private void btnSearch_Click(object sender, EventArgs e)
-    {
-      if (string.IsNullOrWhiteSpace(txtInputData.Text))
-      {
-        MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-        return;
-      }
-
-      if (int.TryParse(txtInputData.Text, out int keyToSearch))
-      {
-        Debug.WriteLine($"Attempting to search for key: {keyToSearch}");
-        inputBuffer.Post((TreeCommand.Search, keyToSearch, null));
-      }
-      else
-      {
-        MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-      }
-
-      // Clear input textbox
-      txtInputData.ForeColor = Color.Black;
-      txtInputData.Text = "Insert Data Here...";
-    }
-
-    private void btnclear_Click(object sender, EventArgs e)
-    {
-      isProcessing = true;
-      messageQueue = new ConcurrentQueue<(NodeStatus, long, int, int[], Person?[], long, int, int[], Person?[])>();
-      Task.Run(() =>
-      {
-        Thread.Sleep(100);
-        isProcessing = false;
-      });
-
-      EnableButtonEvents();
-
-      // THIS BELOW COULD BE NULLABLE STILL
-      _tree = null!;
-      int degree = 3; // Default value
-      bool parseSuccess = false;
-      if (cmbxMaxDegree.SelectedItem != null)
-      {
-        parseSuccess = Int32.TryParse(cmbxMaxDegree.SelectedItem.ToString(), out degree);
-      }
-      degree = parseSuccess ? degree : 3;
-      nodeDictionary = new Dictionary<long, GUINode>();
-      inputBuffer.Post((TreeCommand.Tree, degree, default(Person?)));
-      panel1.Invalidate();
-      rootHeight = 0; // Temporary to see if this works
-
-      // Clear input textbox
-      txtInputData.ForeColor = Color.Black;
-      txtInputData.Text = "Insert Data Here...";
-      lblCurrentProcess.Text = "";
-    }
-
-    private void txt_txtInputData_Enter(object sender, EventArgs e)
-    {
-      if (txtInputData.Text == "Insert Data Here...")
-      {
-        txtInputData.ForeColor = Color.Black;
-        txtInputData.Text = "";
-      }
-    }
-
-    private void txt_txtInputData_Leave(object sender, EventArgs e)
-    {
-      if (txtInputData.Text.Length == 0)
-      {
-        txtInputData.ForeColor = Color.Black;
-        txtInputData.Text = "Insert Data Here...";
-      }
-    }
-
-    private async void btnNext_Click(object sender, EventArgs e)
-    {
-      if (await outputBuffer.OutputAvailableAsync())
-      {
-        (NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) recieved = outputBuffer.Receive();
-        // Create a deep copy of the keys and altKeys arrays to ensure they are not modified elsewhere
-        (NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) feedbackCopy;
-        feedbackCopy.status = recieved.status;
-        feedbackCopy.id = recieved.id;
-        feedbackCopy.numKeys = recieved.numKeys;
-        feedbackCopy.altID = recieved.altID;
-        feedbackCopy.altNumKeys = recieved.altNumKeys;
-        feedbackCopy.keys = new int[recieved.keys.Length];
-        feedbackCopy.contents = new Person[recieved.keys.Length];
-        feedbackCopy.altKeys = new int[recieved.altKeys.Length];
-        feedbackCopy.altContents = new Person[recieved.altKeys.Length];
-        for (int i = 0; i < recieved.numKeys; i++)
-        {
-          feedbackCopy.keys[i] = recieved.keys[i];
-          feedbackCopy.contents[i] = recieved.contents[i];
-        }
-        for (int i = 0; i < recieved.altNumKeys; i++)
-        {
-          feedbackCopy.altKeys[i] = recieved.altKeys[i];
-          feedbackCopy.altContents[i] = recieved.altContents[i];
+            UpdateGUITreeFromNodes();
+            panel1.Invalidate();
         }
 
-        messageQueue.Enqueue(feedbackCopy);
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-        StartConsumerTask();
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-      }
-    }
-
-    private void cmbxMaxDegree_SelectedIndexChanged(object sender, EventArgs e)
-    {
-      _tree = null!;
-      int degree = 3; // Default value
-      bool parseSuccess = false;
-      if (cmbxMaxDegree.SelectedItem != null)
-      {
-        parseSuccess = Int32.TryParse(cmbxMaxDegree.SelectedItem.ToString(), out degree);
-      }
-      degree = parseSuccess ? degree : 3;
-      nodeDictionary = new Dictionary<long, GUINode>();
-      inputBuffer.Post((TreeCommand.Tree, degree, default(Person?)));
-      panel1.Invalidate();
-      rootHeight = 0; // Temporary to see if this works
-      oldRoot = null; // Temporary to see if this works
-      lblCurrentProcess.Text = "";
-    }
-
-    private void DisableButtonEvents()
-    {
-      btnSearch.Enabled = false;
-      btnDelete.Enabled = false;
-      btnInsert.Enabled = false;
-      btnInsertMany.Enabled = false;
-    }
-
-    private void EnableButtonEvents()
-    {
-      btnSearch.Enabled = true;
-      btnDelete.Enabled = true;
-      btnInsert.Enabled = true;
-      btnInsertMany.Enabled = true;
-    }
-
-    private void UpdateGUITreeFromNodes()
-    {
-      GUINode? rootNode = DetermineRootNode();
-      if (rootNode != null)
-      {
-        _tree = new GUITree(rootNode, panel1);
-        //_tree.ResetAndInitializeLeafStart();
-        panel1.Invalidate();
-      }
-    }
-
-    private GUINode? DetermineRootNode()
-    {
-      foreach (var node in nodeDictionary)
-      {
-        if (node.Value.IsRoot)
+        private void SetHighlightedNode(long nodeID, long altNodeID = 0)
         {
-          return node.Value;
+            lastHighlightedID = nodeID; // Sets node to be highlighted for animations
+            lastHighlightedAltID = altNodeID;
+            nodeDictionary[nodeID].nodeHighlighted = true;
+            //if (lastHighlightedAltID != 0) nodeDictionary[altNodeID].nodeHighlighted = true;
+            if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out GUINode? altNode)) nodeDictionary[altNode.ID].nodeHighlighted = true;
+            if (nodeDictionary.TryGetValue(nodeID, out GUINode? node))
+                node.nodeHighlighted = true;
+            if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out node))
+                node.nodeHighlighted = true;
         }
-      }
-      return null;
-      //return null;
-    }
 
-    // Define the Person class
-    public class Person
-    {
-      public string Name { get; set; }
-
-      public Person(string name)
-      {
-        Name = name;
-      }
-    }
-
-    BufferBlock<(
-      NodeStatus status,
-      long id,
-      int numKeys,
-      int[] keys,
-      Person?[] contents,
-      long altID,
-      int altNumKeys,
-      int[] altKeys,
-      Person?[] altContents
-      )> outputBuffer = new();
-
-    private BufferBlock<(
-      TreeCommand action,
-      int key,
-      Person? content
-      )> inputBuffer = new();
-
-    private void InitializeBackend()
-    {
-      BTree<Person> _Tree = new(3, outputBuffer);
-      Task producer = Task.Run(async () =>
-      {
-        Thread.CurrentThread.Name = "Producer";
-        try
+        private void SetHighlightedLine(long nodeID, long altNodeID = 0)
         {
-          while (await inputBuffer.OutputAvailableAsync())
-          {
-            (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
-            switch (action)
+            lastHighlightedID = nodeID; // Sets node to be highlighted for animations
+            lastHighlightedAltID = altNodeID;
+            nodeDictionary[nodeID].lineHighlighted = true;
+            if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out GUINode? altNode)) nodeDictionary[altNode.ID].lineHighlighted = true;
+        }
+
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            PositionPanels();
+        }
+
+        private void PositionPanels()
+        {
+            // Positioning the buttonsPanel
+            panel2.Height = 100;
+            panel2.Width = this.ClientSize.Width; // Make buttonsPanel width equal to the form's client width
+            panel2.Location = new Point(0, this.ClientSize.Height - panel2.Height); // Align to bottom
+
+            // Positioning the visualsPanel
+            panel1.Location = new Point(0, 0); // Start at top-left corner
+            panel1.Size = new Size(this.ClientSize.Width, this.ClientSize.Height - panel2.Height); // Fill the space above buttonsPanel
+
+            scrollableWidth = panel1.Width + 5000;
+            scrollableHeight = panel1.Height + 5000;
+
+            panel1.AutoScrollMinSize = new Size(scrollableWidth, scrollableHeight);
+            //panel1.AutoScrollPosition = new Point((panel1.AutoScrollMinSize.Width - panel1.ClientSize.Width) / 2, 0);
+
+            panel1.Invalidate();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            InitializeBackend();
+            StartConsumerTask();
+
+            // Create horizontal scroll bar
+            System.Windows.Forms.ScrollBar hScrollBar1 = new HScrollBar();
+            hScrollBar1.Dock = DockStyle.Bottom;
+
+            hScrollBar1.Scroll += (s, ea) =>
             {
-              case TreeCommand.Insert:
-                _Tree.Insert(key, content ?? throw new NullContentReferenceException("Insert on tree with null content."));
-                break;
-              case TreeCommand.Delete:
-                _Tree.Delete(key);
-                break;
-              case TreeCommand.Search:
-                _Tree.Search(key);
-                break;
-              case TreeCommand.Close:
-                inputBuffer.Complete();
-                break;
-              case TreeCommand.Tree:
-                _Tree = new BTree<Person>(key, outputBuffer);
-                Debug.WriteLine("Handling Tree command");
-                break;
-              default:
-                Debug.WriteLine("TreeCommand:{0} not recognized", action);
-                break;
+                panel1.HorizontalScroll.Value = hScrollBar1.Value;
+                scrollTimer.Start(); // Start the timer when scrolling occurs
+            };
+
+            System.Windows.Forms.ScrollBar vScrollBar1 = new VScrollBar();
+            vScrollBar1.Dock = DockStyle.Right;
+
+            vScrollBar1.Scroll += (s, ea) =>
+            {
+                panel1.VerticalScroll.Value = vScrollBar1.Value;
+                scrollTimer.Start(); // Start the timer when scrolling occurs
+            };
+
+            panel1.AutoScrollMinSize = new Size(scrollableWidth, scrollableHeight);
+            panel1.AutoScrollPosition = new Point((panel1.AutoScrollMinSize.Width - panel1.ClientSize.Width) / 2, 0);
+
+            scrollableWidth = panel1.Width + 5000;
+            scrollableHeight = panel1.Height + 5000;
+        }
+
+        private void panel1_Paint(object sender, PaintEventArgs e)
+        {
+            if (_tree == null) return; // Check if the tree is initialized
+
+            // Adjustments for drawing
+            float adjustedCenterX = scrollableWidth / 2 - panel1.HorizontalScroll.Value;
+            float adjustedCenterY = 10 - panel1.VerticalScroll.Value;
+
+            // Calculate tree width
+            float width = _tree.CalculateSubtreeWidth(_tree.root);
+
+            // Reset and initialize leafStart before drawing
+            _tree.ResetAndInitializeLeafStart();
+
+            // Initialize dictionary
+            Dictionary<int, int> heightNodesDrawn = new Dictionary<int, int>();
+
+            // Use the stored tree for drawing
+            panel1.SuspendLayout();
+            _tree.DrawTree(e.Graphics, _tree.root, adjustedCenterX, adjustedCenterX, adjustedCenterY, width, heightNodesDrawn, _tree.root.height);
+            panel1.ResumeLayout(true);
+        }
+
+        private void btnInsert_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtInputData.Text))
+            {
+                MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
-          }
+
+            if (int.TryParse(txtInputData.Text, out int keyToInsert))
+            {
+                Debug.WriteLine($"Attempting to insert key: {keyToInsert}");
+
+                // Check if it's the first node and it has not been processed yet
+                if (!isFirstNodeEncountered)
+                {
+                    Debug.WriteLine("Skipping special command for the first node.");
+                    return;
+                }
+
+                inputBuffer.Post((TreeCommand.Insert, keyToInsert, new Person(keyToInsert.ToString())));
+            }
+            else
+            {
+                MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
+            // Clear input textbox
+            txtInputData.ForeColor = Color.Black;
+            txtInputData.Text = "Insert Data Here...";
         }
-        catch (Exception ex)
+
+        private async void btnInsertMany_Click(object sender, EventArgs e)
         {
-          Debug.WriteLine($"Error in Producer task: {ex.Message}");
+            cancellationTokenSource = new CancellationTokenSource(); // Reset the token source for a new operation
+            if (string.IsNullOrWhiteSpace(txtInputData.Text))
+            {
+                MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (int.TryParse(txtInputData.Text, out int keyToInsert))
+            {
+                Debug.WriteLine($"Attempting to insert key: {keyToInsert}");
+
+                // Check if it's the first node and it has not been processed yet
+                if (!isFirstNodeEncountered)
+                {
+                    Debug.WriteLine("Skipping special command for the first node.");
+                    return;
+                }
+
+                for (int i = 1; i < keyToInsert + 1; i++)
+                {
+                    if (cancellationTokenSource.IsCancellationRequested)
+                    {
+                        Debug.WriteLine("Operation cancelled due to duplicate key found.");
+                        break; // Exit the loop if cancellation is requested
+                    }
+                    await inputBuffer.SendAsync((TreeCommand.Insert, i, new Person(keyToInsert.ToString())));
+                    int delay = Invoke(new Func<int>(() => animationSpeed));
+                    await Task.Delay(delay);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
+            // Clear input textbox
+            txtInputData.ForeColor = Color.Black;
+            txtInputData.Text = "Insert Data Here...";
         }
-        finally
+
+        private void btnDelete_Click(object sender, EventArgs e)
         {
-          // Complete the buffer when done processing commands
-          outputBuffer.Complete();
+            if (string.IsNullOrWhiteSpace(txtInputData.Text))
+            {
+                MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (int.TryParse(txtInputData.Text, out int keyToDelete))
+            {
+                Debug.WriteLine($"Attempting to delete key: {keyToDelete}");
+                inputBuffer.Post((TreeCommand.Delete, keyToDelete, null));
+            }
+            else
+            {
+                MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
+            // Clear input textbox
+            txtInputData.ForeColor = Color.Black;
+            txtInputData.Text = "Insert Data Here...";
         }
-      });
+
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtInputData.Text))
+            {
+                MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (int.TryParse(txtInputData.Text, out int keyToSearch))
+            {
+                Debug.WriteLine($"Attempting to search for key: {keyToSearch}");
+                inputBuffer.Post((TreeCommand.Search, keyToSearch, null));
+            }
+            else
+            {
+                MessageBox.Show("Please enter a valid integer key.", "Invalid Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+
+            // Clear input textbox
+            txtInputData.ForeColor = Color.Black;
+            txtInputData.Text = "Insert Data Here...";
+        }
+
+        private void btnclear_Click(object sender, EventArgs e)
+        {
+            ResetTreeAndForm();
+        }
+
+        private void txt_txtInputData_Enter(object sender, EventArgs e)
+        {
+            if (txtInputData.Text == "Insert Data Here...")
+            {
+                txtInputData.ForeColor = Color.Black;
+                txtInputData.Text = "";
+            }
+        }
+
+        private void txt_txtInputData_Leave(object sender, EventArgs e)
+        {
+            if (txtInputData.Text.Length == 0)
+            {
+                txtInputData.ForeColor = Color.Black;
+                txtInputData.Text = "Insert Data Here...";
+            }
+        }
+
+        private void cmbxMaxDegree_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ResetTreeAndForm();
+        }
+
+        private void ResetTreeAndForm()
+        {
+            isProcessing = true;
+            messageQueue = new ConcurrentQueue<(NodeStatus, long, int, int[], Person?[], long, int, int[], Person?[])>();
+            Task.Run(() =>
+            {
+                Thread.Sleep(100);
+                isProcessing = false;
+            });
+
+            EnableButtonEvents();
+
+            // THIS BELOW COULD BE NULLABLE STILL
+            _tree = null!;
+            int degree = 3; // Default value
+            bool parseSuccess = false;
+            if (cmbxMaxDegree.SelectedItem != null)
+            {
+                parseSuccess = Int32.TryParse(cmbxMaxDegree.SelectedItem.ToString(), out degree);
+            }
+            degree = parseSuccess ? degree : 3;
+            nodeDictionary = new Dictionary<long, GUINode>();
+            inputBuffer.Post((TreeCommand.Tree, degree, default(Person?)));
+            panel1.Invalidate();
+            rootHeight = 0; // Temporary to see if this works
+            oldRoot = null; // Temporary to see if this works
+            isFirstNodeEncountered = false;
+
+            // Clear input textbox
+            txtInputData.ForeColor = Color.Black;
+            txtInputData.Text = "Insert Data Here...";
+            lblCurrentProcess.Text = "";
+        }
+
+        private void chkBTreeTrue_CheckedChanged(object sender, EventArgs e)
+        {
+            ResetTreeAndForm();
+            InitializeBackend();
+        }
+
+        private void DisableButtonEvents()
+        {
+            btnSearch.Enabled = false;
+            btnDelete.Enabled = false;
+            btnInsert.Enabled = false;
+            btnInsertMany.Enabled = false;
+            btnclear.Enabled = false;
+        }
+
+        private void EnableButtonEvents()
+        {
+            btnSearch.Enabled = true;
+            btnDelete.Enabled = true;
+            btnInsert.Enabled = true;
+            btnInsertMany.Enabled = true;
+            btnclear.Enabled = true;
+        }
+
+        private void UpdateGUITreeFromNodes()
+        {
+            GUINode? rootNode = DetermineRootNode();
+            if (rootNode != null)
+            {
+                _tree = new GUITree(rootNode, panel1);
+                //_tree.ResetAndInitializeLeafStart();
+                panel1.Invalidate();
+            }
+        }
+
+        private GUINode? DetermineRootNode()
+        {
+            foreach (var node in nodeDictionary)
+            {
+                if (node.Value.IsRoot)
+                {
+                    return node.Value;
+                }
+            }
+            return null;
+            //return null;
+        }
+
+        // Define the Person class
+        public class Person
+        {
+            public string Name { get; set; }
+
+            public Person(string name)
+            {
+                Name = name;
+            }
+        }
+
+        BufferBlock<(
+          NodeStatus status,
+          long id,
+          int numKeys,
+          int[] keys,
+          Person?[] contents,
+          long altID,
+          int altNumKeys,
+          int[] altKeys,
+          Person?[] altContents
+          )> outputBuffer = new();
+
+        private BufferBlock<(
+          TreeCommand action,
+          int key,
+          Person? content
+          )> inputBuffer = new();
+
+        private void InitializeBackend()
+        {
+            if (!chkBTreeTrue.Checked)
+            {
+                BTree<Person> _Tree = new BTree<Person>(3, outputBuffer);
+                Task producer = Task.Run(async () =>
+                {
+                    Thread.CurrentThread.Name = "Producer";
+                    try
+                    {
+                        while (await inputBuffer.OutputAvailableAsync())
+                        {
+                            (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
+                            switch (action)
+                            {
+                                case TreeCommand.Insert:
+                                    _Tree.Insert(key, content ?? throw new NullContentReferenceException("Insert on tree with null content."));
+                                    break;
+                                case TreeCommand.Delete:
+                                    _Tree.Delete(key);
+                                    break;
+                                case TreeCommand.Search:
+                                    _Tree.Search(key);
+                                    break;
+                                case TreeCommand.Close:
+                                    inputBuffer.Complete();
+                                    break;
+                                case TreeCommand.Tree:
+                                    _Tree = new BTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
+                                    Debug.WriteLine("Handling Tree command");
+                                    isFirstNodeEncountered = false;
+                                    break;
+                                default:
+                                    Debug.WriteLine("TreeCommand:{0} not recognized", action);
+                                    break;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error in Producer task: {ex.Message}");
+                    }
+                    finally
+                    {
+                        // Complete the buffer when done processing commands
+                        outputBuffer.Complete();
+                    }
+                });
+            }
+            else if (chkBTreeTrue.Checked)
+            {
+                BPlusTree<Person> _Tree = new BPlusTree<Person>(3, outputBuffer);
+                Task producer = Task.Run(async () =>
+                {
+                    Thread.CurrentThread.Name = "Producer";
+                    try
+                    {
+                        while (await inputBuffer.OutputAvailableAsync())
+                        {
+                            (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
+                            switch (action)
+                            {
+                                case TreeCommand.Insert:
+                                    _Tree.Insert(key, content ?? throw new NullContentReferenceException("Insert on tree with null content."));
+                                    break;
+                                case TreeCommand.Delete:
+                                    _Tree.Delete(key);
+                                    break;
+                                case TreeCommand.Search:
+                                    _Tree.Search(key);
+                                    break;
+                                case TreeCommand.Close:
+                                    inputBuffer.Complete();
+                                    break;
+                                case TreeCommand.Tree:
+                                    _Tree = new BPlusTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
+                                    Debug.WriteLine("Handling Tree command");
+                                    isFirstNodeEncountered = false;
+                                    break;
+                                default:
+                                    Debug.WriteLine("TreeCommand:{0} not recognized", action);
+                                    break;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error in Producer task: {ex.Message}");
+                    }
+                    finally
+                    {
+                        // Complete the buffer when done processing commands
+                        outputBuffer.Complete();
+                    }
+                });
+            }
+        }
     }
-  }
 }
