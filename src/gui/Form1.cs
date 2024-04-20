@@ -73,14 +73,14 @@ namespace B_TreeVisualizationGUI
         Invoke((MethodInvoker)delegate
         {
           // Disable the button on the UI thread
-          this.Invoke((MethodInvoker)delegate
+          Invoke((MethodInvoker)delegate
           {
             // Below are min and max values for the animation speeds and are in milliseconds
             int minValue = 1000;
             int maxValue = 10;
 
             // Calculate the linear scale factor
-            animationSpeed = minValue + (int)((maxValue - minValue) * (trbSpeed.Value - 1) / (10 - 1));
+            animationSpeed = minValue + ((maxValue - minValue) * (trbSpeed.Value - 1) / (10 - 1));
             DisableButtonEvents();
           });
           ProcessFeedback(messageToProcess);

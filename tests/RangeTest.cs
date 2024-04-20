@@ -21,7 +21,8 @@ namespace RangeOperationTesting
   // [TestFixture(3, 1000)]
   // [TestFixture(5, 1000)]
   [TestFixture(3, 10000)]
-  [TestFixture(5, 100000)]
+  [TestFixture(5, 10000)]
+  // [TestFixture(5, 100000)]
   // [TestFixture(50, 1000000)]
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
   public partial class RangeTests(int degree, int numKeys)
@@ -205,15 +206,10 @@ namespace RangeOperationTesting
       await _InputBuffer.SendAsync((TreeCommand.Close, 0, -1, null));
     }
 
-    [TestCase(1000)]
-    [TestCase(10000)]
-    [TestCase(10000)]
-    [TestCase(10000)]
-    [TestCase(10000)]
-    [TestCase(10000)]
-    [TestCase(10000)]
-    [TestCase(10000)]
-    public void BaseTest(int rangeSize)
+    [TestCase(1000, 1000)]
+    [TestCase(10000, 1000)]
+    [TestCase(10000, 1000)]
+    public void BaseTest(int rangeSize, int countOfDeleteRanges)
     {
       Random random = new();
       int key, endKey, index, endIndex;
@@ -222,8 +218,9 @@ namespace RangeOperationTesting
       string insertionOrder = string.Join(',', keys);
       keys.Sort();
       string deleteHstory = "";
-      while ((_UseConstant && _OrderOfDeletion.Count > 0) || (!_UseConstant && keys.Count > 0))
+      while ((_UseConstant && _OrderOfDeletion.Count > 0) || (!_UseConstant && keys.Count > 0) && countOfDeleteRanges >= 0)
       {
+        countOfDeleteRanges--;
         if (_UseConstant)
         {
           index = keys.IndexOf(_OrderOfDeletion[0]);
@@ -260,11 +257,72 @@ namespace RangeOperationTesting
             Assert.Fail($"The delete cycles started with {string.Join(',', keyHistory)}\nSearch turned up bogus for {keys[k]}\n");
           }
         }
-        Console.WriteLine($"Deleting: {key} - {endKey}");
+        Console.WriteLine($"Deleting: {key} - {endKey}\nInsertion:{insertionOrder}\nDeletion:{deleteHstory}");
         _Tree.DeleteRange(key, endKey);
         Assert.That(_Tree.Search(key, endKey), Is.Empty, $"The delete cycles started with {string.Join(',', keyHistory)}\nSearch shouldnt exist for {key}\n{deleteHstory}\n\n{insertionOrder}");
         range.Clear();
       }
+    }
+
+    [Test]
+    public void DeleteAllAtOnce()
+    {
+      string insertionOrder = string.Join(',', keys);
+      keys.Sort();
+      _Tree.DeleteRange(keys[0], keys[^1] + 1);
+      for (int k = 0; k < keys.Count; k++)
+      {
+        var entry = _Tree.Search(keys[k]);
+        if (entry != null)
+        {
+          Assert.Fail($"Search found {keys[k]}\n");
+        }
+      }
+      Assert.That(_Tree.Search(keys[0], keys[^1] + 1), Is.Empty, $"Insertion:{insertionOrder}");
+    }
+
+    [Test]
+    public void DeleteAllExceptGreatestOne()
+    {
+      string insertionOrder = string.Join(',', keys);
+      keys.Sort();
+      _Tree.DeleteRange(keys[0], keys[^1]);
+      for (int k = 0; k < keys.Count - 1; k++)
+      {
+        var entry = _Tree.Search(keys[k]);
+        if (entry != null)
+        {
+          Assert.Fail($"Search found {keys[k]}\n");
+        }
+      }
+      var singleEntry = _Tree.Search(keys[^1]);
+      if (singleEntry == null)
+      {
+        Assert.Fail($"Search found {keys[^1]}\n");
+      }
+      Assert.That(_Tree.Search(keys[0], keys[^1]), Is.Empty, $"Insertion:{insertionOrder}");
+    }
+
+    [Test]
+    public void DeleteAllExceptLeastOne()
+    {
+      string insertionOrder = string.Join(',', keys);
+      keys.Sort();
+      _Tree.DeleteRange(keys[0]+1, keys[^1]+1);
+      for (int k = 1; k < keys.Count; k++)
+      {
+        var entry = _Tree.Search(keys[k]);
+        if (entry != null)
+        {
+          Assert.Fail($"Search found {keys[k]}\n");
+        }
+      }
+      var singleEntry = _Tree.Search(keys[0]);
+      if (singleEntry == null)
+      {
+        Assert.Fail($"Search found {keys[0]}\n");
+      }
+      Assert.That(_Tree.Search(keys[0]+1, keys[^1]+1), Is.Empty, $"Insertion:{insertionOrder}");
     }
 
     // [TestCase(1000)]

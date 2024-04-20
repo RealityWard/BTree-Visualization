@@ -3,6 +3,7 @@ Author: Emily Elzinga and Tristan Anderson
 Date: 2/07/2024
 Desc: Describes functionality for non-leaf nodes on the BTree. Recursive function iteration due to children nodes.
 */
+using System.Diagnostics;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
@@ -147,7 +148,7 @@ namespace BTreeVisualization
               $"Child at index:{index} within node:{ID}")).SearchKeys(key, endKey));
         }
       }
-      if (_Keys[_NumKeys - 1] < endKey)
+      if (_NumKeys > 0 && _Keys[_NumKeys - 1] < endKey)
         result.AddRange((_Children[_NumKeys]
           ?? throw new NullChildReferenceException(
             $"Child at index:{NumKeys} within node:{ID}")).SearchKeys(key,
@@ -377,21 +378,27 @@ namespace BTreeVisualization
           .DeleteKeysSplit(key, endKey, _Children[lastIndex]
             ?? throw new NullChildReferenceException(
             $"Child at index:{lastIndex} within node:{ID}"));
-        int processAgain;
+        int prevProcessAgain;
+        int currProcessAgain = -1;
         do
         {
-          processAgain = (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
+          prevProcessAgain = currProcessAgain;
+          currProcessAgain = (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
             $"Child at index:{firstKeyIndex} within node:{ID}")).RestoreLeft();
-        } while (processAgain > 1);
+        } while (currProcessAgain > 1 && prevProcessAgain != currProcessAgain);
+        if (prevProcessAgain == currProcessAgain)
+          Console.WriteLine();
+        currProcessAgain = -1;
         do
         {
-          processAgain = (_Children[lastIndex] ?? throw new NullChildReferenceException(
+          prevProcessAgain = currProcessAgain;
+          currProcessAgain = (_Children[lastIndex] ?? throw new NullChildReferenceException(
             $"Child at index:{lastIndex} within node:{ID}")).RestoreRight();
-        } while (processAgain > 1);
+        } while (currProcessAgain > 1 && prevProcessAgain != currProcessAgain);
+        if (prevProcessAgain == currProcessAgain)
+          Console.WriteLine();
         ReduceGap(firstKeyIndex, lastIndex);
         MergeAt(firstKeyIndex);
-        if (firstKeyIndex < _NumKeys)
-          MergeAt(firstKeyIndex + 1);
       }
       CheckMyself(0);
     }
@@ -617,6 +624,8 @@ namespace BTreeVisualization
               _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index].ID, -1, [], [],
                 ((NonLeafNode<T>)Children[index]).Children[Children[index].NumKeys - i].ID, -1, [], []));
             }
+            if (keysNeeded == _Degree - 1)
+              ((NonLeafNode<T>)Children[index]).MergeAt(0);
           }
         }
         else if (_Children[index].NumKeys - keysNeeded >= _Degree - 1)
@@ -637,10 +646,14 @@ namespace BTreeVisualization
               _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index + 1].ID, -1, [], [],
                 ((NonLeafNode<T>)Children[index + 1]).Children[i].ID, -1, [], []));
             }
+            if (keysNeeded == _Degree - 1)
+              ((NonLeafNode<T>)Children[index + 1]).MergeAt(Children[index + 1].NumKeys);
           }
         }
         else
         {
+          bool rightZeroNode = _Children[index + 1].NumKeys == 0;
+          bool leftZeroNode = _Children[index].NumKeys == 0;
           _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
           for (; index < _NumKeys - 1;)
           {
@@ -654,6 +667,13 @@ namespace BTreeVisualization
           _Children[index + 1] = default;
           _NumKeys--;
           _BufferBlock.SendAsync((NodeStatus.MergeParent, ID, NumKeys, Keys, Contents, 0, -1, [], []));
+          if (_Children[index] as NonLeafNode<T> != null)
+          {
+            if (leftZeroNode)
+              ((NonLeafNode<T>)Children[index]).MergeAt(0);
+            if (rightZeroNode)
+              ((NonLeafNode<T>)Children[index]).MergeAt(Children[index].NumKeys);
+          }
         }
       }
     }
