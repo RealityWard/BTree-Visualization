@@ -318,14 +318,14 @@ namespace BTreeVisualization
       }
     }
 
-    public override bool RestoreRight()
+    public override int RestoreRight()
     {
-      return false;
+      return 0;
     }
 
-    public override bool RestoreLeft()
+    public override int RestoreLeft()
     {
-      return false;
+      return 0;
     }
 
     /// <summary>

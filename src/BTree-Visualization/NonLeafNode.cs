@@ -377,12 +377,21 @@ namespace BTreeVisualization
           .DeleteKeysSplit(key, endKey, _Children[lastIndex]
             ?? throw new NullChildReferenceException(
             $"Child at index:{lastIndex} within node:{ID}"));
-        (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
-          $"Child at index:{firstKeyIndex} within node:{ID}")).RestoreLeft();
-        (_Children[lastIndex] ?? throw new NullChildReferenceException(
-          $"Child at index:{lastIndex} within node:{ID}")).RestoreRight();
+        int processAgain;
+        do
+        {
+          processAgain = (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
+            $"Child at index:{firstKeyIndex} within node:{ID}")).RestoreLeft();
+        } while (processAgain > 1);
+        do
+        {
+          processAgain = (_Children[lastIndex] ?? throw new NullChildReferenceException(
+            $"Child at index:{lastIndex} within node:{ID}")).RestoreRight();
+        } while (processAgain > 1);
         ReduceGap(firstKeyIndex, lastIndex);
         MergeAt(firstKeyIndex);
+        if (firstKeyIndex < _NumKeys)
+          MergeAt(firstKeyIndex + 1);
       }
       CheckMyself(0);
     }
@@ -392,21 +401,26 @@ namespace BTreeVisualization
       (_Keys[firstKeyIndex], _Contents[firstKeyIndex]) =
         (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
         $"Child at index:{_NumKeys} within node:{ID}")).ForfeitKey();
-      firstKeyIndex++;
+      if (_Contents[firstKeyIndex] != null)
+        firstKeyIndex++;
       if (firstKeyIndex != lastIndex)
       {
         int i = firstKeyIndex;
+        Children[firstKeyIndex] = _Children[lastIndex];
         for (int j = lastIndex; j < _NumKeys;)
         {
           _Keys[i] = _Keys[j];
           _Contents[i] = _Contents[j];
-          Children[++i] = _Children[++j];
+          i++;
+          j++;
+          Children[i] = _Children[j];
         }
         for (; i < _NumKeys;)
         {
           _Keys[i] = default;
           _Contents[i] = default;
-          Children[++i] = default;
+          i++;
+          Children[i] = default;
         }
         _NumKeys -= lastIndex - firstKeyIndex;
       }
@@ -482,20 +496,24 @@ namespace BTreeVisualization
       CheckMyself(0);
     }
 
-    public override bool RestoreRight()
+    public override int RestoreRight()
     {
-      bool result = (_Children[0] ?? throw new NullChildReferenceException(
+      int result = (_Children[0] ?? throw new NullChildReferenceException(
         $"Child at index:0 within node:{ID}")).RestoreRight();
       MergeAt(0);
-      return result || _NumKeys == 0;
+      if (result > 0 || _NumKeys == 0)
+        return ++result;
+      return result;
     }
 
-    public override bool RestoreLeft()
+    public override int RestoreLeft()
     {
-      bool result = (_Children[_NumKeys] ?? throw new NullChildReferenceException(
+      int result = (_Children[_NumKeys] ?? throw new NullChildReferenceException(
         $"Child at index:{_NumKeys} within node:{ID}")).RestoreLeft();
       MergeAt(_NumKeys);
-      return result || _NumKeys == 0;
+      if (result > 0 || _NumKeys == 0)
+        return ++result;
+      return result;
     }
 
     /// <summary>

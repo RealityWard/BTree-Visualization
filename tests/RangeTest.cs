@@ -21,7 +21,7 @@ namespace RangeOperationTesting
   // [TestFixture(3, 1000)]
   // [TestFixture(5, 1000)]
   [TestFixture(3, 10000)]
-  // [TestFixture(5, 100000)]
+  [TestFixture(5, 100000)]
   // [TestFixture(50, 1000000)]
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
   public partial class RangeTests(int degree, int numKeys)
@@ -45,7 +45,7 @@ namespace RangeOperationTesting
 
     private List<int> _OrderOfDeletion = [];
     private List<int> _BeginningTreeState = [];
-    private readonly bool _UseConstant = true;
+    private readonly bool _UseConstant = false;
     private readonly string _Path = ".\\rangeTesting.txt";
 
     /// <summary>
@@ -260,6 +260,7 @@ namespace RangeOperationTesting
             Assert.Fail($"The delete cycles started with {string.Join(',', keyHistory)}\nSearch turned up bogus for {keys[k]}\n");
           }
         }
+        Console.WriteLine($"Deleting: {key} - {endKey}");
         _Tree.DeleteRange(key, endKey);
         Assert.That(_Tree.Search(key, endKey), Is.Empty, $"The delete cycles started with {string.Join(',', keyHistory)}\nSearch shouldnt exist for {key}\n{deleteHstory}\n\n{insertionOrder}");
         range.Clear();

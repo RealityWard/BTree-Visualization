@@ -94,8 +94,8 @@ namespace BTreeVisualization
     public abstract void DeleteKeysSplit(int key, int endKey, N rightSibiling);
     public abstract void DeleteKeysLeft(int index);
     public abstract void DeleteKeysRight(int index);
-    public abstract bool RestoreRight();
-    public abstract bool RestoreLeft();
+    public abstract int RestoreRight();
+    public abstract int RestoreLeft();
     /// <summary>
     /// Prints out this node and its children.
     /// </summary>
