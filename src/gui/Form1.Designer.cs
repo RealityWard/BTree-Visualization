@@ -50,8 +50,6 @@ namespace B_TreeVisualizationGUI
             // 
             // panel1
             // 
-            panel1.Dock = DockStyle.Top;
-            panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             panel1.AutoScroll = true;
             panel1.BackColor = SystemColors.ControlDarkDark;
             panel1.Controls.Add(chkDebugMode);
@@ -249,16 +247,15 @@ namespace B_TreeVisualizationGUI
             // 
             lblCurrentProcess.Anchor = AnchorStyles.Bottom;
             lblCurrentProcess.AutoSize = true;
+            lblCurrentProcess.Font = new Font("Segoe UI", 12F, FontStyle.Bold, GraphicsUnit.Point, 0);
             lblCurrentProcess.ForeColor = SystemColors.ActiveCaptionText;
-            lblCurrentProcess.Location = new Point(360, 67);
+            lblCurrentProcess.Location = new Point(361, 64);
             lblCurrentProcess.Name = "lblCurrentProcess";
-            lblCurrentProcess.Size = new Size(188, 15);
+            lblCurrentProcess.Size = new Size(0, 21);
             lblCurrentProcess.TabIndex = 11;
-            lblCurrentProcess.Text = "No Tree Currently Being Processed";
             // 
             // panel2
             // 
-            panel2.Dock = DockStyle.Bottom;
             panel2.Controls.Add(lblCurrentProcess);
             panel2.Controls.Add(cmbxMaxDegree);
             panel2.Controls.Add(btnclear);
@@ -266,7 +263,6 @@ namespace B_TreeVisualizationGUI
             panel2.Controls.Add(btnInsertMany);
             panel2.Controls.Add(lblSpeed);
             panel2.Controls.Add(btnSearch);
-            panel2.Controls.Add(btnNext);
             panel2.Controls.Add(trbSpeed);
             panel2.Controls.Add(btnDelete);
             panel2.Controls.Add(txtInputData);
@@ -287,6 +283,7 @@ namespace B_TreeVisualizationGUI
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;
+            Resize += Form1_Resize;
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)trbSpeed).EndInit();
@@ -295,8 +292,8 @@ namespace B_TreeVisualizationGUI
             ResumeLayout(false);
         }
 
-    #endregion
-    private Panel panel1;
+        #endregion
+        private Panel panel1;
         private TextBox txtInputData;
         private ComboBox cmbxMaxDegree;
         private CheckBox chkDebugMode;

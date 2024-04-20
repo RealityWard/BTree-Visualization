@@ -14,8 +14,9 @@ namespace B_TreeVisualizationGUI
     int scrollableWidth = 5000;
     int scrollableHeight = 5000;
     private GUITree _tree;
-    Dictionary<long, GUINode> nodeDictionary = [];
+    Dictionary<long, GUINode> nodeDictionary = new Dictionary<long, GUINode>();
     private System.Windows.Forms.Timer scrollTimer;
+    private bool isFirstNodeEncountered = false;
     private int rootHeight = 0; // Temporary to see if this works
     private GUINode oldRoot; // Temporary to see if this works
     private GUINode lastSearched;
@@ -39,7 +40,8 @@ namespace B_TreeVisualizationGUI
             NodeStatus.MergeParent,
             NodeStatus.UnderFlow,
             NodeStatus.Merge,
-            NodeStatus.Shift
+            NodeStatus.Shift,
+            NodeStatus.SSearching
         };
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -407,9 +409,9 @@ namespace B_TreeVisualizationGUI
                                                                     // Add sibling keys to node
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
             {
-              lblCurrentProcess.Text = ("A merge has occurred"); // Inform user of what process is currently happening
-              lblCurrentProcess.Text = ("Updating merged node"); // Inform user of what process is currently happening
-                                                                 // Update node
+              lblCurrentProcess.Text = "A merge has occurred"; // Inform user of what process is currently happening
+              lblCurrentProcess.Text = "Updating merged node"; // Inform user of what process is currently happening
+                                                               // Update node
               node.Keys = feedback.keys;
               node.NumKeys = feedback.numKeys;
               if (feedback.status == NodeStatus.MergeRoot)
@@ -586,7 +588,9 @@ namespace B_TreeVisualizationGUI
           {
             Debug.WriteLine("Received SSearching status."); // For debug purposes DELETE LATER
             lblCurrentProcess.Text = ("Looking for key."); // Inform user of what process is currently happening
-                                                           // IMPLEMENT?
+            SetHighlightedNode(feedback.id); // Highlights node for animations
+            SetHighlightedLine(feedback.id); // Highlights node for animations
+            UpdateVisuals(); // Update the panel to show changes
             break;
           }
         // FOUND
@@ -719,7 +723,8 @@ namespace B_TreeVisualizationGUI
       scrollableWidth = panel1.Width + 5000;
       scrollableHeight = panel1.Height + 5000;
 
-      //InitializeTree(); // Initialize the test tree when the form loads
+      scrollableWidth = panel1.Width + 5000;
+      scrollableHeight = panel1.Height + 5000;
     }
 
     private void panel1_Paint(object sender, PaintEventArgs e)
@@ -972,16 +977,13 @@ namespace B_TreeVisualizationGUI
 
     private void UpdateGUITreeFromNodes()
     {
-      GUINode? rootNode = DetermineRootNode();
-      if (rootNode != null)
-      {
-        _tree = new GUITree(rootNode, panel1);
-        //_tree.ResetAndInitializeLeafStart();
-        panel1.Invalidate();
-      }
+      GUINode rootNode = DetermineRootNode();
+      _tree = new GUITree(rootNode, panel1);
+      //_tree.ResetAndInitializeLeafStart();
+      panel1.Invalidate();
     }
 
-    private GUINode? DetermineRootNode()
+    private GUINode DetermineRootNode()
     {
       foreach (var node in nodeDictionary)
       {
@@ -990,7 +992,7 @@ namespace B_TreeVisualizationGUI
           return node.Value;
         }
       }
-      return null;
+      throw new InvalidOperationException("No root node found.");
       //return null;
     }
 
@@ -1022,52 +1024,103 @@ namespace B_TreeVisualizationGUI
       int key,
       Person? content
       )> inputBuffer = new();
-
+      
     private void InitializeBackend()
     {
-      BTree<Person> _Tree = new(3, outputBuffer);
-      Task producer = Task.Run(async () =>
+      if (!chkBTreeTrue.Checked)
       {
-        Thread.CurrentThread.Name = "Producer";
-        try
+        BTree<Person> _Tree = new BTree<Person>(3, outputBuffer);
+        Task producer = Task.Run(async () =>
         {
-          while (await inputBuffer.OutputAvailableAsync())
+          Thread.CurrentThread.Name = "Producer";
+          try
           {
-            (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
-            switch (action)
+            while (await inputBuffer.OutputAvailableAsync())
             {
-              case TreeCommand.Insert:
-                _Tree.Insert(key, content ?? throw new NullContentReferenceException("Insert on tree with null content."));
-                break;
-              case TreeCommand.Delete:
-                _Tree.Delete(key);
-                break;
-              case TreeCommand.Search:
-                _Tree.Search(key);
-                break;
-              case TreeCommand.Close:
-                inputBuffer.Complete();
-                break;
-              case TreeCommand.Tree:
-                _Tree = new BTree<Person>(key, outputBuffer);
-                Debug.WriteLine("Handling Tree command");
-                break;
-              default:
-                Debug.WriteLine("TreeCommand:{0} not recognized", action);
-                break;
+              (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
+              switch (action)
+              {
+                case TreeCommand.Insert:
+                  _Tree.Insert(key, content ?? throw new NullContentReferenceException("Insert on tree with null content."));
+                  break;
+                case TreeCommand.Delete:
+                  _Tree.Delete(key);
+                  break;
+                case TreeCommand.Search:
+                  _Tree.Search(key);
+                  break;
+                case TreeCommand.Close:
+                  inputBuffer.Complete();
+                  break;
+                case TreeCommand.Tree:
+                  _Tree = new BTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
+                  Debug.WriteLine("Handling Tree command");
+                  isFirstNodeEncountered = false;
+                  break;
+                default:
+                  Debug.WriteLine("TreeCommand:{0} not recognized", action);
+                  break;
+              }
             }
           }
-        }
-        catch (Exception ex)
+          catch (Exception ex)
+          {
+            Debug.WriteLine($"Error in Producer task: {ex.Message}");
+          }
+          finally
+          {
+            // Complete the buffer when done processing commands
+            outputBuffer.Complete();
+          }
+        });
+      }
+      else if (chkBTreeTrue.Checked)
+      {
+        BPlusTree<Person> _Tree = new BPlusTree<Person>(3, outputBuffer);
+        Task producer = Task.Run(async () =>
         {
-          Debug.WriteLine($"Error in Producer task: {ex.Message}");
-        }
-        finally
-        {
-          // Complete the buffer when done processing commands
-          outputBuffer.Complete();
-        }
-      });
+          Thread.CurrentThread.Name = "Producer";
+          try
+          {
+            while (await inputBuffer.OutputAvailableAsync())
+            {
+              (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
+              switch (action)
+              {
+                case TreeCommand.Insert:
+                  _Tree.Insert(key, content ?? throw new NullContentReferenceException("Insert on tree with null content."));
+                  break;
+                case TreeCommand.Delete:
+                  _Tree.Delete(key);
+                  break;
+                case TreeCommand.Search:
+                  _Tree.Search(key);
+                  break;
+                case TreeCommand.Close:
+                  inputBuffer.Complete();
+                  break;
+                case TreeCommand.Tree:
+                  _Tree = new BPlusTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
+                  Debug.WriteLine("Handling Tree command");
+                  isFirstNodeEncountered = false;
+                  break;
+                default:
+                  Debug.WriteLine("TreeCommand:{0} not recognized", action);
+                  break;
+              }
+            }
+          }
+          catch (Exception ex)
+          {
+            Debug.WriteLine($"Error in Producer task: {ex.Message}");
+          }
+          finally
+          {
+            // Complete the buffer when done processing commands
+            outputBuffer.Complete();
+          }
+        });
+      }
     }
   }
 }
