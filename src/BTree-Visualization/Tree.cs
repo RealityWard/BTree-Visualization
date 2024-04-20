@@ -7,6 +7,7 @@ structure and initializes root and new node creation in the beginning.
 */
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
+using BTreeVisualizationNode;
 
 namespace BTreeVisualization
 {
