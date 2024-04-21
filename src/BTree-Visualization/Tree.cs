@@ -110,6 +110,14 @@ namespace BTreeVisualization
       }
     }
 
+    /// <summary>
+    /// Deletes all entries matching the range
+    /// key <= x < endKey
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key"></param>
+    /// <param name="endKey"></param>
+    /// <exception cref="NullChildReferenceException"></exception>
     public void DeleteRange(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, -1, [key, endKey], [], 0, -1, [], []));

@@ -27,6 +27,7 @@ namespace B_TreeVisualizationGUI
     private int animationSpeed;
     private bool animate = true;
     private Task Animation;
+    private Task _Producer;
     private bool isConsumerTaskRunning = false;
     private long lastHighlightedID;
     private long lastHighlightedAltID;
@@ -334,6 +335,13 @@ namespace B_TreeVisualizationGUI
         case NodeStatus.DeleteRange:
           {
             Debug.WriteLine("Received Delete Range status."); // For debug purposes DELETE LATER
+            break;
+          }
+        case NodeStatus.Restoration:
+          {
+            SetHighlightedNode(feedback.id); // Highlights node for animations
+            SetHighlightedLine(feedback.id); // Highlights node for animations
+            UpdateVisuals(); // Update the panel to show changes
             break;
           }
         // DSEARCHING
@@ -780,7 +788,7 @@ namespace B_TreeVisualizationGUI
       panel1.ResumeLayout(true);
     }
 
-    private void btnInsert_Click(object sender, EventArgs e)
+    private async void btnInsert_Click(object sender, EventArgs e)
     {
       if (string.IsNullOrWhiteSpace(txtInputData.Text))
       {
@@ -791,7 +799,7 @@ namespace B_TreeVisualizationGUI
       if (int.TryParse(txtInputData.Text, out int keyToInsert))
       {
         Debug.WriteLine($"Attempting to insert key: {keyToInsert}");
-        inputBuffer.Post((TreeCommand.Insert, keyToInsert, new Person(keyToInsert.ToString())));
+        await inputBuffer.SendAsync((TreeCommand.Insert, keyToInsert, 0, new Person(keyToInsert.ToString())));
       }
       else
       {
@@ -826,7 +834,7 @@ namespace B_TreeVisualizationGUI
             break; // Exit the loop if cancellation is requested
           }
           Random random = new();
-          await inputBuffer.SendAsync((TreeCommand.Insert, random.Next(1000), new Person(keyToInsert.ToString())));
+          await inputBuffer.SendAsync((TreeCommand.Insert, random.Next(1000), 0, new Person(keyToInsert.ToString())));
           int delay = Invoke(new Func<int>(() => animationSpeed));
           await Task.Delay(delay);
         }
@@ -841,7 +849,7 @@ namespace B_TreeVisualizationGUI
       txtInputData.Text = "Insert Data Here...";
     }
 
-    private void btnDelete_Click(object sender, EventArgs e)
+    private async void btnDelete_Click(object sender, EventArgs e)
     {
       if (string.IsNullOrWhiteSpace(txtInputData.Text))
       {
@@ -852,7 +860,7 @@ namespace B_TreeVisualizationGUI
       if (int.TryParse(txtInputData.Text, out int keyToDelete))
       {
         Debug.WriteLine($"Attempting to delete key: {keyToDelete}");
-        inputBuffer.Post((TreeCommand.Delete, keyToDelete, null));
+        await inputBuffer.SendAsync((TreeCommand.Delete, keyToDelete, 0, null));
       }
       else
       {
@@ -864,7 +872,7 @@ namespace B_TreeVisualizationGUI
       txtInputData.Text = "Insert Data Here...";
     }
 
-    private void btnSearch_Click(object sender, EventArgs e)
+    private async void btnSearch_Click(object sender, EventArgs e)
     {
       if (string.IsNullOrWhiteSpace(txtInputData.Text))
       {
@@ -875,7 +883,7 @@ namespace B_TreeVisualizationGUI
       if (int.TryParse(txtInputData.Text, out int keyToSearch))
       {
         Debug.WriteLine($"Attempting to search for key: {keyToSearch}");
-        inputBuffer.Post((TreeCommand.Search, keyToSearch, null));
+        await inputBuffer.SendAsync((TreeCommand.Search, keyToSearch, 0, null));
       }
       else
       {
@@ -986,7 +994,7 @@ namespace B_TreeVisualizationGUI
       ResetTreeAndForm();
     }
 
-    private void ResetTreeAndForm()
+    private async void ResetTreeAndForm()
     {
       isProcessing = true;
       messageQueue = new ConcurrentQueue<(NodeStatus, long, int, int[], Person?[], long, int, int[], Person?[])>();
@@ -1008,7 +1016,7 @@ namespace B_TreeVisualizationGUI
       }
       degree = parseSuccess ? degree : 3;
       nodeDictionary = new Dictionary<long, GUINode>();
-      inputBuffer.Post((TreeCommand.Tree, degree, default(Person?)));
+      await inputBuffer.SendAsync((TreeCommand.Tree, degree, 0, default(Person?)));
       panel1.Invalidate();
       rootHeight = 0; // Temporary to see if this works
       oldRoot = null; // Temporary to see if this works
@@ -1094,22 +1102,31 @@ namespace B_TreeVisualizationGUI
     private BufferBlock<(
       TreeCommand action,
       int key,
+      int endKey,
       Person? content
       )> inputBuffer = new();
 
     private void InitializeBackend()
     {
+      if (_Producer != null)
+      {
+        inputBuffer.Complete();
+        outputBuffer.Complete();
+        _Producer.Wait();
+        inputBuffer = new();
+        outputBuffer = new();
+        _Producer.Dispose();
+      }
       if (!chkBTreeTrue.Checked)
       {
-        BTree<Person> _Tree = new BTree<Person>(3, outputBuffer);
-        Task producer = Task.Run(async () =>
+        _Producer = Task.Run(async () =>
         {
-          Thread.CurrentThread.Name = "Producer";
+          BTree<Person> _Tree = new BTree<Person>(3, outputBuffer);
           try
           {
             while (await inputBuffer.OutputAvailableAsync())
             {
-              (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
+              (TreeCommand action, int key, int endKey, Person? content) = inputBuffer.Receive();
               switch (action)
               {
                 case TreeCommand.Insert:
@@ -1122,7 +1139,6 @@ namespace B_TreeVisualizationGUI
                   _Tree.Search(key);
                   break;
                 case TreeCommand.Close:
-                  inputBuffer.Complete();
                   break;
                 case TreeCommand.Tree:
                   _Tree = new BTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
@@ -1148,15 +1164,14 @@ namespace B_TreeVisualizationGUI
       }
       else if (chkBTreeTrue.Checked)
       {
-        BPlusTree<Person> _Tree = new BPlusTree<Person>(3, outputBuffer);
-        Task producer = Task.Run(async () =>
+        _Producer = Task.Run(async () =>
         {
-          Thread.CurrentThread.Name = "Producer";
+          BPlusTree<Person> _Tree = new(3, outputBuffer);
           try
           {
             while (await inputBuffer.OutputAvailableAsync())
             {
-              (TreeCommand action, int key, Person? content) = inputBuffer.Receive();
+              (TreeCommand action, int key, int endKey, Person? content) = inputBuffer.Receive();
               switch (action)
               {
                 case TreeCommand.Insert:

@@ -218,26 +218,9 @@ namespace BTreeVisualization
       }
     }
 
-    public override bool CheckMyself(int key)
-    {
-      if (key == 342077)
-        Console.Write("here");
-      bool result = true;
-      for (int i = 0; i < _NumKeys; i++)
-      {
-        if (Keys[i] == 366013)
-          Console.Write("here");
-        result = result && _Contents[i] != null;
-      }
-      if (!result)
-        Console.Write("here");
-      return result;
-    }
-
     public override void DeleteKeysSplit(int key, int endKey,
       BTreeNode<T> rightSibiling)
     {
-      CheckMyself(key);
       // if -1 it is last child index
       int firstKeyIndex = Search(this, key);
       // if -1 it is last child index
@@ -252,7 +235,6 @@ namespace BTreeVisualization
 
     public override void DeleteKeysMain(int key, int endKey)
     {
-      CheckMyself(key);
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [],
         0, -1, [], []));
       int firstKeyIndex = Search(this, key);

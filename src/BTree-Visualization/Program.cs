@@ -63,6 +63,10 @@ namespace ThreadCommunication
     /// </summary>
     DeleteRangeSplit,
     /// <summary>
+    /// Sent on the path the restore methods take after delete a range. Only ID sent.
+    /// </summary>
+    Restoration,
+    /// <summary>
     /// Sent everytime DeleteKey is called on a node. Only ID sent.
     /// </summary>
     DSearching,

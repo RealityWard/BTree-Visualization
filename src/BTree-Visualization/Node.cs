@@ -113,7 +113,6 @@ namespace BTreeVisualizationNode
   /// be externally viewed.</param>
   public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<T, BTreeNode<T>>(degree, bufferBlock)
   {
-    public abstract bool CheckMyself(int key);
     /// <summary>
     /// Holds key entries for this node.
     /// </summary>
