@@ -159,7 +159,6 @@ namespace BPlusTreeVisualization
             $"Child at index:{i + dividerIndex} within node:{ID}");
         _Children[i + dividerIndex] = default;
         _Keys[i + dividerIndex] = default;
-        _BufferBlock.SendAsync((NodeStatus.Shift, ID , -1, [], [], newChildren[i-1].ID, -1, [], []));
       }
       newChildren[i -1] = _Children[i + dividerIndex]
         ?? throw new NullChildReferenceException(
@@ -179,6 +178,13 @@ namespace BPlusTreeVisualization
       (int, int[]) temp2 = newNode.CreateBufferVar();
       _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID, temp2.Item1,
         temp2.Item2, [], parentID, -1, [], []));
+
+      for (int j = 0; j <= newNode.NumKeys; j++)
+      {
+        _BufferBlock.SendAsync((NodeStatus.Shift, newNode.ID, -1, [], [],
+          (newNode.Children[j] ?? throw new NullChildReferenceException(
+            $"Child at index:{j} within node:{newNode.ID}")).ID, -1, [], []));
+      }
       return (dividerEntry, newNode);
     }
 
