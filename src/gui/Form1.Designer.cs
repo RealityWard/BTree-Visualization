@@ -51,13 +51,15 @@ namespace B_TreeVisualizationGUI
             // 
             // panel1
             // 
+            panel1.Dock = DockStyle.Top;
+            panel1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             panel1.AutoScroll = true;
             panel1.BackColor = SystemColors.ControlDarkDark;
             panel1.Controls.Add(chkDebugMode);
             panel1.Location = new Point(0, 0);
-            panel1.MinimumSize = new Size(905, 503);
+            panel1.MinimumSize = new Size(905, 460);
             panel1.Name = "panel1";
-            panel1.Size = new Size(905, 503);
+            panel1.Size = new Size(905, 460);
             panel1.TabIndex = 6;
             panel1.Paint += panel1_Paint;
             // 
@@ -173,9 +175,9 @@ namespace B_TreeVisualizationGUI
             btnNext.FlatStyle = FlatStyle.Flat;
             btnNext.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnNext.ForeColor = Color.White;
-            btnNext.Location = new Point(35, 12);
+            btnNext.Location = new Point(40, 95);
             btnNext.Name = "btnNext";
-            btnNext.Size = new Size(10, 10);
+            btnNext.Size = new Size(300, 28);
             btnNext.TabIndex = 13;
             btnNext.Text = "Step";
             btnNext.TextColor = Color.White;
@@ -257,6 +259,8 @@ namespace B_TreeVisualizationGUI
             // 
             // panel2
             // 
+            // panel2.Anchor = AnchorStyles.Bottom;
+            panel2.Dock = DockStyle.Bottom;
             panel2.Controls.Add(chkBTreeTrue);
             panel2.Controls.Add(lblCurrentProcess);
             panel2.Controls.Add(cmbxMaxDegree);
@@ -266,12 +270,13 @@ namespace B_TreeVisualizationGUI
             panel2.Controls.Add(lblSpeed);
             panel2.Controls.Add(btnSearch);
             panel2.Controls.Add(trbSpeed);
+            panel2.Controls.Add(btnNext);
             panel2.Controls.Add(btnDelete);
             panel2.Controls.Add(txtInputData);
             panel2.Location = new Point(0, 502);
-            panel2.MinimumSize = new Size(905, 100);
+            panel2.MinimumSize = new Size(905, 130);
             panel2.Name = "panel2";
-            panel2.Size = new Size(905, 100);
+            panel2.Size = new Size(905, 130);
             panel2.TabIndex = 12;
             // 
             // chkBTreeTrue
