@@ -26,7 +26,7 @@ namespace BTreeVisualizationNode
   /// <param name="degree">Same as parent non-leaf node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class Node<T,N>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
+  public abstract class Node<T, N>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
   {
     /// <summary>
     /// Output Buffer for Status updates to be externally viewed.
@@ -53,23 +53,13 @@ namespace BTreeVisualizationNode
     /// </summary>
     protected int _NumKeys = 0;
     /// <summary>
-    /// Holds key entries for this node.
-    /// </summary>
-    protected int[] _Keys = new int[2 * degree - 1];
-    /// <summary>
     /// Prints out this node and its children.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="x">Hierachical Node ID</param>
     /// <returns>String in JSON syntax.</returns>
     public abstract string Traverse(string x);
-    /// <summary>
-    /// Getter of _Keys
-    /// </summary>
-    public int[] Keys
-    {
-      get { return _Keys; }
-    }
+
     /// <summary>
     /// Getter of _ID
     /// </summary>
@@ -121,15 +111,25 @@ namespace BTreeVisualizationNode
   /// <param name="degree">Same as parent node/tree</param>
   /// <param name="bufferBlock">Output Buffer for Status updates to
   /// be externally viewed.</param>
-  public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<T,BTreeNode<T>>(degree, bufferBlock)
+  public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<T, BTreeNode<T>>(degree, bufferBlock)
   {
     public abstract bool CheckMyself(int key);
+    /// <summary>
+    /// Holds key entries for this node.
+    /// </summary>
+    protected int[] _Keys = new int[2 * degree - 1];
+    /// <summary>
+    /// Getter of _Keys
+    /// </summary>
+    public int[] Keys
+    {
+      get { return _Keys; }
+    }
     /// <summary>
     /// Generic typed array parallel to the keys array.
     /// It holds the values associated with the corresponding key.
     /// </summary>
     protected T?[] _Contents = new T[2 * degree - 1];
-
     /// <summary>
     /// Getter for _Contents[]
     /// </summary>
@@ -275,7 +275,7 @@ namespace BTreeVisualizationNode
       }
       return node.Keys[midIndex] >= key ? midIndex : -1;
     }
-    
+
     public (int, int[], T?[]) CreateBufferVar()
     {
       int numKeys = NumKeys;

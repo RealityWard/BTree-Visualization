@@ -135,7 +135,17 @@ namespace BPlusTreeVisualization
                 T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) 
                 : Node<T, BPlusTreeNode<T>>(degree, bufferBlock)
     {
-    
+    /// <summary>
+    /// Holds key entries for this node.
+    /// </summary>
+    protected int[] _Keys = new int[degree];
+    /// <summary>
+    /// Getter of _Keys
+    /// </summary>
+    public int[] Keys
+    {
+      get { return _Keys; }
+    }
     /// <summary>
     /// Removes the beginning entry of this node.
     /// </summary>
