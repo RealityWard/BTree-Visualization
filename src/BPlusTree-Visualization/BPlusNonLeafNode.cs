@@ -177,7 +177,7 @@ namespace BPlusTreeVisualization
         temp.Item2, [], parentID, -1, [], []));
 
       (int, int[]) temp2 = newNode.CreateBufferVar();
-      _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, temp2.Item1,
+      _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID, temp2.Item1,
         temp2.Item2, [], parentID, -1, [], []));
       return (dividerEntry, newNode);
     }

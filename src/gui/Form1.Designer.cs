@@ -1,4 +1,5 @@
 ﻿
+
 namespace B_TreeVisualizationGUI
 {
     partial class Form1
@@ -38,6 +39,7 @@ namespace B_TreeVisualizationGUI
             btnSearch = new CustomControls.RJControls.RJButton();
             trbSpeed = new TrackBar();
             btnDelete = new CustomControls.RJControls.RJButton();
+            btnPlayAndPause = new CustomControls.RJControls.RJButton();
             btnNext = new CustomControls.RJControls.RJButton();
             lblSpeed = new Label();
             btnInsert = new CustomControls.RJControls.RJButton();
@@ -177,7 +179,7 @@ namespace B_TreeVisualizationGUI
             btnNext.ForeColor = Color.White;
             btnNext.Location = new Point(40, 95);
             btnNext.Name = "btnNext";
-            btnNext.Size = new Size(300, 28);
+            btnNext.Size = new Size(150, 28);
             btnNext.TabIndex = 13;
             btnNext.Text = "Step";
             btnNext.TextColor = Color.White;
@@ -193,6 +195,27 @@ namespace B_TreeVisualizationGUI
             trbSpeed.Size = new Size(104, 45);
             trbSpeed.TabIndex = 9;
             trbSpeed.Value = 5;
+            // 
+            // btnPlayAndPause
+            // 
+            btnPlayAndPause.Anchor = AnchorStyles.Bottom;
+            btnPlayAndPause.BackColor = Color.MediumSlateBlue;
+            btnPlayAndPause.BackgroundColor = Color.MediumSlateBlue;
+            btnPlayAndPause.BorderColor = Color.PaleVioletRed;
+            btnPlayAndPause.BorderRadius = 20;
+            btnPlayAndPause.BorderSize = 0;
+            btnPlayAndPause.FlatAppearance.BorderSize = 0;
+            btnPlayAndPause.FlatStyle = FlatStyle.Flat;
+            btnPlayAndPause.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
+            btnPlayAndPause.ForeColor = Color.White;
+            btnPlayAndPause.Location = new Point(200, 95);
+            btnPlayAndPause.Name = "btnPlayAndPause";
+            btnPlayAndPause.Size = new Size(150, 28);
+            btnPlayAndPause.TabIndex = 15;
+            btnPlayAndPause.Text = "\u23EF";
+            btnPlayAndPause.TextColor = Color.White;
+            btnPlayAndPause.UseVisualStyleBackColor = false;
+            btnPlayAndPause.Click += btnPlayAndPause_Click;
             // 
             // btnDelete
             // 
@@ -271,6 +294,7 @@ namespace B_TreeVisualizationGUI
             panel2.Controls.Add(btnSearch);
             panel2.Controls.Add(trbSpeed);
             panel2.Controls.Add(btnNext);
+            panel2.Controls.Add(btnPlayAndPause);
             panel2.Controls.Add(btnDelete);
             panel2.Controls.Add(txtInputData);
             panel2.Location = new Point(0, 502);
@@ -311,8 +335,8 @@ namespace B_TreeVisualizationGUI
             ResumeLayout(false);
         }
 
-        #endregion
-        private Panel panel1;
+    #endregion
+    private Panel panel1;
         private TextBox txtInputData;
         private ComboBox cmbxMaxDegree;
         private CheckBox chkDebugMode;
@@ -321,6 +345,7 @@ namespace B_TreeVisualizationGUI
         private CustomControls.RJControls.RJButton btnSearch;
         private CustomControls.RJControls.RJButton btnNext;
         private TrackBar trbSpeed;
+        private CustomControls.RJControls.RJButton btnPlayAndPause;
         private CustomControls.RJControls.RJButton btnDelete;
         private Label lblSpeed;
         private CustomControls.RJControls.RJButton btnInsert;

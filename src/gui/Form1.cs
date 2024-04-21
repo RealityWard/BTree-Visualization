@@ -25,6 +25,8 @@ namespace B_TreeVisualizationGUI
     private ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)> messageQueue;
     private bool isProcessing = false;
     private int animationSpeed;
+    private bool animate = true;
+    private Task Animation;
     private bool isConsumerTaskRunning = false;
     private long lastHighlightedID;
     private long lastHighlightedAltID;
@@ -72,6 +74,18 @@ namespace B_TreeVisualizationGUI
       {
         panel1.Invalidate();
       });
+    }
+
+    private async Task Animator()
+    {
+      btnNext.Enabled = false;
+      while (animate)
+      {
+        await NewMethod();
+        await Task.Delay(animationSpeed);
+      }
+      btnNext.Enabled = true;
+      return;
     }
 
     private async Task StartConsumerTask()
@@ -696,7 +710,7 @@ namespace B_TreeVisualizationGUI
 
       // Positioning the visualsPanel
       // panel1.Location = new Point(0, 0); // Start at top-left corner
-      // panel1.Size = new Size(this.ClientSize.Width, this.ClientSize.Height - panel2.Height); // Fill the space above buttonsPanel
+      panel1.Size = new Size(this.ClientSize.Width, this.ClientSize.Height - panel2.Height); // Fill the space above buttonsPanel
 
       scrollableWidth = panel1.Width + 5000;
       scrollableHeight = panel1.Height + 5000;
@@ -712,6 +726,7 @@ namespace B_TreeVisualizationGUI
       InitializeBackend();
       messageQueue = new ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>();
       StartConsumerTask();
+      _ = Animator();
 
       // Create horizontal scroll bar
       System.Windows.Forms.ScrollBar hScrollBar1 = new HScrollBar();
@@ -877,25 +892,25 @@ namespace B_TreeVisualizationGUI
       ResetTreeAndForm();
     }
 
-    private void txt_txtInputData_Enter(object sender, EventArgs e)
+    private void btnPlayAndPause_Click(object sender, EventArgs e)
     {
-      if (txtInputData.Text == "Insert Data Here...")
+      if (animate)
       {
-        txtInputData.ForeColor = Color.Black;
-        txtInputData.Text = "";
+        animate = false;
       }
-    }
-
-    private void txt_txtInputData_Leave(object sender, EventArgs e)
-    {
-      if (txtInputData.Text.Length == 0)
+      else
       {
-        txtInputData.ForeColor = Color.Black;
-        txtInputData.Text = "Insert Data Here...";
+        animate = true;
+        _ = Animator();
       }
     }
 
     private async void btnNext_Click(object sender, EventArgs e)
+    {
+      await NewMethod();
+    }
+
+    private async Task NewMethod()
     {
       if (outputBuffer.Count > 0)
       {
@@ -914,7 +929,8 @@ namespace B_TreeVisualizationGUI
             EnableButtonEvents();
           });
         });
-        btnNext.Enabled = false;
+        if (!animate)
+          btnNext.Enabled = false;
         (NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) recieved = await outputBuffer.ReceiveAsync();
         // Create a deep copy of the keys and altKeys arrays to ensure they are not modified elsewhere
         (NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) feedbackCopy;
@@ -930,17 +946,38 @@ namespace B_TreeVisualizationGUI
         for (int i = 0; i < recieved.numKeys; i++)
         {
           feedbackCopy.keys[i] = recieved.keys[i];
-          feedbackCopy.contents[i] = recieved.contents[i];
+          if (i < recieved.contents.Length)
+            feedbackCopy.contents[i] = recieved.contents[i];
         }
         for (int i = 0; i < recieved.altNumKeys; i++)
         {
           feedbackCopy.altKeys[i] = recieved.altKeys[i];
-          feedbackCopy.altContents[i] = recieved.altContents[i];
+          if (i < recieved.altContents.Length)
+            feedbackCopy.altContents[i] = recieved.altContents[i];
         }
 
         messageQueue.Enqueue(feedbackCopy);
         await StartConsumerTask();
-        btnNext.Enabled = true;
+        if (!animate)
+          btnNext.Enabled = true;
+      }
+    }
+
+    private void txt_txtInputData_Enter(object sender, EventArgs e)
+    {
+      if (txtInputData.Text == "Insert Data Here...")
+      {
+        txtInputData.ForeColor = Color.Black;
+        txtInputData.Text = "";
+      }
+    }
+
+    private void txt_txtInputData_Leave(object sender, EventArgs e)
+    {
+      if (txtInputData.Text.Length == 0)
+      {
+        txtInputData.ForeColor = Color.Black;
+        txtInputData.Text = "Insert Data Here...";
       }
     }
 
