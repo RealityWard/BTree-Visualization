@@ -89,28 +89,8 @@ namespace B_TreeVisualizationGUI
 
             // Calculate the linear scale factor
             animationSpeed = minValue + ((maxValue - minValue) * (trbSpeed.Value - 1) / (10 - 1));
-            DisableButtonEvents();
           });
           ProcessFeedback(messageToProcess);
-        });
-
-        // if (_delayRequiringStatuses.Contains(messageToProcess.status))
-        // {
-        //   if (messageToProcess.status == NodeStatus.Shift && seenShift == false)
-        //   {
-        //     seenShift = true;
-        //   }
-        //   else
-        //   {
-        //     int delay = Invoke(new Func<int>(() => animationSpeed));
-        //     seenShift = false;
-        //     await Task.Delay(delay);
-        //   }
-        // }
-        // Disable the button on the UI thread
-        Invoke((MethodInvoker)delegate
-        {
-          EnableButtonEvents();
         });
 
         if (nodeDictionary.TryGetValue(lastHighlightedID, out GUINode? node))
@@ -267,7 +247,8 @@ namespace B_TreeVisualizationGUI
             bool isLeaf = false;
             bool isRoot = true;
             nodeDictionary[feedback.id] = new GUINode(feedback.id, feedback.keys, isLeaf, isRoot, rootHeight, feedback.numKeys);
-            oldRoot.IsRoot = false; // Update the old root to not say it's a root anymore
+            if (oldRoot != null)
+              oldRoot.IsRoot = false; // Update the old root to not say it's a root anymore
             if (chkDebugMode.Checked == true) ShowNodesMessageBox(); // For debug purposes DELETE LATER
                                                                      //UpdateVisuals(); // Update the panel to show changes
             break;
@@ -315,10 +296,10 @@ namespace B_TreeVisualizationGUI
               node = new GUINode(feedback.id, feedback.keys, isLeaf, isRoot, height, feedback.numKeys);
               nodeDictionary[feedback.id] = node; // Add node to dictionary
                                                   // Update the parent node's children list to include the new node
-              if (feedback.altID != 0)
+              if (feedback.altID != 0 && nodeDictionary.TryGetValue(feedback.altID, out GUINode? altNode))
               {
-                nodeDictionary[feedback.altID].Children.Add(nodeDictionary[feedback.id]);
-                node.height = Math.Max(0, nodeDictionary[feedback.altID].height - 1);
+                altNode.Children.Add(node);
+                node.height = Math.Max(0, altNode.height - 1);
                 nodeDictionary[lastHighlightedID].nodeHighlighted = false;
                 nodeDictionary[lastHighlightedID].lineHighlighted = false;
                 SetHighlightedNode(feedback.id); // Highlights node for animations
@@ -683,9 +664,10 @@ namespace B_TreeVisualizationGUI
     {
       lastHighlightedID = nodeID; // Sets node to be highlighted for animations
       lastHighlightedAltID = altNodeID;
-      nodeDictionary[nodeID].nodeHighlighted = true;
+      // nodeDictionary[nodeID].nodeHighlighted = true;
       //if (lastHighlightedAltID != 0) nodeDictionary[altNodeID].nodeHighlighted = true;
-      if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out GUINode? altNode)) nodeDictionary[altNode.ID].nodeHighlighted = true;
+      // if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out GUINode? altNode))
+      //   nodeDictionary[altNode.ID].nodeHighlighted = true;
       if (nodeDictionary.TryGetValue(nodeID, out GUINode? node))
         node.nodeHighlighted = true;
       if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out node))
@@ -915,9 +897,25 @@ namespace B_TreeVisualizationGUI
 
     private async void btnNext_Click(object sender, EventArgs e)
     {
-      if (await outputBuffer.OutputAvailableAsync())
+      if (outputBuffer.Count > 0)
       {
-        (NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) recieved = outputBuffer.Receive();
+        _ = Task.Run(async () =>
+        {
+          Invoke((MethodInvoker)delegate
+          {
+            DisableButtonEvents();
+          });
+          while (outputBuffer.Count > 0)
+          {
+            await Task.Delay(1000);
+          }
+          Invoke((MethodInvoker)delegate
+          {
+            EnableButtonEvents();
+          });
+        });
+        btnNext.Enabled = false;
+        (NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) recieved = await outputBuffer.ReceiveAsync();
         // Create a deep copy of the keys and altKeys arrays to ensure they are not modified elsewhere
         (NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents) feedbackCopy;
         feedbackCopy.status = recieved.status;
@@ -941,9 +939,8 @@ namespace B_TreeVisualizationGUI
         }
 
         messageQueue.Enqueue(feedbackCopy);
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-        StartConsumerTask();
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        await StartConsumerTask();
+        btnNext.Enabled = true;
       }
     }
 
@@ -994,7 +991,6 @@ namespace B_TreeVisualizationGUI
 
     private void DisableButtonEvents()
     {
-      btnNext.Enabled = false;
       btnSearch.Enabled = false;
       btnDelete.Enabled = false;
       btnInsert.Enabled = false;
@@ -1004,7 +1000,6 @@ namespace B_TreeVisualizationGUI
 
     private void EnableButtonEvents()
     {
-      btnNext.Enabled = true;
       btnSearch.Enabled = true;
       btnDelete.Enabled = true;
       btnInsert.Enabled = true;
