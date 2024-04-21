@@ -38,11 +38,13 @@ namespace B_TreeVisualizationGUI
             btnSearch = new CustomControls.RJControls.RJButton();
             trbSpeed = new TrackBar();
             btnDelete = new CustomControls.RJControls.RJButton();
-            btnNext = new CustomControls.RJControls.RJButton();
             lblSpeed = new Label();
             btnInsert = new CustomControls.RJControls.RJButton();
             lblCurrentProcess = new Label();
             panel2 = new Panel();
+            btnNext = new CustomControls.RJControls.RJButton();
+            btnDeleteRange = new CustomControls.RJControls.RJButton();
+            btnSearchRange = new CustomControls.RJControls.RJButton();
             chkBTreeTrue = new CheckBox();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)trbSpeed).BeginInit();
@@ -51,7 +53,6 @@ namespace B_TreeVisualizationGUI
             // 
             // panel1
             // 
-            panel1.Dock = DockStyle.Top;
             panel1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             panel1.AutoScroll = true;
             panel1.BackColor = SystemColors.ControlDarkDark;
@@ -77,9 +78,9 @@ namespace B_TreeVisualizationGUI
             // txtInputData
             // 
             txtInputData.Anchor = AnchorStyles.Bottom;
-            txtInputData.Location = new Point(148, 64);
+            txtInputData.Location = new Point(38, 32);
             txtInputData.Name = "txtInputData";
-            txtInputData.Size = new Size(195, 23);
+            txtInputData.Size = new Size(188, 23);
             txtInputData.TabIndex = 5;
             txtInputData.Text = "Insert Data Here...";
             txtInputData.Enter += txt_txtInputData_Enter;
@@ -93,9 +94,9 @@ namespace B_TreeVisualizationGUI
             cmbxMaxDegree.ForeColor = SystemColors.Window;
             cmbxMaxDegree.FormattingEnabled = true;
             cmbxMaxDegree.Items.AddRange(new object[] { "3", "4", "5", "6", "7" });
-            cmbxMaxDegree.Location = new Point(12, 60);
+            cmbxMaxDegree.Location = new Point(747, 53);
             cmbxMaxDegree.Name = "cmbxMaxDegree";
-            cmbxMaxDegree.Size = new Size(130, 30);
+            cmbxMaxDegree.Size = new Size(146, 30);
             cmbxMaxDegree.TabIndex = 4;
             cmbxMaxDegree.Text = "Degree 3";
             cmbxMaxDegree.SelectedIndexChanged += cmbxMaxDegree_SelectedIndexChanged;
@@ -112,7 +113,7 @@ namespace B_TreeVisualizationGUI
             btnclear.FlatStyle = FlatStyle.Flat;
             btnclear.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnclear.ForeColor = Color.White;
-            btnclear.Location = new Point(746, 12);
+            btnclear.Location = new Point(743, 3);
             btnclear.Name = "btnclear";
             btnclear.Size = new Size(150, 40);
             btnclear.TabIndex = 3;
@@ -133,7 +134,7 @@ namespace B_TreeVisualizationGUI
             btnInsertMany.FlatStyle = FlatStyle.Flat;
             btnInsertMany.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnInsertMany.ForeColor = Color.White;
-            btnInsertMany.Location = new Point(278, 12);
+            btnInsertMany.Location = new Point(279, 49);
             btnInsertMany.Name = "btnInsertMany";
             btnInsertMany.Size = new Size(150, 40);
             btnInsertMany.TabIndex = 8;
@@ -154,7 +155,7 @@ namespace B_TreeVisualizationGUI
             btnSearch.FlatStyle = FlatStyle.Flat;
             btnSearch.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnSearch.ForeColor = Color.White;
-            btnSearch.Location = new Point(590, 12);
+            btnSearch.Location = new Point(435, 3);
             btnSearch.Name = "btnSearch";
             btnSearch.Size = new Size(150, 40);
             btnSearch.TabIndex = 2;
@@ -163,31 +164,10 @@ namespace B_TreeVisualizationGUI
             btnSearch.UseVisualStyleBackColor = false;
             btnSearch.Click += btnSearch_Click;
             // 
-            // btnNext
-            // 
-            btnNext.Anchor = AnchorStyles.Bottom;
-            btnNext.BackColor = Color.MediumSlateBlue;
-            btnNext.BackgroundColor = Color.MediumSlateBlue;
-            btnNext.BorderColor = Color.PaleVioletRed;
-            btnNext.BorderRadius = 2;
-            btnNext.BorderSize = 0;
-            btnNext.FlatAppearance.BorderSize = 0;
-            btnNext.FlatStyle = FlatStyle.Flat;
-            btnNext.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
-            btnNext.ForeColor = Color.White;
-            btnNext.Location = new Point(40, 95);
-            btnNext.Name = "btnNext";
-            btnNext.Size = new Size(300, 28);
-            btnNext.TabIndex = 13;
-            btnNext.Text = "Step";
-            btnNext.TextColor = Color.White;
-            btnNext.UseVisualStyleBackColor = false;
-            btnNext.Click += btnNext_Click;
-            // 
             // trbSpeed
             // 
             trbSpeed.Anchor = AnchorStyles.Bottom;
-            trbSpeed.Location = new Point(12, 12);
+            trbSpeed.Location = new Point(140, 81);
             trbSpeed.Minimum = 1;
             trbSpeed.Name = "trbSpeed";
             trbSpeed.Size = new Size(104, 45);
@@ -206,7 +186,7 @@ namespace B_TreeVisualizationGUI
             btnDelete.FlatStyle = FlatStyle.Flat;
             btnDelete.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnDelete.ForeColor = Color.White;
-            btnDelete.Location = new Point(434, 12);
+            btnDelete.Location = new Point(591, 3);
             btnDelete.Name = "btnDelete";
             btnDelete.Size = new Size(150, 40);
             btnDelete.TabIndex = 1;
@@ -219,7 +199,7 @@ namespace B_TreeVisualizationGUI
             // 
             lblSpeed.Anchor = AnchorStyles.Bottom;
             lblSpeed.AutoSize = true;
-            lblSpeed.Location = new Point(17, 42);
+            lblSpeed.Location = new Point(140, 113);
             lblSpeed.Name = "lblSpeed";
             lblSpeed.Size = new Size(98, 15);
             lblSpeed.TabIndex = 10;
@@ -237,7 +217,7 @@ namespace B_TreeVisualizationGUI
             btnInsert.FlatStyle = FlatStyle.Flat;
             btnInsert.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnInsert.ForeColor = Color.White;
-            btnInsert.Location = new Point(122, 12);
+            btnInsert.Location = new Point(279, 3);
             btnInsert.Name = "btnInsert";
             btnInsert.Size = new Size(150, 40);
             btnInsert.TabIndex = 0;
@@ -251,7 +231,7 @@ namespace B_TreeVisualizationGUI
             lblCurrentProcess.Anchor = AnchorStyles.Bottom;
             lblCurrentProcess.AutoSize = true;
             lblCurrentProcess.ForeColor = SystemColors.ActiveCaptionText;
-            lblCurrentProcess.Location = new Point(360, 67);
+            lblCurrentProcess.Location = new Point(449, 106);
             lblCurrentProcess.Name = "lblCurrentProcess";
             lblCurrentProcess.Size = new Size(188, 15);
             lblCurrentProcess.TabIndex = 11;
@@ -259,8 +239,9 @@ namespace B_TreeVisualizationGUI
             // 
             // panel2
             // 
-            // panel2.Anchor = AnchorStyles.Bottom;
-            panel2.Dock = DockStyle.Bottom;
+            panel2.Controls.Add(btnNext);
+            panel2.Controls.Add(btnDeleteRange);
+            panel2.Controls.Add(btnSearchRange);
             panel2.Controls.Add(chkBTreeTrue);
             panel2.Controls.Add(lblCurrentProcess);
             panel2.Controls.Add(cmbxMaxDegree);
@@ -270,20 +251,78 @@ namespace B_TreeVisualizationGUI
             panel2.Controls.Add(lblSpeed);
             panel2.Controls.Add(btnSearch);
             panel2.Controls.Add(trbSpeed);
-            panel2.Controls.Add(btnNext);
             panel2.Controls.Add(btnDelete);
             panel2.Controls.Add(txtInputData);
-            panel2.Location = new Point(0, 502);
+            panel2.Dock = DockStyle.Bottom;
+            panel2.Location = new Point(0, 464);
             panel2.MinimumSize = new Size(905, 130);
             panel2.Name = "panel2";
-            panel2.Size = new Size(905, 130);
+            panel2.Size = new Size(905, 138);
             panel2.TabIndex = 12;
+            // 
+            // btnNext
+            // 
+            btnNext.BackColor = Color.MediumSlateBlue;
+            btnNext.BackgroundColor = Color.MediumSlateBlue;
+            btnNext.BorderColor = Color.PaleVioletRed;
+            btnNext.BorderRadius = 20;
+            btnNext.BorderSize = 0;
+            btnNext.FlatAppearance.BorderSize = 0;
+            btnNext.FlatStyle = FlatStyle.Flat;
+            btnNext.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnNext.ForeColor = Color.White;
+            btnNext.Location = new Point(279, 95);
+            btnNext.Name = "btnNext";
+            btnNext.Size = new Size(150, 40);
+            btnNext.TabIndex = 16;
+            btnNext.Text = "step";
+            btnNext.TextColor = Color.White;
+            btnNext.UseVisualStyleBackColor = false;
+            btnNext.Click += btnNext_Click;
+            // 
+            // btnDeleteRange
+            // 
+            btnDeleteRange.BackColor = Color.MediumSlateBlue;
+            btnDeleteRange.BackgroundColor = Color.MediumSlateBlue;
+            btnDeleteRange.BorderColor = Color.PaleVioletRed;
+            btnDeleteRange.BorderRadius = 20;
+            btnDeleteRange.BorderSize = 0;
+            btnDeleteRange.FlatAppearance.BorderSize = 0;
+            btnDeleteRange.FlatStyle = FlatStyle.Flat;
+            btnDeleteRange.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnDeleteRange.ForeColor = Color.White;
+            btnDeleteRange.Location = new Point(591, 47);
+            btnDeleteRange.Name = "btnDeleteRange";
+            btnDeleteRange.Size = new Size(150, 40);
+            btnDeleteRange.TabIndex = 15;
+            btnDeleteRange.Text = "delete range";
+            btnDeleteRange.TextColor = Color.White;
+            btnDeleteRange.UseVisualStyleBackColor = false;
+            // 
+            // btnSearchRange
+            // 
+            btnSearchRange.BackColor = Color.MediumSlateBlue;
+            btnSearchRange.BackgroundColor = Color.MediumSlateBlue;
+            btnSearchRange.BorderColor = Color.PaleVioletRed;
+            btnSearchRange.BorderRadius = 20;
+            btnSearchRange.BorderSize = 0;
+            btnSearchRange.FlatAppearance.BorderSize = 0;
+            btnSearchRange.FlatStyle = FlatStyle.Flat;
+            btnSearchRange.Font = new Font("Consolas", 14.25F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnSearchRange.ForeColor = Color.White;
+            btnSearchRange.Location = new Point(435, 49);
+            btnSearchRange.Name = "btnSearchRange";
+            btnSearchRange.Size = new Size(150, 40);
+            btnSearchRange.TabIndex = 14;
+            btnSearchRange.Text = "search range";
+            btnSearchRange.TextColor = Color.White;
+            btnSearchRange.UseVisualStyleBackColor = false;
             // 
             // chkBTreeTrue
             // 
             chkBTreeTrue.Anchor = AnchorStyles.Bottom;
             chkBTreeTrue.AutoSize = true;
-            chkBTreeTrue.Location = new Point(777, 66);
+            chkBTreeTrue.Location = new Point(28, 98);
             chkBTreeTrue.Name = "chkBTreeTrue";
             chkBTreeTrue.Size = new Size(82, 19);
             chkBTreeTrue.TabIndex = 8;
@@ -319,7 +358,6 @@ namespace B_TreeVisualizationGUI
         private CustomControls.RJControls.RJButton btnclear;
         private CustomControls.RJControls.RJButton btnInsertMany;
         private CustomControls.RJControls.RJButton btnSearch;
-        private CustomControls.RJControls.RJButton btnNext;
         private TrackBar trbSpeed;
         private CustomControls.RJControls.RJButton btnDelete;
         private Label lblSpeed;
@@ -327,5 +365,8 @@ namespace B_TreeVisualizationGUI
         private Label lblCurrentProcess;
         private Panel panel2;
         private CheckBox chkBTreeTrue;
+        private CustomControls.RJControls.RJButton btnSearchRange;
+        private CustomControls.RJControls.RJButton btnDeleteRange;
+        private CustomControls.RJControls.RJButton btnNext;
     }
 }
