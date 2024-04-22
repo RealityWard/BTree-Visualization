@@ -664,7 +664,7 @@ namespace B_TreeVisualizationGUI
             }
             if (nodeDictionary.TryGetValue(feedback.id, out node))
             {
-              NewMethod1(node);
+              DeleteRecur(node);
               Debug.WriteLine($"Node ID={feedback.id} deleted."); // For debug purposes DELETE LATER
               nodeDictionary.Remove(feedback.id);
             }
@@ -678,7 +678,7 @@ namespace B_TreeVisualizationGUI
           }
       }
 
-      void NewMethod1(GUINode? node)
+      void DeleteRecur(GUINode? node)
       {
         if (node != null)
         {
@@ -686,7 +686,7 @@ namespace B_TreeVisualizationGUI
           {
             for (int i = 0; i < node.Children.Count; i++)
             {
-              NewMethod1(node.Children[i]);
+              DeleteRecur(node.Children[i]);
             }
           }
           Debug.WriteLine($"Node ID={node.ID} deleted."); // For debug purposes DELETE LATER
