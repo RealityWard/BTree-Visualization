@@ -205,8 +205,11 @@ namespace BPlusTreeVisualization
 
         PropagateChanges(pathStack);
       }
-      //send status to say key not found
+      else{
+        //send status to say key not found
       _BufferBlock.SendAsync((NodeStatus.Deleted, ID, -1, [], [], 0, -1, [], []));
+      }
+      
     }
 
     /// <summary>

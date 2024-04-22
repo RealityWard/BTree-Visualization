@@ -327,10 +327,10 @@ namespace BPlusTreeVisualization
     /// Traverses through the (sub)tree and updates the nonleaf key values
     /// </summary>
     public void UpdateKeyValues(){
-      for(int i = 0; i < NumKeys;i++){
+      for(int i = 0; i < _Keys.Count();i++){
         _Keys[i] = default;
       }
-      for(int i = 1; i < NumKeys + 1; i++){
+      for(int i = 1; i < _NumKeys + 1; i++){
         if(_Children[i] != null){
           UpdateKeyValuesHelper(i);
         }

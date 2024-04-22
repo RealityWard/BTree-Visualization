@@ -427,7 +427,12 @@ namespace B_TreeVisualizationGUI
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
             {
               node.Keys = feedback.keys;
+              node.NumKeys = feedback.numKeys;
+              node.UpdateNodeWidth();
+              Debug.WriteLine($"Node ID={feedback.id} updated after key deletion.");
+              SetHighlightedNode(feedback.id);
               UpdateVisuals(); // Update the panel to show changes
+              lblCurrentProcess.Text = ("Updating the keys of the non-leaf node after key deletion.");
             }
             break;
           }
