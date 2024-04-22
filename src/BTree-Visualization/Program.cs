@@ -59,10 +59,6 @@ namespace ThreadCommunication
     /// </summary>
     DeleteRange,
     /// <summary>
-    /// Initial response to DeleteKeys calling DeleteKeys on two children. Only ID sent.
-    /// </summary>
-    DeleteRangeSplit,
-    /// <summary>
     /// Sent on the path the restore methods take after delete a range. Only ID sent.
     /// </summary>
     Restoration,
@@ -122,11 +118,6 @@ namespace ThreadCommunication
     /// </summary>
     UnderFlow,
     /// <summary>
-    /// Sent after UnderFlow in children.
-    /// ID,NumKeys,Keys,Contents
-    /// </summary>
-    UnderFlowParent,
-    /// <summary>
     /// During both split and merge children will need to update who they point to.
     /// Alt refers to child node.
     /// ID,-1,[],[],AltID
@@ -171,7 +162,7 @@ namespace ThreadCommunication
     /// the key values for the non-leafnodes have to change
     /// sends the ID, Keys
     /// </summary>
-    //UpdateKeyValues,
+    UpdateKeyValues,
     /// <summary>
     /// Sent if the node had nothing left
     /// during a delete over a range of keys.

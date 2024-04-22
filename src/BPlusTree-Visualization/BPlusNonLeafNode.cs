@@ -252,7 +252,7 @@ namespace BPlusTreeVisualization
           UpdateKeyValues();
           
           (int, int[]) temp5 = CreateBufferVar(); 
-          //_BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp5.Item1,temp5.Item2,[],-1,-1,[],[]));
+          _BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp5.Item1,temp5.Item2,[],-1,-1,[],[]));
           bool isRootUnderflow = IsRootUnderflow();
           if(isRootUnderflow){
             //merge root status update
@@ -270,7 +270,7 @@ namespace BPlusTreeVisualization
           
           //new status update: updated key values
           (int, int[]) temp = CreateBufferVar();
-          //_BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp.Item1,temp.Item2,[],-1,-1,[],[]));
+          _BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp.Item1,temp.Item2,[],-1,-1,[],[]));
           bool isUnderflow = IsUnderflow();
 
           if(!isUnderflow){
@@ -316,7 +316,7 @@ namespace BPlusTreeVisualization
           }
           UpdateKeyValues();
           (int, int[]) temp4 = CreateBufferVar();
-          //_BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp4.Item1,temp4.Item2,[],-1,-1,[],[]));
+          _BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp4.Item1,temp4.Item2,[],-1,-1,[],[]));
   
           parentNode.PropagateChanges(pathStack);
 

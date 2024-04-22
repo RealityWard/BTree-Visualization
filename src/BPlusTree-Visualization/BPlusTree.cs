@@ -76,10 +76,11 @@ namespace BPlusTreeVisualization
       _Root.DeleteKey(key, pathStack);
       if (_Root.NumKeys == 0 && _Root as BPlusNonLeafNode<T> != null)
       {
+        long temp = _Root.ID;
         _Root = ((BPlusNonLeafNode<T>)_Root).Children[0]
         ?? throw new NullChildReferenceException(
-            $"Child of child on root node");;
-        //merge root status update
+            $"Child of child on root node");
+        bufferBlock.SendAsync((NodeStatus.MergeRoot, _Root.ID, _Root.NumKeys, _Root.Keys, [], temp, -1, [], []));
       }
     }
     

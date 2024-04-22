@@ -391,12 +391,6 @@ namespace B_TreeVisualizationGUI
             Debug.WriteLine("Received Deleted Range status."); // For debug purposes DELETE LATER
             break;
           }
-        // REBALANCED
-        case NodeStatus.Rebalanced:
-          {
-            Debug.WriteLine("Received Rebalanced status."); // For debug purposes DELETE LATER
-            break;
-          }
         // FSEARCHING
         case NodeStatus.FSearching:
           {
@@ -426,6 +420,15 @@ namespace B_TreeVisualizationGUI
             SetHighlightedNode(feedback.id); // Highlights node for animations
             SetHighlightedLine(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
+            break;
+          }
+        case NodeStatus.UpdateKeyValues:
+          {
+            if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
+            {
+              node.Keys = feedback.keys;
+              UpdateVisuals(); // Update the panel to show changes
+            }
             break;
           }
         // MERGE and MERGE ROOT
@@ -1041,6 +1044,7 @@ namespace B_TreeVisualizationGUI
       btnInsert.Enabled = false;
       btnInsertMany.Enabled = false;
       btnclear.Enabled = false;
+      cmbxMaxDegree.Enabled = false;
     }
 
     private void EnableButtonEvents()
@@ -1050,6 +1054,7 @@ namespace B_TreeVisualizationGUI
       btnInsert.Enabled = true;
       btnInsertMany.Enabled = true;
       btnclear.Enabled = true;
+      cmbxMaxDegree.Enabled = true;
     }
 
     private void UpdateGUITreeFromNodes()

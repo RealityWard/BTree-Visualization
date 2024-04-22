@@ -354,23 +354,12 @@ namespace BTreeVisualization
           .DeleteKeysSplit(key, endKey, _Children[lastIndex]
             ?? throw new NullChildReferenceException(
             $"Child at index:{lastIndex} within node:{ID}"));
-        // for knowing depth of still empty nodes
-        // int prevProcessAgain;
-        // for checking if progress is still being made
-        int currProcessAgain = -1;
-        // do
-        // {// Fixing left tree empty nodes
-        // prevProcessAgain = currProcessAgain;
-        currProcessAgain = (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
+        // Fixing left tree empty nodes
+        (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
           $"Child at index:{firstKeyIndex} within node:{ID}")).RestoreLeft();
-        // } while (currProcessAgain > 1 && prevProcessAgain != currProcessAgain);
-        // currProcessAgain = -1;// reset condition
-        // do
-        // {// Fixing right tree empty nodes
-        // prevProcessAgain = currProcessAgain;
-        currProcessAgain = (_Children[lastIndex] ?? throw new NullChildReferenceException(
+        // Fixing right tree empty nodes
+        (_Children[lastIndex] ?? throw new NullChildReferenceException(
           $"Child at index:{lastIndex} within node:{ID}")).RestoreRight();
-        // } while (currProcessAgain > 1 && prevProcessAgain != currProcessAgain);
         ReduceGap(firstKeyIndex, lastIndex);
         // Check for underflow
         MergeAt(firstKeyIndex);
@@ -622,9 +611,6 @@ namespace BTreeVisualization
       _BufferBlock.SendAsync((NodeStatus.Merge, ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, rightSibiling.ID, -1, [], []));
     }
 
-#pragma warning disable CS8604 // Possible null reference argument.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
     /// <summary>
     /// Checks the child at index for underflow. If so it then checks for _Degree
     /// number of children in the right child of the key. _Degree or greater means
@@ -643,6 +629,9 @@ namespace BTreeVisualization
     /// <param name="index">Index of affected child node.</param>
     public void MergeAt(int index)
     {
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
       if (_Children[index] == null)
         throw new NullChildReferenceException(
         $"Child at index:{index} within node:{ID}");
@@ -742,10 +731,10 @@ namespace BTreeVisualization
           }
         }
       }
-    }
 #pragma warning restore CS8604 // Possible null reference argument.
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+    }
 
     /// <summary>
     /// Inserts at the beginning of this node arrays the
