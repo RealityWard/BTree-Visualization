@@ -171,13 +171,11 @@ namespace B_TreeVisualizationGUI
       }
       switch (feedback.status)
       {
-        // INSERT
         case NodeStatus.Insert:
           {
             Debug.WriteLine("Received Insert status."); // For debug purposes DELETE LATER
             break;
           }
-        // ISEARCHING
         case NodeStatus.ISearching:
           {
             Debug.WriteLine("Received ISearching status."); // For debug purposes DELETE LATER
@@ -190,7 +188,6 @@ namespace B_TreeVisualizationGUI
             lblCurrentProcess.Text = ($"Searching for an adaquate node to add input key to"); // Inform user of what process is currently happening                                                                                //UpdateVisuals(); // Update the panel to show changes FIX
             break;
           }
-        // INSERTED
         case NodeStatus.Inserted:
           {
             Debug.WriteLine("Received Inserted status."); // For debug purposes DELETE LATER
@@ -234,7 +231,6 @@ namespace B_TreeVisualizationGUI
             }
             break;
           }
-        // SPLIT INSERT
         case NodeStatus.SplitInsert:
           {
             Debug.WriteLine("Received SplitInsert status."); // For debug purposes DELETE LATER
@@ -251,7 +247,6 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // NEW ROOT
         case NodeStatus.NewRoot:
           {
             Debug.WriteLine($"A new root is being assigned. New root node ID={feedback.id}."); // For debug purposes DELETE LATER
@@ -268,7 +263,6 @@ namespace B_TreeVisualizationGUI
                                                                      //UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // SPLIT
         case NodeStatus.Split:
           {
             Debug.WriteLine("A split has occurred"); // For debug purposes DELETE LATER
@@ -281,7 +275,6 @@ namespace B_TreeVisualizationGUI
             }
             break;
           }
-        // SPLIT RESULT
         case NodeStatus.SplitResult:
           {
             Debug.WriteLine("Received SplitResult status."); // For debug purposes DELETE LATER
@@ -324,14 +317,6 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // DELETE
-        case NodeStatus.Delete:
-          {
-            Debug.WriteLine("Received Delete status."); // For debug purposes DELETE LATER
-                                                        // ADD ANIMATION HERE?
-            break;
-          }
-        // DELETED RANGE
         case NodeStatus.DeleteRange:
           {
             Debug.WriteLine("Received Delete Range status."); // For debug purposes DELETE LATER
@@ -344,7 +329,6 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // DSEARCHING
         case NodeStatus.DSearching:
           {
             Debug.WriteLine("Received DSearching status."); // For debug purposes DELETE LATER
@@ -353,7 +337,6 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // DELETED
         case NodeStatus.Deleted:
           {
             Debug.WriteLine("Received Deleted status."); // For debug purposes DELETE LATER
@@ -385,26 +368,43 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // DELETE RANGE
         case NodeStatus.DeletedRange:
           {
             Debug.WriteLine("Received Deleted Range status."); // For debug purposes DELETE LATER
+            if (feedback.numKeys == -1)
+            {
+              Debug.WriteLine($"Key not found for deletion in node ID={feedback.id}.");
+              MessageBox.Show("Node was not affected.");
+            }
+            else if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
+            {
+              // Update node
+              node.Keys = feedback.keys;
+              node.NumKeys = feedback.numKeys;
+              node.UpdateNodeWidth();
+              Debug.WriteLine($"Node ID={feedback.id} updated after key deletion. Remaining keys: {String.Join(", ", node.Keys)}"); // For debug purposes DELETE LATER
+            }
+            else
+            {
+              Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update after deletion."); // For debug purposes DELETE LATER
+            }
+            SetHighlightedNode(feedback.id); // Highlights node for animations
+            UpdateVisuals();
             break;
           }
-        // FSEARCHING
         case NodeStatus.FSearching:
           {
             Debug.WriteLine("Received FSearching status."); // For debug purposes DELETE LATER
+            lblCurrentProcess.Text = ("Retrieving key from leaf node as a consequence of an underflow.");
             SetHighlightedNode(feedback.id); // Highlights node for animations
             SetHighlightedLine(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // FORFEIT
         case NodeStatus.Forfeit:
           {
             Debug.WriteLine("Received Forfeit status."); // For debug purposes DELETE LATER
-            lblCurrentProcess.Text = ("Retrieving key from node as a consequence of the merge"); // Inform user of what process is currently happening
+            lblCurrentProcess.Text = ("Retrieving key from node as a consequence of an underflow.");
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
             {
               // Update node
@@ -436,7 +436,6 @@ namespace B_TreeVisualizationGUI
             }
             break;
           }
-        // MERGE and MERGE ROOT
         case NodeStatus.Merge:
         case NodeStatus.MergeRoot:
           {
@@ -512,7 +511,6 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals();
             break;
           }
-        // MERGE PARENT
         case NodeStatus.MergeParent:
           {
             Debug.WriteLine("Received MergeParent status."); // For debug purposes DELETE LATER
@@ -533,7 +531,6 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // UNDERFLOW
         case NodeStatus.UnderFlow:
           {
             Debug.WriteLine("Received Underflow status."); // For debug purposes DELETE LATER
@@ -566,7 +563,6 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // SHIFT
         case NodeStatus.Shift:
           {
             Debug.WriteLine("Received Shift status."); // For debug purposes DELETE LATER
@@ -606,19 +602,16 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // SEARCH
         case NodeStatus.Search:
           {
             Debug.WriteLine("Received Search status."); // For debug purposes DELETE LATER
             break;
           }
-        // SEARCH RANGE
         case NodeStatus.SearchRange:
           {
             Debug.WriteLine("Received SearchRange status."); // For debug purposes DELETE LATER
             break;
           }
-        // SSEARCH
         case NodeStatus.SSearching:
           {
             Debug.WriteLine("Received SSearching status."); // For debug purposes DELETE LATER
@@ -628,7 +621,6 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // FOUND
         case NodeStatus.Found:
           {
             Debug.WriteLine("Received Found status."); // For debug purposes DELETE LATER
@@ -642,7 +634,6 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // FOUND RANGE
         case NodeStatus.FoundRange:
           {
             Debug.WriteLine("Received FoundRange status."); // For debug purposes DELETE LATER
@@ -656,7 +647,6 @@ namespace B_TreeVisualizationGUI
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
-        // NODE DELETED
         case NodeStatus.NodeDeleted:
           {
             Debug.WriteLine("Received NodeDeleted status."); // For debug purposes DELETE LATER
@@ -672,7 +662,12 @@ namespace B_TreeVisualizationGUI
                 }
               }
             }
-            nodeDictionary.Remove(feedback.id);
+            if (nodeDictionary.TryGetValue(feedback.id, out node))
+            {
+              NewMethod1(node);
+              Debug.WriteLine($"Node ID={feedback.id} deleted."); // For debug purposes DELETE LATER
+              nodeDictionary.Remove(feedback.id);
+            }
             break;
           }
         // UNKNOWN STATUS
@@ -681,6 +676,22 @@ namespace B_TreeVisualizationGUI
             Debug.WriteLine($"Unknown {feedback.status} recieved.");
             break;
           }
+      }
+
+      void NewMethod1(GUINode? node)
+      {
+        if (node != null)
+        {
+          if (node.Children != null)
+          {
+            for (int i = 0; i < node.Children.Count; i++)
+            {
+              NewMethod1(node.Children[i]);
+            }
+          }
+          Debug.WriteLine($"Node ID={node.ID} deleted."); // For debug purposes DELETE LATER
+          nodeDictionary.Remove(node.ID);
+        }
       }
     }
 

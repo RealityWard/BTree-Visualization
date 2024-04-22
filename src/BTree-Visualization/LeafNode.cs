@@ -2,7 +2,6 @@
 Desc: Implements the leaf nodes of a B-Tree. Non-recursive function
 iteration due to no children.
 */
-using System.Collections.Generic;
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
 using BTreeVisualizationNode;
@@ -162,29 +161,22 @@ namespace BTreeVisualization
     public override ((int, T?), BTreeNode<T>?) InsertKey(int key, T data, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.ISearching, ID, -1, [], [], 0, -1, [], []));
-      int i = 0;
-      while (i < _NumKeys && key > _Keys[i])
-        i++;
-      if (i == _NumKeys || key != _Keys[i] || key == 0)
+      int i = Search(this, key);
+      if (i == -1)
+        i = _NumKeys;
+      for (int j = _NumKeys - 1; j >= i; j--)
       {
-        for (int j = _NumKeys - 1; j >= i; j--)
-        {
-          _Keys[j + 1] = _Keys[j];
-          _Contents[j + 1] = _Contents[j];
-        }
-        _Keys[i] = key;
-        _Contents[i] = data;
-        _NumKeys++;
-        (int, int[], T?[]) bufferVar = CreateBufferVar();
-        _BufferBlock.SendAsync((NodeStatus.Inserted, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
-        if (IsFull())
-        {
-          return Split(parentID);
-        }
+        _Keys[j + 1] = _Keys[j];
+        _Contents[j + 1] = _Contents[j];
       }
-      else
+      _Keys[i] = key;
+      _Contents[i] = data;
+      _NumKeys++;
+      (int, int[], T?[]) bufferVar = CreateBufferVar();
+      _BufferBlock.SendAsync((NodeStatus.Inserted, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
+      if (IsFull())
       {
-        _BufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
+        return Split(parentID);
       }
       return ((-1, default(T)), null);
     }
@@ -219,7 +211,7 @@ namespace BTreeVisualization
     }
 
     public override void DeleteKeysSplit(int key, int endKey,
-      BTreeNode<T> rightSibiling)
+      BTreeNode<T> rightSibiling, long parentID)
     {
       // if -1 it is last child index
       int firstKeyIndex = Search(this, key);
@@ -229,11 +221,11 @@ namespace BTreeVisualization
         lastIndex = rightSibiling.NumKeys;
       if (firstKeyIndex == -1)
         firstKeyIndex = _NumKeys;
-      DeleteKeysLeft(firstKeyIndex);
-      rightSibiling.DeleteKeysRight(lastIndex);
+      DeleteKeysLeft(firstKeyIndex,parentID);
+      rightSibiling.DeleteKeysRight(lastIndex,parentID);
     }
 
-    public override void DeleteKeysMain(int key, int endKey)
+    public override void DeleteKeysMain(int key, int endKey, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [],
         0, -1, [], []));
@@ -258,7 +250,7 @@ namespace BTreeVisualization
       }
     }
 
-    public override void DeleteKeysLeft(int index)
+    public override void DeleteKeysLeft(int index, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
         -1, [], [], 0, -1, [], []));
@@ -276,7 +268,7 @@ namespace BTreeVisualization
       }
     }
 
-    public override void DeleteKeysRight(int index)
+    public override void DeleteKeysRight(int index, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
         -1, [], [], 0, -1, [], []));

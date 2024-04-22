@@ -96,18 +96,16 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public void Delete(int key)
     {
-      _BufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [key], [], 0, -1, [], []));
-      if (key == 0 && zeroKeyUsed)
-        zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
-      _Root.DeleteKey(key);
-      if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
-      {
-        long temp = _Root.ID;
-        _Root = ((NonLeafNode<T>)_Root).Children[0]
-          ?? throw new NullChildReferenceException(
-            $"Child of child on root node");
-        _BufferBlock.SendAsync((NodeStatus.MergeRoot, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
-      }
+      // _BufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [key], [], 0, -1, [], []));
+      DeleteRange(key, key + 1);
+      // if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
+      // {
+      //   long temp = _Root.ID;
+      //   _Root = ((NonLeafNode<T>)_Root).Children[0]
+      //     ?? throw new NullChildReferenceException(
+      //       $"Child of child on root node");
+      //   _BufferBlock.SendAsync((NodeStatus.MergeRoot, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
+      // }
     }
 
     /// <summary>
@@ -123,7 +121,7 @@ namespace BTreeVisualization
       _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, -1, [key, endKey], [], 0, -1, [], []));
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
-      _Root.DeleteKeysMain(key, endKey);
+      _Root.DeleteKeysMain(key, endKey, 0);
       if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
         long temp = _Root.ID;

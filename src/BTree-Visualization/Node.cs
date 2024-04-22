@@ -158,10 +158,10 @@ namespace BTreeVisualizationNode
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
     public abstract void DeleteKey(int key);
-    public abstract void DeleteKeysMain(int key, int endKey);
-    public abstract void DeleteKeysSplit(int key, int endKey, BTreeNode<T> rightSibiling);
-    public abstract void DeleteKeysLeft(int index);
-    public abstract void DeleteKeysRight(int index);
+    public abstract void DeleteKeysMain(int key, int endKey, long parentID);
+    public abstract void DeleteKeysSplit(int key, int endKey, BTreeNode<T> rightSibiling, long parentID);
+    public abstract void DeleteKeysLeft(int index, long parentID);
+    public abstract void DeleteKeysRight(int index, long parentID);
     public abstract int RestoreRight();
     public abstract int RestoreLeft();
     /// <summary>

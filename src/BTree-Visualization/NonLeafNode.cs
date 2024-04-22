@@ -3,8 +3,6 @@ Author: Emily Elzinga and Tristan Anderson
 Date: 2/07/2024
 Desc: Describes functionality for non-leaf nodes on the BTree. Recursive function iteration due to children nodes.
 */
-using System.Diagnostics;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
 using BTreeVisualizationNode;
@@ -57,26 +55,6 @@ namespace BTreeVisualization
         _Children[i] = children[i];
       }
       _Children[keys.Length] = children[keys.Length];
-    }
-
-    /// <summary>
-    /// Iterates over the _Keys[] to find an entry == key.
-    /// </summary>
-    /// <remarks>Copied and modified from
-    /// LeafNode.Search()</remarks>
-    /// <param name="key">Integer to find in _Keys[] of this node.</param>
-    /// <returns>If found returns the index else returns -1.</returns>
-    private int Search(int key)
-    {
-      //searches for correct key, finds it returns the node, else returns -1
-      for (int i = 0; i < _NumKeys; i++)
-      {
-        if (_Keys[i] >= key)
-        {
-          return i;
-        }
-      }
-      return -1;
     }
 
     /// <summary>
@@ -178,41 +156,31 @@ namespace BTreeVisualization
       _BufferBlock.SendAsync((NodeStatus.ISearching, ID, -1, [key], [data],
         0, -1, [], []));
       ((int, T?), BTreeNode<T>?) result;
-      int i = 0;
-      while (i < _NumKeys && key > _Keys[i])
+      int i = Search(this, key);
+      if (i == -1)
+        i = _NumKeys;
+      result = (_Children[i]
+        ?? throw new NullChildReferenceException(
+          $"Child at index:{i} within node:{ID}")).InsertKey(key, data, ID);
+      if (result.Item2 != null && result.Item1.Item2 != null)
       {
-        i++;
-      }
-      if (i == _NumKeys || key != _Keys[i] || key == 0)
-      {
-        result = (_Children[i]
-          ?? throw new NullChildReferenceException(
-            $"Child at index:{i} within node:{ID}")).InsertKey(key, data, ID);
-        if (result.Item2 != null && result.Item1.Item2 != null)
+        for (int j = _NumKeys - 1; j >= i; j--)
         {
-          for (int j = _NumKeys - 1; j >= i; j--)
-          {
-            _Keys[j + 1] = _Keys[j];
-            _Contents[j + 1] = _Contents[j];
-            _Children[j + 2] = _Children[j + 1];
-          }
-          _Keys[i] = result.Item1.Item1;
-          _Contents[i] = result.Item1.Item2;
-          _Children[i + 1] = result.Item2;
-          _NumKeys++;
-          (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
-          _BufferBlock.SendAsync((NodeStatus.SplitInsert, ID, bufferVar.NumKeys,
-            bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
-          if (IsFull())
-          {
-            return Split(parentID);
-          }
+          _Keys[j + 1] = _Keys[j];
+          _Contents[j + 1] = _Contents[j];
+          _Children[j + 2] = _Children[j + 1];
         }
-      }
-      else
-      {
-        _BufferBlock.SendAsync((NodeStatus.SplitInsert, 0, -1, [], [],
-          0, -1, [], []));
+        _Keys[i] = result.Item1.Item1;
+        _Contents[i] = result.Item1.Item2;
+        _Children[i + 1] = result.Item2;
+        _NumKeys++;
+        (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
+        _BufferBlock.SendAsync((NodeStatus.SplitInsert, ID, bufferVar.NumKeys,
+          bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
+        if (IsFull())
+        {
+          return Split(parentID);
+        }
       }
       return ((-1, default(T)), null);
     }
@@ -225,6 +193,8 @@ namespace BTreeVisualization
     /// LeafNode.Split()</remarks>
     /// <returns>The new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).</returns>
+    /// <exception cref="NullContentReferenceException"></exception>
+    /// <exception cref="NullChildReferenceException"></exception>
     public override ((int, T), BTreeNode<T>) Split(long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.Split, ID, -1, [], [], 0, -1, [], []));
@@ -233,7 +203,7 @@ namespace BTreeVisualization
       BTreeNode<T>[] newChildren = new BTreeNode<T>[_Degree];
       int i = 0;
       for (; i < _Degree - 1; i++)
-      {
+      {// Fill arrays with entries for new node.
         newKeys[i] = _Keys[i + _Degree];
         newContent[i] = _Contents[i + _Degree]
           ?? throw new NullContentReferenceException(
@@ -257,6 +227,7 @@ namespace BTreeVisualization
           $"Content at index:{_NumKeys} within node:{ID}"));
       _Keys[_NumKeys] = default;
       _Contents[_NumKeys] = default;
+      // Begin GUI Update
       (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
       (int NumKeys, int[] Keys, T?[] Contents) newNodeBufferVar = newNode.CreateBufferVar();
       _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, bufferVar.NumKeys,
@@ -270,6 +241,7 @@ namespace BTreeVisualization
           (newNode.Children[j] ?? throw new NullChildReferenceException(
             $"Child at index:{j} within node:{newNode.ID}")).ID, -1, [], []));
       }
+      // End GUI Update
       return (dividerEntry, newNode);
     }
 
@@ -322,7 +294,7 @@ namespace BTreeVisualization
     /// <param name="key">Start of range, inclusive</param>
     /// <param name="endKey">end of range, exclusive</param>
     /// <exception cref="NullChildReferenceException"></exception>
-    public override void DeleteKeysMain(int key, int endKey)
+    public override void DeleteKeysMain(int key, int endKey,long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [],
         0, -1, [], []));
@@ -335,7 +307,7 @@ namespace BTreeVisualization
       {// Range is to the far right and doesn't include any keys of this node.
         (_Children[_NumKeys] ?? throw new NullChildReferenceException(
           $"Child at index:{_NumKeys} within node:{ID}"))
-          .DeleteKeysMain(key, endKey);
+          .DeleteKeysMain(key, endKey,parentID);
         // Check for underflow
         MergeAt(_NumKeys);
       }
@@ -343,7 +315,7 @@ namespace BTreeVisualization
       {// Range doesn't include any keys from this node.
         (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
           $"Child at index:{firstKeyIndex} within node:{ID}"))
-          .DeleteKeysMain(key, endKey);
+          .DeleteKeysMain(key, endKey,parentID);
         // Check for underflow
         MergeAt(firstKeyIndex);
       }
@@ -353,7 +325,7 @@ namespace BTreeVisualization
           $"Child at index:{firstKeyIndex} within node:{ID}"))
           .DeleteKeysSplit(key, endKey, _Children[lastIndex]
             ?? throw new NullChildReferenceException(
-            $"Child at index:{lastIndex} within node:{ID}"));
+            $"Child at index:{lastIndex} within node:{ID}"),parentID);
         // Fixing left tree empty nodes
         (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
           $"Child at index:{firstKeyIndex} within node:{ID}")).RestoreLeft();
@@ -379,7 +351,7 @@ namespace BTreeVisualization
     /// <param name="rightSibiling">Right fork.</param>
     /// <exception cref="NullChildReferenceException"></exception>
     public override void DeleteKeysSplit(int key, int endKey,
-      BTreeNode<T> rightSibiling)
+      BTreeNode<T> rightSibiling,long parentID)
     {
       // if -1 it is last child index
       int firstKeyIndex = Search(this, key);
@@ -393,9 +365,9 @@ namespace BTreeVisualization
         $"Child at index:{firstKeyIndex} within node:{ID}")).DeleteKeysSplit(
           key, endKey, ((NonLeafNode<T>)rightSibiling).Children[lastIndex]
           ?? throw new NullChildReferenceException(
-          $"Child at index:{lastIndex} within node:{ID}"));
-      DeleteKeysLeft(firstKeyIndex);
-      rightSibiling.DeleteKeysRight(lastIndex);
+          $"Child at index:{lastIndex} within node:{ID}"),parentID);
+      DeleteKeysLeft(firstKeyIndex,parentID);
+      rightSibiling.DeleteKeysRight(lastIndex,parentID);
     }
 
     /// <summary>
@@ -430,6 +402,10 @@ namespace BTreeVisualization
           _Contents[i] = _Contents[j];
           i++;
           j++;
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+          _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
+            _Children[i].ID, -1, [], [], ID, -1, [], []));
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
           Children[i] = _Children[j];
         }
         for (; i < _NumKeys;)
@@ -450,7 +426,7 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="index">Index to start
     /// deleting from.</param>
-    public override void DeleteKeysLeft(int index)
+    public override void DeleteKeysLeft(int index,long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
         -1, [], [], 0, -1, [], []));
@@ -463,7 +439,7 @@ namespace BTreeVisualization
           i++;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
           _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-            _Children[i].ID, -1, [], [], 0, -1, [], []));
+            _Children[i].ID, -1, [], [], ID, -1, [], []));
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
           _Children[i] = default;
         }
@@ -486,7 +462,7 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="index">Index to start
     /// copying from.</param>
-    public override void DeleteKeysRight(int index)
+    public override void DeleteKeysRight(int index,long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
         -1, [], [], 0, -1, [], []));
@@ -495,7 +471,7 @@ namespace BTreeVisualization
         int j = 0;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
         _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-          _Children[j].ID, -1, [], [], 0, -1, [], []));
+          _Children[j].ID, -1, [], [], ID, -1, [], []));
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         // Shift array entries to the left.
         _Children[j] = _Children[index];
@@ -507,7 +483,7 @@ namespace BTreeVisualization
           if (j < index)// Let frontend know of whole node being dropped
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-              _Children[j].ID, -1, [], [], 0, -1, [], []));
+              _Children[j].ID, -1, [], [], ID, -1, [], []));
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
           i++;
           _Children[j] = _Children[i];
@@ -617,15 +593,14 @@ namespace BTreeVisualization
     /// merging the two will result in an overflow or a split. If less than _Degree
     /// then the merge will not be a full node needing to be split immediately.
     /// This is meant to reduce the number of times elements are moved back and forth.
-    /// Underflow is _NumKeys <= _Degree - 2.
+    /// Underflow is _NumKeys less than or equal to _Degree - 2.
     /// Full is _NumKeys == 2 * _Degree - 1.
     /// Don't forget the dividing key adds 1
     /// Sum of the two nodes in minimal bad scenario:
     /// (_Degree - 2) + _Degree + 1 == 2 * _Degree - 1
     /// Results in Full at least.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
+    /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="index">Index of affected child node.</param>
     public void MergeAt(int index)
     {
@@ -737,11 +712,13 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Inserts at the beginning of this node arrays the
-    /// given key and data and grabs the last child of the sibiling.
+    /// Inserts a number of entries equal to diff 
+    /// at the beginning of this node's arrays, starting with the
+    /// divider entry then the rest from the end of the sibiling.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-22</remarks>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="diff"># of entries to be added to this node. This includes
+    /// the divider entry.</param>
     /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
@@ -752,7 +729,7 @@ namespace BTreeVisualization
       {
         _Children[_NumKeys + diff] = _Children[_NumKeys];
         for (int i = _NumKeys - 1; i >= 0; i--)
-        {
+        {// Making room
           _Keys[i + diff] = _Keys[i];
           _Contents[i + diff] = _Contents[i];
           _Children[i + diff] = _Children[i];
@@ -773,10 +750,13 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Tacks on the given key and data and grabs the first child of the sibiling.
+    /// Inserts a number of entries equal to diff 
+    /// at the beginning of this node's arrays, starting with the
+    /// divider entry then the rest from the start of the sibiling.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="diff"># of entries to be added to this node. This includes
+    /// the divider entry.</param>
     /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to right. (Sibiling's Keys
@@ -802,13 +782,11 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-18
-    /// Shifts the values in the arrays by one to the left overwriting
-    /// the first entries and decrements the _NumKeys var.
+    /// Shifts the values in the arrays by diff to the left overwriting
+    /// the first entries and decrements the _NumKeys var by diff.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="diff"># of entries to be removed from this node.</param>
     public override void LosesToLeft(int diff)
     {
       if (diff > 0)
@@ -834,7 +812,7 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Decrements the _NumKeys var.
+    /// Decrements the _NumKeys var by diff.
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-22</remarks>
@@ -887,6 +865,7 @@ namespace BTreeVisualization
     /// <summary>
     /// Gets the total number keys in all children of this node and itself.
     /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
     /// <returns>Count of keys.</returns>
     /// <exception cref="NullChildReferenceException"></exception>
     static public long KeyCount(NonLeafNode<T> node)
@@ -912,6 +891,7 @@ namespace BTreeVisualization
     /// <summary>
     /// Gets the total number of nodes from this node down plus itself.
     /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
     /// <returns>Count of nodes.</returns>
     /// <exception cref="NullChildReferenceException"></exception>
     static public int NodeCount(NonLeafNode<T> node)
