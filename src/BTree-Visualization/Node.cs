@@ -275,6 +275,8 @@ namespace BTreeVisualizationNode
       return node.Keys[midIndex] >= key ? midIndex : -1;
     }
 
+    public abstract void DeleteNode(long id);
+
     public (int, int[], T?[]) CreateBufferVar()
     {
       int numKeys = NumKeys;

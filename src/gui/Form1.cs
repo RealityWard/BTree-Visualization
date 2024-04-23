@@ -7,6 +7,7 @@ using BPlusTreeVisualization;
 using BTreeVisualization;
 using ThreadCommunication;
 using BTreeVisualizationNode;
+using Microsoft.VisualBasic;
 
 namespace B_TreeVisualizationGUI
 {
@@ -134,7 +135,7 @@ namespace B_TreeVisualizationGUI
         // Keys of the current node
         string keysString = string.Join(", ", node.Keys);
         // IDs of children
-        string childrenIds = node.Children != null ? string.Join(", ", node.Children.Select(child => child.GetHashCode().ToString())) : "None";
+        string childrenIds = node.Children != null ? string.Join(", ", node.Children.Select(child => child.ID.ToString())) : "None";
 
         message.AppendLine($"ID: {nodePair.Key}, Keys: [{keysString}], IsLeaf: {node.IsLeaf}, IsRoot: {node.IsRoot}, Children: [{childrenIds}], Node Height: {node.height}");
         message.AppendLine(); // Add a new line between each printed node for easier reading
@@ -452,6 +453,15 @@ namespace B_TreeVisualizationGUI
               {
                 node.IsRoot = true;
                 rootHeight--;
+
+                if (node.IsLeaf)
+                {
+                  foreach (var entry in nodeDictionary)
+                  {
+                    if (entry.Key != node.ID)
+                      nodeDictionary.Remove(entry.Key);
+                  }
+                }
               }
               node.UpdateNodeWidth();
               Debug.WriteLine($"Node ID={feedback.id} updated. Remaining keys: {String.Join(", ", node.Keys)}"); // For debug purposes DELETE LATER
@@ -489,14 +499,17 @@ namespace B_TreeVisualizationGUI
               foreach (var kvp in nodeDictionary)
               {
                 GUINode parentNode = kvp.Value;
-                if (parentNode.Children != null && parentNode.Children.Contains(nodeDictionary[feedback.id]))
+                if (parentNode.Children != null)
                 {
-                  parentNode.Children.Remove(nodeDictionary[feedback.id]);
+                  for (int i = 0; i < parentNode.Children.Count; i++)
+                  {
+                    if (parentNode.Children[i].ID == feedback.id)
+                      parentNode.Children.RemoveAt(i);
+                  }
                   if (parentNode.Children.Count == 0)
                   {
                     parentNode.IsLeaf = true;
                   }
-                  break;
                 }
               }
               nodeDictionary.Remove(feedback.altID); // Delete sibling from dicitonary
@@ -650,6 +663,7 @@ namespace B_TreeVisualizationGUI
         case NodeStatus.NodeDeleted:
           {
             Debug.WriteLine("Received NodeDeleted status."); // For debug purposes DELETE LATER
+            if (chkDebugMode.Checked == true) ShowNodesMessageBox();
             lblCurrentProcess.Text = ("Deleting node."); // Inform user of what process is currently happening
                                                          // If node is still in the dictionary, delete it
             if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? node))
@@ -664,7 +678,6 @@ namespace B_TreeVisualizationGUI
             }
             if (nodeDictionary.TryGetValue(feedback.id, out node))
             {
-              DeleteRecur(node);
               Debug.WriteLine($"Node ID={feedback.id} deleted."); // For debug purposes DELETE LATER
               nodeDictionary.Remove(feedback.id);
             }
@@ -676,22 +689,6 @@ namespace B_TreeVisualizationGUI
             Debug.WriteLine($"Unknown {feedback.status} recieved.");
             break;
           }
-      }
-
-      void DeleteRecur(GUINode? node)
-      {
-        if (node != null)
-        {
-          if (node.Children != null)
-          {
-            for (int i = 0; i < node.Children.Count; i++)
-            {
-              DeleteRecur(node.Children[i]);
-            }
-          }
-          Debug.WriteLine($"Node ID={node.ID} deleted."); // For debug purposes DELETE LATER
-          nodeDictionary.Remove(node.ID);
-        }
       }
     }
 
@@ -719,8 +716,10 @@ namespace B_TreeVisualizationGUI
     {
       lastHighlightedID = nodeID; // Sets node to be highlighted for animations
       lastHighlightedAltID = altNodeID;
-      nodeDictionary[nodeID].lineHighlighted = true;
-      if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out GUINode? altNode)) nodeDictionary[altNode.ID].lineHighlighted = true;
+      if (nodeDictionary.TryGetValue(nodeID, out GUINode? node))
+        node.lineHighlighted = true;
+      if (lastHighlightedAltID != 0 && nodeDictionary.TryGetValue(altNodeID, out node))
+        node.lineHighlighted = true;
     }
 
     private void Form1_Resize(object sender, EventArgs e)
@@ -1094,7 +1093,6 @@ namespace B_TreeVisualizationGUI
         }
       }
       return null;
-      //return null;
     }
 
     // Define the Person class

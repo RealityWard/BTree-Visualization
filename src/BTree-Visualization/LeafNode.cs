@@ -180,6 +180,12 @@ namespace BTreeVisualization
       }
       return ((-1, default(T)), null);
     }
+    
+    public override void DeleteNode(long id)
+    {
+      _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
+        ID, -1, [], [], id, -1, [], []));
+    }
 
     /// <summary>
     /// Author: Tristan Anderson

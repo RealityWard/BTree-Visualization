@@ -122,7 +122,7 @@ namespace BTreeVisualization
       if (key == 0 && zeroKeyUsed)
         zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
       _Root.DeleteKeysMain(key, endKey, 0);
-      if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
+      while (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
         long temp = _Root.ID;
         _Root = ((NonLeafNode<T>)_Root).Children[0]

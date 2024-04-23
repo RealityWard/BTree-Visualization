@@ -294,7 +294,7 @@ namespace BTreeVisualization
     /// <param name="key">Start of range, inclusive</param>
     /// <param name="endKey">end of range, exclusive</param>
     /// <exception cref="NullChildReferenceException"></exception>
-    public override void DeleteKeysMain(int key, int endKey,long parentID)
+    public override void DeleteKeysMain(int key, int endKey, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [],
         0, -1, [], []));
@@ -307,7 +307,7 @@ namespace BTreeVisualization
       {// Range is to the far right and doesn't include any keys of this node.
         (_Children[_NumKeys] ?? throw new NullChildReferenceException(
           $"Child at index:{_NumKeys} within node:{ID}"))
-          .DeleteKeysMain(key, endKey,parentID);
+          .DeleteKeysMain(key, endKey, parentID);
         // Check for underflow
         MergeAt(_NumKeys);
       }
@@ -315,7 +315,7 @@ namespace BTreeVisualization
       {// Range doesn't include any keys from this node.
         (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
           $"Child at index:{firstKeyIndex} within node:{ID}"))
-          .DeleteKeysMain(key, endKey,parentID);
+          .DeleteKeysMain(key, endKey, parentID);
         // Check for underflow
         MergeAt(firstKeyIndex);
       }
@@ -325,7 +325,7 @@ namespace BTreeVisualization
           $"Child at index:{firstKeyIndex} within node:{ID}"))
           .DeleteKeysSplit(key, endKey, _Children[lastIndex]
             ?? throw new NullChildReferenceException(
-            $"Child at index:{lastIndex} within node:{ID}"),parentID);
+            $"Child at index:{lastIndex} within node:{ID}"), parentID);
         // Fixing left tree empty nodes
         (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
           $"Child at index:{firstKeyIndex} within node:{ID}")).RestoreLeft();
@@ -351,7 +351,7 @@ namespace BTreeVisualization
     /// <param name="rightSibiling">Right fork.</param>
     /// <exception cref="NullChildReferenceException"></exception>
     public override void DeleteKeysSplit(int key, int endKey,
-      BTreeNode<T> rightSibiling,long parentID)
+      BTreeNode<T> rightSibiling, long parentID)
     {
       // if -1 it is last child index
       int firstKeyIndex = Search(this, key);
@@ -365,9 +365,9 @@ namespace BTreeVisualization
         $"Child at index:{firstKeyIndex} within node:{ID}")).DeleteKeysSplit(
           key, endKey, ((NonLeafNode<T>)rightSibiling).Children[lastIndex]
           ?? throw new NullChildReferenceException(
-          $"Child at index:{lastIndex} within node:{ID}"),parentID);
-      DeleteKeysLeft(firstKeyIndex,parentID);
-      rightSibiling.DeleteKeysRight(lastIndex,parentID);
+          $"Child at index:{lastIndex} within node:{ID}"), parentID);
+      DeleteKeysLeft(firstKeyIndex, parentID);
+      rightSibiling.DeleteKeysRight(lastIndex, parentID);
     }
 
     /// <summary>
@@ -396,16 +396,15 @@ namespace BTreeVisualization
       {// Range included more than one key or left fork is empty.
         int i = firstKeyIndex;
         Children[firstKeyIndex] = _Children[lastIndex];
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+        _Children[firstKeyIndex].DeleteNode(ID);
         for (int j = lastIndex; j < _NumKeys;)
         {
           _Keys[i] = _Keys[j];
           _Contents[i] = _Contents[j];
           i++;
           j++;
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-          _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-            _Children[i].ID, -1, [], [], ID, -1, [], []));
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+          _Children[i].DeleteNode(ID);
           Children[i] = _Children[j];
         }
         for (; i < _NumKeys;)
@@ -413,10 +412,23 @@ namespace BTreeVisualization
           _Keys[i] = default;
           _Contents[i] = default;
           i++;
+          _Children[i].DeleteNode(ID);
           Children[i] = default;
         }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
         _NumKeys -= lastIndex - firstKeyIndex;
       }
+    }
+
+    public override void DeleteNode(long id)
+    {
+      if (_Children[0] as NonLeafNode<T> != null)
+        for (int i = 0; i < _NumKeys; i++)
+        {
+          DeleteNode(ID);
+        }
+      _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
+        ID, -1, [], [], id, -1, [], []));
     }
 
     /// <summary>
@@ -426,7 +438,7 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="index">Index to start
     /// deleting from.</param>
-    public override void DeleteKeysLeft(int index,long parentID)
+    public override void DeleteKeysLeft(int index, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
         -1, [], [], 0, -1, [], []));
@@ -438,8 +450,7 @@ namespace BTreeVisualization
           _Contents[i] = default;
           i++;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-          _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-            _Children[i].ID, -1, [], [], ID, -1, [], []));
+          _Children[i].DeleteNode(ID);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
           _Children[i] = default;
         }
@@ -462,17 +473,19 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="index">Index to start
     /// copying from.</param>
-    public override void DeleteKeysRight(int index,long parentID)
+    public override void DeleteKeysRight(int index, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
         -1, [], [], 0, -1, [], []));
       if (index > 0)
       {// Some keys belong to range.
         int j = 0;
+        for (int k = 0; k < index; k++)
+        {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-        _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-          _Children[j].ID, -1, [], [], ID, -1, [], []));
+          _Children[k].DeleteNode(ID);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
         // Shift array entries to the left.
         _Children[j] = _Children[index];
         for (int i = index; i < _NumKeys;)
@@ -482,8 +495,7 @@ namespace BTreeVisualization
           j++;
           if (j < index)// Let frontend know of whole node being dropped
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-            _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-              _Children[j].ID, -1, [], [], ID, -1, [], []));
+            _Children[j].DeleteNode(ID);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
           i++;
           _Children[j] = _Children[i];
@@ -682,6 +694,7 @@ namespace BTreeVisualization
           bool leftZeroNode = _Children[index].NumKeys == 0;
           // Get rid of dividing entry
           _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
+          _BufferBlock.SendAsync((NodeStatus.MergeParent, _Children[index + 1].ID, -1, [], [], ID, -1, [], []));
           for (; index < _NumKeys - 1;)
           {
             _Keys[index] = _Keys[index + 1];
