@@ -93,6 +93,17 @@ namespace B_TreeVisualizationGUI
     {
       while (messageQueue.TryDequeue(out var messageToProcess))
       {
+        if (nodeDictionary.TryGetValue(lastHighlightedID, out GUINode? node))
+        {
+          node.nodeHighlighted = false;
+          node.lineHighlighted = false;
+        }
+        if (nodeDictionary.TryGetValue(lastHighlightedAltID, out node))
+        {
+          node.nodeHighlighted = false;
+          node.lineHighlighted = false;
+        }
+
         Invoke((MethodInvoker)delegate
         {
           // Disable the button on the UI thread
@@ -107,17 +118,6 @@ namespace B_TreeVisualizationGUI
           });
           ProcessFeedback(messageToProcess);
         });
-
-        if (nodeDictionary.TryGetValue(lastHighlightedID, out GUINode? node))
-        {
-          node.nodeHighlighted = false;
-          node.lineHighlighted = false;
-        }
-        if (nodeDictionary.TryGetValue(lastHighlightedAltID, out node))
-        {
-          node.nodeHighlighted = false;
-          node.lineHighlighted = false;
-        }
 
         UpdateGUITreeFromNodes();
       }
