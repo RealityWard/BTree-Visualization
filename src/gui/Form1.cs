@@ -216,7 +216,7 @@ namespace B_TreeVisualizationGUI
                                                                            // Update node
                 node.Keys = feedback.keys;
                 node.NumKeys = feedback.numKeys;
-                node.NodeWidth = 40 * node.NumKeys;
+                node.UpdateNodeWidth();
               }
               else
               {
@@ -242,7 +242,7 @@ namespace B_TreeVisualizationGUI
               // Update node
               node.NumKeys = feedback.numKeys;
               node.Keys = feedback.keys;
-              node.NodeWidth = 40 * feedback.numKeys;
+              node.UpdateNodeWidth();
             }
             SetHighlightedNode(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
@@ -289,7 +289,7 @@ namespace B_TreeVisualizationGUI
                                                                                     // Update node
                 node.Keys = feedback.keys;
                 node.NumKeys = feedback.numKeys;
-                node.NodeWidth = 40 * node.NumKeys;
+                node.UpdateNodeWidth();
                 SetHighlightedNode(feedback.id); // Highlights node for animations
               }
             }
@@ -503,7 +503,7 @@ namespace B_TreeVisualizationGUI
                 {
                   for (int i = 0; i < parentNode.Children.Count; i++)
                   {
-                    if (parentNode.Children[i].ID == feedback.id)
+                    if (parentNode.Children[i].ID == feedback.altID)
                       parentNode.Children.RemoveAt(i);
                   }
                   if (parentNode.Children.Count == 0)
