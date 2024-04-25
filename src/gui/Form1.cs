@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks.Dataflow;
 using System.Xml.Linq;
+using System.Windows.Forms;
 using BPlusTreeVisualization;
 using BTreeVisualization;
 using ThreadCommunication;
@@ -828,6 +829,19 @@ namespace B_TreeVisualizationGUI
       txtInputData.ForeColor = Color.Black;
       txtInputData.Text = "Insert Data Here...";
     }
+
+    private async void btnInfo_Click(object sender, EventArgs e)
+    {
+            var formPopup = new Form();
+            formPopup.Width = 1500;
+            formPopup.Height = 1200;
+            var WebBrowser1 = new WebBrowser();
+            WebBrowser1.Navigate("https://zackarybeckhtmlstorage.z19.web.core.windows.net/");
+            WebBrowser1.Width = 1450;
+            WebBrowser1.Height = 1150;
+            formPopup.Controls.Add( WebBrowser1 );
+            formPopup.ShowDialog();
+        }
 
     private async void btnInsertMany_Click(object sender, EventArgs e)
     {

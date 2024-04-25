@@ -16,4 +16,10 @@
 	<BaseOutputPath></BaseOutputPath>
   </PropertyGroup>
 
+	<ItemGroup>
+		<Content Update="implementationiInfo.html">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
 </Project>

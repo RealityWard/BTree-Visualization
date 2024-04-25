@@ -43,6 +43,7 @@ namespace B_TreeVisualizationGUI
             btnNext = new CustomControls.RJControls.RJButton();
             lblSpeed = new Label();
             btnInsert = new CustomControls.RJControls.RJButton();
+            btnInfo = new CustomControls.RJControls.RJButton();
             lblCurrentProcess = new Label();
             panel2 = new Panel();
             chkBTreeTrue = new CheckBox();
@@ -268,6 +269,27 @@ namespace B_TreeVisualizationGUI
             btnInsert.TextColor = Color.White;
             btnInsert.UseVisualStyleBackColor = false;
             btnInsert.Click += btnInsert_Click;
+            //
+            // btnInfo
+            //
+            btnInfo.Anchor = AnchorStyles.Bottom;
+            btnInfo.BackColor = Color.MediumSlateBlue;
+            btnInfo.BackgroundColor = Color.MediumSlateBlue;
+            btnInfo.BorderColor = Color.PaleVioletRed;
+            btnInfo.BorderRadius = 20;
+            btnInfo.BorderSize = 0;
+            btnInfo.FlatAppearance.BorderSize = 0;
+            btnInfo.FlatStyle = FlatStyle.Flat;
+            btnInfo.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
+            btnInfo.ForeColor = Color.White;
+            btnInfo.Location = new Point(750, 95);
+            btnInfo.Name = "btnInfo";
+            btnInfo.Size = new Size(150, 28);
+            btnInfo.TabIndex = 0;
+            btnInfo.Text = "info";
+            btnInfo.TextColor = Color.White;
+            btnInfo.UseVisualStyleBackColor = false;
+            btnInfo.Click += btnInfo_Click;
             // 
             // lblCurrentProcess
             // 
@@ -297,6 +319,7 @@ namespace B_TreeVisualizationGUI
             panel2.Controls.Add(btnPlayAndPause);
             panel2.Controls.Add(btnDelete);
             panel2.Controls.Add(txtInputData);
+            panel2.Controls.Add(btnInfo);
             panel2.Location = new Point(0, 502);
             panel2.MinimumSize = new Size(905, 130);
             panel2.Name = "panel2";
@@ -349,6 +372,7 @@ namespace B_TreeVisualizationGUI
         private CustomControls.RJControls.RJButton btnDelete;
         private Label lblSpeed;
         private CustomControls.RJControls.RJButton btnInsert;
+        private CustomControls.RJControls.RJButton btnInfo;
         private Label lblCurrentProcess;
         private Panel panel2;
         private CheckBox chkBTreeTrue;
