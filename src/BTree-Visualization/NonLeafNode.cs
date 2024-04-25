@@ -395,16 +395,16 @@ namespace BTreeVisualization
       if (firstKeyIndex != lastIndex)
       {// Range included more than one key or left fork is empty.
         int i = firstKeyIndex;
-        Children[firstKeyIndex] = _Children[lastIndex];
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-        _Children[firstKeyIndex].DeleteNode(ID);
+        for (int k = firstKeyIndex; k < lastIndex; k++)
+          _Children[k].DeleteNode(ID);
+        Children[firstKeyIndex] = _Children[lastIndex];
         for (int j = lastIndex; j < _NumKeys;)
         {
           _Keys[i] = _Keys[j];
           _Contents[i] = _Contents[j];
           i++;
           j++;
-          _Children[i].DeleteNode(ID);
           Children[i] = _Children[j];
         }
         for (; i < _NumKeys;)
@@ -412,7 +412,6 @@ namespace BTreeVisualization
           _Keys[i] = default;
           _Contents[i] = default;
           i++;
-          _Children[i].DeleteNode(ID);
           Children[i] = default;
         }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
@@ -422,11 +421,12 @@ namespace BTreeVisualization
 
     public override void DeleteNode(long id)
     {
-      if (_Children[0] as NonLeafNode<T> != null)
-        for (int i = 0; i < _NumKeys; i++)
-        {
-          DeleteNode(ID);
-        }
+      for (int i = 0; i <= _NumKeys; i++)
+      {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+        _Children[i].DeleteNode(ID);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+      }
       _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
         ID, -1, [], [], id, -1, [], []));
     }
@@ -525,6 +525,8 @@ namespace BTreeVisualization
     /// <exception cref="NullChildReferenceException"></exception>
     public override int RestoreRight()
     {
+      _BufferBlock.SendAsync((NodeStatus.Restoration, ID,
+        -1, [], [], 0, -1, [], []));
       int result = (_Children[0] ?? throw new NullChildReferenceException(
         $"Child at index:0 within node:{ID}")).RestoreRight();
       MergeAt(0);
@@ -694,7 +696,6 @@ namespace BTreeVisualization
           bool leftZeroNode = _Children[index].NumKeys == 0;
           // Get rid of dividing entry
           _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
-          _BufferBlock.SendAsync((NodeStatus.MergeParent, _Children[index + 1].ID, -1, [], [], ID, -1, [], []));
           for (; index < _NumKeys - 1;)
           {
             _Keys[index] = _Keys[index + 1];

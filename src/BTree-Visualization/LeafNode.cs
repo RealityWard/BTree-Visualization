@@ -301,11 +301,15 @@ namespace BTreeVisualization
 
     public override int RestoreRight()
     {
+      _BufferBlock.SendAsync((NodeStatus.Restoration, ID,
+        -1, [], [], 0, -1, [], []));
       return 0;
     }
 
     public override int RestoreLeft()
     {
+      _BufferBlock.SendAsync((NodeStatus.Restoration, ID,
+        -1, [], [], 0, -1, [], []));
       return 0;
     }
 
