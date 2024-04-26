@@ -839,6 +839,7 @@ namespace B_TreeVisualizationGUI
             WebBrowser1.Navigate("https://zackarybeckhtmlstorage.z19.web.core.windows.net/");
             WebBrowser1.Width = 1450;
             WebBrowser1.Height = 1140;
+            WebBrowser1.Dock = DockStyle.Fill;
             formPopup.Controls.Add( WebBrowser1 );
             formPopup.ShowDialog();
         }
