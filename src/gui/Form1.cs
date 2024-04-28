@@ -84,7 +84,7 @@ namespace B_TreeVisualizationGUI
       btnNext.Enabled = false;
       while (animate)
       {
-        await NewMethod();
+        await ConsumeOneOutput();
         await Task.Delay(animationSpeed);
       }
       btnNext.Enabled = true;
@@ -157,7 +157,7 @@ namespace B_TreeVisualizationGUI
         bool isRoot = nodeDictionary.Count == 0;
         GUINode node = new(feedback.id, feedback.keys, true, isRoot, 0, 0);
         nodeDictionary[feedback.id] = node;
-        if (chkDebugMode.Checked == true) ShowNodesMessageBox(); // For debug purposes DELETE LATER
+        if (chkDebugMode.Checked == true) ShowNodesMessageBox();
         SetHighlightedNode(feedback.id); // Highlights node for animations
         UpdateVisuals(); // Update the panel to show changes
       }
@@ -176,64 +176,47 @@ namespace B_TreeVisualizationGUI
       {
         case NodeStatus.Insert:
           {
+            lblCurrentProcess.Text = $"Starting Insert process for {feedback.keys[0]}";
             break;
           }
         case NodeStatus.ISearching:
           {
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node))
             {
+              lblCurrentProcess.Text = $"Searching {feedback.id} for an adaquate node to add key to.";
               SetHighlightedNode(feedback.id); // Highlights node for animations
               SetHighlightedLine(feedback.id); // Highlights node for animations
               UpdateVisuals(); // Update the panel to show changes
             }
-            lblCurrentProcess.Text = ($"Searching for an adaquate node to add input key to");                                                                                 //UpdateVisuals(); // Update the panel to show changes FIX
             break;
           }
         case NodeStatus.Inserted:
           {
-            lblCurrentProcess.Text = ("Inserting key"); 
-                                                        // Check if input key is already in the tree
-            if (feedback.numKeys == -1)
+            lblCurrentProcess.Text = "Inserting key";
+            Debug.WriteLine($"Creating or updating GUINode. ID={feedback.id}, Keys={String.Join(", ", feedback.keys)}");
+            if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
             {
-              Debug.WriteLine($"Key already found in tree in node ID={feedback.id}."); // For debug purposes DELETE LATER
-              MessageBox.Show("Input key is already in the tree.");
-              cancellationTokenSource.Cancel(); // Request cancellation
-              messageQueue = new ConcurrentQueue<(NodeStatus, long, int, int[], Person?[], long, int, int[], Person?[])>();
-              Task.Run(() =>
-              {
-                Thread.Sleep(100);
-                isProcessing = false;
-              });
+              Debug.WriteLine($"Node found. Updating ID={feedback.id}");
+              node.Keys = feedback.keys;
+              node.NumKeys = feedback.numKeys;
+              node.UpdateNodeWidth();
             }
             else
             {
-              Debug.WriteLine($"Creating or updating GUINode. ID={feedback.id}, Keys={String.Join(", ", feedback.keys)}"); // For debug purposes DELETE LATER
-                                                                                                                           // Check if node already exists in the dictionary
-              if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
-              {
-                Debug.WriteLine($"Node found. Updating ID={feedback.id}"); // For debug purposes DELETE LATER
-                                                                           // Update node
-                node.Keys = feedback.keys;
-                node.NumKeys = feedback.numKeys;
-                node.UpdateNodeWidth();
-              }
-              else
-              {
-                Debug.WriteLine($"Node not found. Creating new node. ID={feedback.id}"); // For debug purposes DELETE LATER
-                                                                                         // Create new node
-                bool isRoot = nodeDictionary.Count == 0;
-                node = new GUINode(feedback.id, feedback.keys, true, isRoot, 0, 1);
-                nodeDictionary[feedback.id] = node;
-              }
-              if (chkDebugMode.Checked == true) ShowNodesMessageBox(); // For debug purposes DELETE LATER
-              SetHighlightedNode(feedback.id); // Highlights node for animations
-              UpdateVisuals(); // Update the panel to show changes
+              lblCurrentProcess.Text += "\nCreated new root node.";
+              Debug.WriteLine($"Node not found. Creating new node. ID={feedback.id}");
+              bool isRoot = nodeDictionary.Count == 0;
+              node = new GUINode(feedback.id, feedback.keys, true, isRoot, 0, 1);
+              nodeDictionary[feedback.id] = node;
             }
+            if (chkDebugMode.Checked == true) ShowNodesMessageBox();
+            SetHighlightedNode(feedback.id); // Highlights node for animations
+            UpdateVisuals(); // Update the panel to show changes
             break;
           }
         case NodeStatus.SplitInsert:
           {
-            lblCurrentProcess.Text = ("Adding key from node being split to new node");
+            lblCurrentProcess.Text = "Adding key from node being split to new node";
             // Check if node is in the dictionary and is not a duplicate
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && feedback.numKeys != -1)
             {
@@ -248,25 +231,24 @@ namespace B_TreeVisualizationGUI
           }
         case NodeStatus.NewRoot:
           {
-            Debug.WriteLine($"A new root is being assigned. New root node ID={feedback.id}."); // For debug purposes DELETE LATER
-            lblCurrentProcess.Text = ("Creating new root as a consequence of the split"); 
-            Debug.WriteLine($"Creating new root GUINode. ID={feedback.id}, Keys={String.Join(", ", feedback.keys)}"); // For debug purposes DELETE LATER
+            lblCurrentProcess.Text = "Creating new root as a consequence of the split";
+            Debug.WriteLine($"A new root is being assigned. New root node ID={feedback.id}.");
+            Debug.WriteLine($"Creating new root GUINode. ID={feedback.id}, Keys={String.Join(", ", feedback.keys)}");
             rootHeight++; // Update global root height
-                          // Create new node 
             bool isLeaf = false;
             bool isRoot = true;
             nodeDictionary[feedback.id] = new GUINode(feedback.id, feedback.keys, isLeaf, isRoot, rootHeight, feedback.numKeys);
             if (oldRoot != null)
               oldRoot.IsRoot = false; // Update the old root to not say it's a root anymore
-            if (chkDebugMode.Checked == true) ShowNodesMessageBox(); // For debug purposes DELETE LATER
-                                                                     //UpdateVisuals(); // Update the panel to show changes
+            if (chkDebugMode.Checked == true) ShowNodesMessageBox();
+            SetHighlightedNode(feedback.id); // Highlights node for animations
+            UpdateVisuals(); // Update the panel to show changes
             break;
           }
         case NodeStatus.Split:
           {
-            lblCurrentProcess.Text = ("Splitting node"); 
-            Debug.WriteLine($"A split has occurred. Split node ID={feedback.id}. Preparing to handle new nodes."); // For debug purposes DELETE LATER
-                                                                                                                   // Check if node is the root
+            lblCurrentProcess.Text = "Splitting node";
+            Debug.WriteLine($"A split has occurred. Split node ID={feedback.id}. Preparing to handle new nodes.");
             if (nodeDictionary[feedback.id].IsRoot == true)
             {
               oldRoot = nodeDictionary[feedback.id]; // Update oldRoot global
@@ -275,51 +257,55 @@ namespace B_TreeVisualizationGUI
           }
         case NodeStatus.SplitResult:
           {
-            Debug.WriteLine($"Creating or updating GUINode from split. ID={feedback.id}, Keys={String.Join(", ", feedback.keys)}"); // For debug purposes DELETE LATER
-                                                                                                                                    // Check if node exists in the dictionary
+            Debug.WriteLine($"Creating or updating GUINode from split. ID={feedback.id}, Keys={String.Join(", ", feedback.keys)}");
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node))
             {
               if (node != null) // Null check
               {
-                lblCurrentProcess.Text = ("Updating the node that is being split"); 
-                                                                                    // Update node
+                lblCurrentProcess.Text = "Updating the node that was split";
+                // Update node
                 node.Keys = feedback.keys;
                 node.NumKeys = feedback.numKeys;
                 node.UpdateNodeWidth();
-                SetHighlightedNode(feedback.id); // Highlights node for animations
               }
             }
             else
             {
-              Debug.WriteLine($"Node not found. Creating new node. ID={feedback.id}"); // For debug purposes DELETE LATER
-              lblCurrentProcess.Text = ("Creating a new node"); 
-              SetHighlightedNode(lastHighlightedID); // Highlights node for animations
-                                                     // Create new node
+              lblCurrentProcess.Text = "Creating a new node because of split";
+              Debug.WriteLine($"Node not found. Creating new node. ID={feedback.id}");
               bool isLeaf = true;
               bool isRoot = false;
               int height = 0;
               node = new GUINode(feedback.id, feedback.keys, isLeaf, isRoot, height, feedback.numKeys);
               nodeDictionary[feedback.id] = node; // Add node to dictionary
-                                                  // Update the parent node's children list to include the new node
+              // Update the parent node's children list to include the new node
               if (feedback.altID != 0 && nodeDictionary.TryGetValue(feedback.altID, out GUINode? altNode))
               {
                 altNode.Children.Add(node);
                 node.height = Math.Max(0, altNode.height - 1);
                 nodeDictionary[lastHighlightedID].nodeHighlighted = false;
                 nodeDictionary[lastHighlightedID].lineHighlighted = false;
-                SetHighlightedNode(feedback.id); // Highlights node for animations
               }
             }
-            if (chkDebugMode.Checked == true) ShowNodesMessageBox(); //  For debug purposes DELETE LATER
+            if (chkDebugMode.Checked == true) ShowNodesMessageBox();
+            SetHighlightedNode(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
         case NodeStatus.DeleteRange:
           {
+            lblCurrentProcess.Text = $"Starting Delete process for ";
+            if (feedback.keys.Length > 0)
+              lblCurrentProcess.Text += $"{feedback.keys[0]}";
+            if (feedback.keys.Length == 2)
+              if (feedback.keys[0] + 1 != feedback.keys[1])
+                lblCurrentProcess.Text += $" to {feedback.keys[1]}";
+            lblCurrentProcess.Text += ".";
             break;
           }
         case NodeStatus.Restoration:
           {
+            lblCurrentProcess.Text = $"Starting restoration process for {feedback.id}";
             SetHighlightedNode(feedback.id); // Highlights node for animations
             SetHighlightedLine(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
@@ -327,6 +313,7 @@ namespace B_TreeVisualizationGUI
           }
         case NodeStatus.DSearching:
           {
+            lblCurrentProcess.Text = $"Searching {feedback.id} for keys to delete.";
             SetHighlightedNode(feedback.id); // Highlights node for animations
             SetHighlightedLine(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
@@ -344,8 +331,8 @@ namespace B_TreeVisualizationGUI
               // Check if key exists in the dictionary
               if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
               {
-                lblCurrentProcess.Text = ("Deleting input key"); 
-                                                                 // Update node
+                lblCurrentProcess.Text = ("Deleting input key");
+                // Update node
                 node.Keys = feedback.keys;
                 node.NumKeys = feedback.numKeys;
                 node.UpdateNodeWidth();
@@ -366,19 +353,21 @@ namespace B_TreeVisualizationGUI
             if (feedback.numKeys == -1)
             {
               Debug.WriteLine($"Key not found for deletion in node ID={feedback.id}.");
-              MessageBox.Show("Node was not affected.");
+              lblCurrentProcess.Text = $"Nothing was deleted in this node.";
             }
             else if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
             {
+              lblCurrentProcess.Text = $"Key(s) were successfully deleted in this node.";
               // Update node
               node.Keys = feedback.keys;
               node.NumKeys = feedback.numKeys;
               node.UpdateNodeWidth();
-              Debug.WriteLine($"Node ID={feedback.id} updated after key deletion. Remaining keys: {String.Join(", ", node.Keys)}"); // For debug purposes DELETE LATER
+              Debug.WriteLine($"Node ID={feedback.id} updated after key deletion. Remaining keys: {String.Join(", ", node.Keys)}");
             }
             else
             {
-              Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update after deletion."); // For debug purposes DELETE LATER
+              lblCurrentProcess.Text = $"Something went wrong.";
+              Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update after deletion.");
             }
             SetHighlightedNode(feedback.id); // Highlights node for animations
             UpdateVisuals();
@@ -386,7 +375,7 @@ namespace B_TreeVisualizationGUI
           }
         case NodeStatus.FSearching:
           {
-            lblCurrentProcess.Text = ("Retrieving key from leaf node as a consequence of an underflow.");
+            lblCurrentProcess.Text = $"Searching {feedback.id} for right most leaf.";
             SetHighlightedNode(feedback.id); // Highlights node for animations
             SetHighlightedLine(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
@@ -394,18 +383,25 @@ namespace B_TreeVisualizationGUI
           }
         case NodeStatus.Forfeit:
           {
-            lblCurrentProcess.Text = ("Retrieving key from node as a consequence of an underflow.");
-            if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
+            if (feedback.numKeys != -1)
             {
-              // Update node
-              node.Keys = feedback.keys;
-              node.NumKeys = feedback.numKeys;
-              node.UpdateNodeWidth();
-              Debug.WriteLine($"Node ID={feedback.id} updated after key deletion. Remaining keys: {String.Join(", ", node.Keys)}"); // For debug purposes DELETE LATER
+              if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
+              {
+                lblCurrentProcess.Text = "Retrieving key from node as a consequence of an underflow.";
+                // Update node
+                node.Keys = feedback.keys;
+                node.NumKeys = feedback.numKeys;
+                node.UpdateNodeWidth();
+                Debug.WriteLine($"Node ID={feedback.id} updated after key deletion. Remaining keys: {String.Join(", ", node.Keys)}");
+              }
+              else
+              {
+                Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update after deletion.");
+              }
             }
             else
             {
-              Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update after deletion."); // For debug purposes DELETE LATER
+              lblCurrentProcess.Text = "Couldn't retrieve key because the node was empty.";
             }
             SetHighlightedNode(feedback.id); // Highlights node for animations
             SetHighlightedLine(feedback.id); // Highlights node for animations
@@ -422,7 +418,7 @@ namespace B_TreeVisualizationGUI
               Debug.WriteLine($"Node ID={feedback.id} updated after key deletion.");
               SetHighlightedNode(feedback.id);
               UpdateVisuals(); // Update the panel to show changes
-              lblCurrentProcess.Text = ("Updating the keys of the non-leaf node after key deletion.");
+              lblCurrentProcess.Text = "Updating the keys of the non-leaf node after key deletion.";
             }
             break;
           }
@@ -431,9 +427,8 @@ namespace B_TreeVisualizationGUI
           {
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
             {
-              lblCurrentProcess.Text = "A merge has occurred"; 
-              lblCurrentProcess.Text = "Updating merged node"; 
-                                                               // Update node
+              lblCurrentProcess.Text = "A merge has occurred. Updating merged node.";
+              // Update node
               node.Keys = feedback.keys;
               node.NumKeys = feedback.numKeys;
               if (feedback.status == NodeStatus.MergeRoot)
@@ -451,16 +446,16 @@ namespace B_TreeVisualizationGUI
                 }
               }
               node.UpdateNodeWidth();
-              Debug.WriteLine($"Node ID={feedback.id} updated. Remaining keys: {String.Join(", ", node.Keys)}"); // For debug purposes DELETE LATER
+              Debug.WriteLine($"Node ID={feedback.id} updated. Remaining keys: {String.Join(", ", node.Keys)}");
             }
             else
             {
-              Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update."); // For debug purposes DELETE LATER
+              Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update.");
             }
             // Eat sibling node
             if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? sibling) && sibling != null)
             {
-              lblCurrentProcess.Text = ("Eating sibling node"); 
+              lblCurrentProcess.Text += $"\nEating sibling node that had {string.Join(", ", sibling.Keys)} entries";
               if (feedback.status == NodeStatus.Merge)
               {
                 if (nodeDictionary[feedback.altID].IsRoot)
@@ -513,7 +508,7 @@ namespace B_TreeVisualizationGUI
           }
         case NodeStatus.MergeParent:
           {
-            lblCurrentProcess.Text = ("Updating node as a consequence of the merge"); 
+            lblCurrentProcess.Text = "Updating parent node as a consequence of the merge";
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null)
             {
               node.Keys = feedback.keys; // Update keys array
@@ -538,11 +533,11 @@ namespace B_TreeVisualizationGUI
               node.Keys = feedback.keys;
               node.NumKeys = feedback.numKeys;
               node.UpdateNodeWidth();
-              Debug.WriteLine($"Node ID={feedback.id} updated. Remaining keys: {String.Join(", ", node.Keys)}"); // For debug purposes DELETE LATER
+              Debug.WriteLine($"Node ID={feedback.id} updated. Remaining keys: {String.Join(", ", node.Keys)}");
             }
             else
             {
-              Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update."); // For debug purposes DELETE LATER
+              Debug.WriteLine($"Node with ID={feedback.id} not found when attempting to update.");
             }
             if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? sibling) && sibling != null)
             {
@@ -550,12 +545,13 @@ namespace B_TreeVisualizationGUI
               sibling.Keys = feedback.altKeys;
               sibling.NumKeys = feedback.altNumKeys;
               sibling.UpdateNodeWidth();
-              Debug.WriteLine($"Node ID={feedback.altID} updated. Remaining keys: {String.Join(", ", node.Keys)}"); // For debug purposes DELETE LATER
+              Debug.WriteLine($"Node ID={feedback.altID} updated. Remaining keys: {String.Join(", ", sibling.Keys)}");
             }
             else
             {
               Debug.WriteLine($"Node with ID={feedback.altID} not found when attempting to update after deletion.");
             }
+            lblCurrentProcess.Text = "Node was in underflow and took one or more entries from its sibiling.";
             SetHighlightedNode(feedback.id); // Highlights node for animations
             SetHighlightedLine(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
@@ -563,53 +559,68 @@ namespace B_TreeVisualizationGUI
           }
         case NodeStatus.Shift:
           {
-            lblCurrentProcess.Text = ("Updating children"); 
-            GUINode childNode = nodeDictionary[feedback.altID];
-            // Remove the child from its previous parent
-            foreach (var kvp in nodeDictionary)
+            if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node) && node != null &&
+              nodeDictionary.TryGetValue(feedback.altID, out GUINode? childNode) && childNode != null)
             {
-              GUINode parentNode = kvp.Value;
-              if (parentNode.Children != null && parentNode.Children.Contains(childNode))
+              // Remove the child from its previous parent
+              foreach (var kvp in nodeDictionary)
               {
-                parentNode.Children.Remove(childNode);
-                if (parentNode.Children.Count == 0)
+                GUINode parentNode = kvp.Value;
+                if (parentNode.Children != null && parentNode.Children.Contains(childNode))
                 {
-                  parentNode.IsLeaf = true;
+                  parentNode.Children.Remove(childNode);
+                  if (parentNode.Children.Count == 0)
+                  {
+                    parentNode.IsLeaf = true;
+                  }
+                  break;
                 }
-                break;
               }
-            }
-            // Add the child to the new parent
-            if (nodeDictionary[feedback.id].Children == null)
-            {
-              nodeDictionary[feedback.id].Children = new List<GUINode>() { childNode };
+              // Add the child to the new parent
+              if (node.Children == null)
+              {
+                node.Children = new List<GUINode>() { childNode };
+              }
+              else
+              {
+                node.Children.Add(childNode);
+                foreach (var child in node.Children)
+                {
+                  child.height = Math.Max(0, node.height - 1);
+                }
+                SetHighlightedNode(feedback.altID, altShiftHighlightID); // Highlights node for animations
+                SetHighlightedLine(feedback.altID, altShiftHighlightID); // Highlights node for animations
+              }
+              lblCurrentProcess.Text = $"Moving {feedback.altID} to new parent.";
+              node.IsLeaf = false;
+              altShiftHighlightID = feedback.altID;
+              UpdateVisuals(); // Update the panel to show changes
             }
             else
             {
-              nodeDictionary[feedback.id].Children.Add(childNode);
-              foreach (var child in nodeDictionary[feedback.id].Children)
-              {
-                child.height = Math.Max(0, nodeDictionary[feedback.id].height - 1);
-              }
-              SetHighlightedNode(feedback.altID, altShiftHighlightID); // Highlights node for animations
-              SetHighlightedLine(feedback.altID, altShiftHighlightID); // Highlights node for animations
+              lblCurrentProcess.Text = "Something went wrong.";
             }
-            nodeDictionary[feedback.id].IsLeaf = false;
-            altShiftHighlightID = feedback.altID;
-            UpdateVisuals(); // Update the panel to show changes
             break;
           }
         case NodeStatus.Search:
           {
+            lblCurrentProcess.Text = $"Starting Search process for {feedback.keys[0]}";
             break;
           }
         case NodeStatus.SearchRange:
           {
+            lblCurrentProcess.Text = $"Starting Search process for ";
+            if (feedback.keys.Length > 0)
+              lblCurrentProcess.Text += $"{feedback.keys[0]}";
+            if (feedback.keys.Length == 2)
+              if (feedback.keys[0] + 1 != feedback.keys[1])
+                lblCurrentProcess.Text += $" to {feedback.keys[1]}";
+            lblCurrentProcess.Text += ".";
             break;
           }
         case NodeStatus.SSearching:
           {
-            lblCurrentProcess.Text = ("Looking for key."); 
+            lblCurrentProcess.Text = $"Searching {feedback.id}.";
             SetHighlightedNode(feedback.id); // Highlights node for animations
             SetHighlightedLine(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
@@ -617,40 +628,40 @@ namespace B_TreeVisualizationGUI
           }
         case NodeStatus.Found:
           {
-            lblCurrentProcess.Text = ("Key found."); 
+            lblCurrentProcess.Text = "Key found.";
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node))
             {
               node.Searched = true;
               lastSearched = node;
-              Debug.WriteLine($"Node ID={feedback.id} has been highlighted."); // For debug purposes DELETE LATER
+              Debug.WriteLine($"Node ID={feedback.id} has been highlighted.");
             }
+            SetHighlightedNode(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
         case NodeStatus.FoundRange:
           {
-            lblCurrentProcess.Text = ("Key found."); 
+            lblCurrentProcess.Text = $"Key(s) found: {string.Join(", ", feedback.keys)}";
             if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node))
             {
               node.Searched = true;
               lastSearched = node;
-              Debug.WriteLine($"Node ID={feedback.id} has been highlighted."); // For debug purposes DELETE LATER
+              Debug.WriteLine($"Node ID={feedback.id} has been highlighted.");
             }
+            SetHighlightedNode(feedback.id); // Highlights node for animations
             UpdateVisuals(); // Update the panel to show changes
             break;
           }
         case NodeStatus.FoundRangeComplete:
           {
-            lblCurrentProcess.Text = ("Listing all entries found.");
-            MessageBox.Show($"The aggregate of all found range statuses." +
-              $"\n{string.Join(',',feedback.keys)}", "Invalid Input", MessageBoxButtons.OK);
+            lblCurrentProcess.Text = "Listing all entries found.\nThe aggregate of all found range statuses." +
+              $"\n{string.Join(", ", feedback.keys)}";
             break;
           }
         case NodeStatus.NodeDeleted:
           {
             if (chkDebugMode.Checked == true) ShowNodesMessageBox();
-            lblCurrentProcess.Text = ("Deleting node."); 
-                                                         // If node is still in the dictionary, delete it
+            lblCurrentProcess.Text = "Deleting node.";
             if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? node))
             {
               for (int i = 0; i < node.Children.Count; i++)
@@ -661,11 +672,14 @@ namespace B_TreeVisualizationGUI
                 }
               }
             }
+            // If node is still in the dictionary, delete it
             if (nodeDictionary.TryGetValue(feedback.id, out node))
             {
-              Debug.WriteLine($"Node ID={feedback.id} deleted."); // For debug purposes DELETE LATER
+              Debug.WriteLine($"Node ID={feedback.id} deleted.");
               nodeDictionary.Remove(feedback.id);
             }
+            SetHighlightedNode(feedback.altID); // Highlights node for animations
+            UpdateVisuals(); // Update the panel to show changes
             break;
           }
         default:
@@ -933,10 +947,10 @@ namespace B_TreeVisualizationGUI
 
     private async void btnNext_Click(object sender, EventArgs e)
     {
-      await NewMethod();
+      await ConsumeOneOutput();
     }
 
-    private async Task NewMethod()
+    private async Task ConsumeOneOutput()
     {
       if (outputBuffer.Count > 0)
       {

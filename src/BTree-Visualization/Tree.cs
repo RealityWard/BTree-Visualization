@@ -22,16 +22,14 @@ namespace BTreeVisualization
     /// </summary>
     public readonly int _Degree;
     /// <summary>
-    /// Tracks whether a key of zero is in use in the tree.
+    /// Used to output updates to the nodes on the frontend.
     /// </summary>
-    private bool zeroKeyUsed;
     private BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock;
 
     public BTree(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
     {
       _Degree = degree;
       _Root = new LeafNode<T>(degree, bufferBlock);
-      zeroKeyUsed = false;
       _BufferBlock = bufferBlock;
       _BufferBlock.SendAsync((NodeStatus.Inserted, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
     }
@@ -62,25 +60,13 @@ namespace BTreeVisualization
     /// <param name="data">Coresponding data belonging to key.</param>
     public void Insert(int key, T data)
     {
-      if ((key == 0 && !zeroKeyUsed) || key != 0)
+      _BufferBlock.SendAsync((NodeStatus.Insert, 0, 1, [key], [data], 0, -1, [], []));
+      ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data, 0);
+      if (result.Item2 != null && result.Item1.Item2 != null)
       {
-        /** Due to initializing all int[] entries as zero instead of null
-          We must use a boolean to detect whether or not to 
-          allow a zero key insertion*/
-        if (key == 0)
-          zeroKeyUsed = true;
-        _BufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [key], [data], 0, -1, [], []));
-        ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data, 0);
-        if (result.Item2 != null && result.Item1.Item2 != null)
-        {
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-          Split(result);
+        Split(result);
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-        }
-      }
-      else
-      {
-        _BufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
     }
 
@@ -96,8 +82,8 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public void Delete(int key)
     {
-      // _BufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [key], [], 0, -1, [], []));
       DeleteRange(key, key + 1);
+      // _BufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [key], [], 0, -1, [], []));
       // if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       // {
       //   long temp = _Root.ID;
@@ -118,7 +104,7 @@ namespace BTreeVisualization
     /// <exception cref="NullChildReferenceException"></exception>
     public void DeleteRange(int key, int endKey)
     {
-      _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, -1, [key, endKey], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, 2, [key, endKey], [], 0, -1, [], []));
       _Root.DeleteKeysMain(key, endKey, 0);
       while (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
@@ -152,8 +138,8 @@ namespace BTreeVisualization
       }
       //*/
       // Patch through to new method
-      List<(int key, T content)> result = Search(key, key+1);
-      return result.Count > 0? result[0].content : default;
+      List<(int key, T content)> result = Search(key, key + 1);
+      return result.Count > 0 ? result[0].content : default;
     }
 
     /// <summary>
@@ -165,7 +151,7 @@ namespace BTreeVisualization
     /// <returns>A list of key-value pairs from the matching range in order of found.</returns>
     public List<(int key, T content)> Search(int key, int endKey)
     {
-      _BufferBlock.SendAsync((NodeStatus.SearchRange, 0, -1, [key, endKey], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.SearchRange, 0, 2, [key, endKey], [], 0, -1, [], []));
       if (key == endKey)
         endKey++;
       List<(int key, T value)> result = _Root.SearchKeys(key, endKey);

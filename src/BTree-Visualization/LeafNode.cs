@@ -161,16 +161,16 @@ namespace BTreeVisualization
     public override ((int, T?), BTreeNode<T>?) InsertKey(int key, T data, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.ISearching, ID, -1, [], [], 0, -1, [], []));
-      int i = Search(this, key);
-      if (i == -1)
-        i = _NumKeys;
-      for (int j = _NumKeys - 1; j >= i; j--)
+      int index = Search(this, key);
+      if (index == -1)
+        index = _NumKeys;
+      for (int j = _NumKeys - 1; j >= index; j--)
       {
         _Keys[j + 1] = _Keys[j];
         _Contents[j + 1] = _Contents[j];
       }
-      _Keys[i] = key;
-      _Contents[i] = data;
+      _Keys[index] = key;
+      _Contents[index] = data;
       _NumKeys++;
       (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
       _BufferBlock.SendAsync((NodeStatus.Inserted, ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
@@ -180,7 +180,7 @@ namespace BTreeVisualization
       }
       return ((-1, default(T)), null);
     }
-    
+
     /// <summary>
     /// Sends NodeDeleted status to the frontend for this
     /// node.
@@ -243,8 +243,8 @@ namespace BTreeVisualization
         lastIndex = rightSibiling.NumKeys;
       if (firstKeyIndex == -1)
         firstKeyIndex = _NumKeys;
-      DeleteKeysLeft(firstKeyIndex,parentID);
-      rightSibiling.DeleteKeysRight(lastIndex,parentID);
+      DeleteKeysLeft(firstKeyIndex, parentID);
+      rightSibiling.DeleteKeysRight(lastIndex, parentID);
     }
 
     /// <summary>
@@ -364,7 +364,6 @@ namespace BTreeVisualization
     /// <returns>Tuple of Key and corresponding content.</returns>
     public override (int, T?) ForfeitKey()
     {
-      _BufferBlock.SendAsync((NodeStatus.FSearching, ID, -1, [], [], 0, -1, [], []));
       (int, T?) keyToBeLost;
       if (_NumKeys != 0)
       {
@@ -374,13 +373,14 @@ namespace BTreeVisualization
             $"Content at index:{_NumKeys} within node:{ID}"));
         _Keys[_NumKeys] = default;
         _Contents[_NumKeys] = default;
+        (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
+        _BufferBlock.SendAsync((NodeStatus.Forfeit, ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
       }
       else
       {
         keyToBeLost = (0, default);
+        _BufferBlock.SendAsync((NodeStatus.Forfeit, ID, -1, [], [], 0, -1, [], []));
       }
-      (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
-      _BufferBlock.SendAsync((NodeStatus.Forfeit, ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
       return keyToBeLost;
     }
 
