@@ -157,6 +157,12 @@ namespace ThreadCommunication
     /// </summary>
     FoundRange,
     /// <summary>
+    /// Like FoundRange except only sent at the end of a search range
+    /// from the tree object which combines all the foundrange entries into one.
+    /// 0,Keys.Length,Keys,Contents
+    /// </summary>
+    FoundRangeComplete,
+    /// <summary>
     /// Sent once the key values of the nonLeafNode are updated
     /// when the leafnodes in the bplustree get deleted, or a merge happens
     /// the key values for the non-leafnodes have to change

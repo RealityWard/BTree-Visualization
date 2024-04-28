@@ -168,18 +168,18 @@ namespace BTreeVisualization
       List<(int key, T value)> result = _Root.SearchKeys(key, endKey);
       if (result.Count > 0)
       {
-        // int[] keys = new int[result.Count];
-        // T[] contents = new T[result.Count];
-        // for (int i = 0; i < result.Count; i++)
-        // {
-        //   keys[i] = result[i].key;
-        //   contents[i] = result[i].value;
-        // }
-        // _BufferBlock.SendAsync((NodeStatus.FoundRange, _Root.ID, result.Count, keys, contents, 0, -1, [], []));
+        int[] keys = new int[result.Count];
+        T[] contents = new T[result.Count];
+        for (int i = 0; i < result.Count; i++)
+        {
+          keys[i] = result[i].key;
+          contents[i] = result[i].value;
+        }
+        _BufferBlock.SendAsync((NodeStatus.FoundRangeComplete, 0, result.Count, keys, contents, 0, -1, [], []));
       }
       else
       {
-        _BufferBlock.SendAsync((NodeStatus.FoundRange, _Root.ID, -1, [], [], 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.FoundRangeComplete, 0, -1, [], [], 0, -1, [], []));
       }
       return result;
     }
