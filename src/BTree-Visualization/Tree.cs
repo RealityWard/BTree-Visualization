@@ -119,8 +119,6 @@ namespace BTreeVisualization
     public void DeleteRange(int key, int endKey)
     {
       _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, -1, [key, endKey], [], 0, -1, [], []));
-      if (key == 0 && zeroKeyUsed)
-        zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
       _Root.DeleteKeysMain(key, endKey, 0);
       while (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
@@ -238,11 +236,19 @@ namespace BTreeVisualization
     /// Calculates the Minimum Height of the B-Tree
     /// </summary>
     /// <returns> minimum height of the B-tree as an integer
-    /// 
     public int GetMinHeight()
     {
       return GetMinHeight(_Root, 0);
     }
+
+    /// <summary>
+    /// Author: Andreas Kramer
+    /// Calculates the Minimum Height of the B-Tree
+    /// Update to static version by Tristan
+    /// </summary>
+    /// <param name="node"></param>
+    /// <param name="currentLevel"></param>
+    /// <returns>minimum height of the B-tree as an</returns>
     static private int GetMinHeight(BTreeNode<T> node, int currentLevel)
     {
       if (node == null || node is LeafNode<T>)
@@ -273,12 +279,20 @@ namespace BTreeVisualization
     /// Calculates the Maximum Height of the B-Tree and returns it as an integer
     /// </summary>
     /// <returns></returns>
-    /// 
     public int GetMaxHeight()
     {
       return GetMaxHeight(_Root, 0);
     }
-    private int GetMaxHeight(BTreeNode<T> node, int currentLevel)
+
+    /// <summary>
+    /// Author: Andreas Kramer
+    /// Calculates the Maximum Height of the B-Tree and returns it as an integer
+    /// 
+    /// </summary>
+    /// <param name="node"></param>
+    /// <param name="currentLevel"></param>
+    /// <returns></returns>
+    private static int GetMaxHeight(BTreeNode<T> node, int currentLevel)
     {
       if (node == null || node is LeafNode<T>)
       {

@@ -299,18 +299,16 @@ namespace BTreeVisualization
       }
     }
 
-    public override int RestoreRight()
+    public override void RestoreRight()
     {
       _BufferBlock.SendAsync((NodeStatus.Restoration, ID,
         -1, [], [], 0, -1, [], []));
-      return 0;
     }
 
-    public override int RestoreLeft()
+    public override void RestoreLeft()
     {
       _BufferBlock.SendAsync((NodeStatus.Restoration, ID,
         -1, [], [], 0, -1, [], []));
-      return 0;
     }
 
     /// <summary>

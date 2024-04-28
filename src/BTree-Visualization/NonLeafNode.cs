@@ -334,7 +334,18 @@ namespace BTreeVisualization
           $"Child at index:{lastIndex} within node:{ID}")).RestoreRight();
         ReduceGap(firstKeyIndex, lastIndex);
         // Check for underflow
-        MergeAt(firstKeyIndex);
+        if (firstKeyIndex < _NumKeys)
+        {
+          MergeAt(firstKeyIndex);
+          if (firstKeyIndex < _NumKeys)
+            MergeAt(firstKeyIndex + 1);
+          else
+            MergeAt(_NumKeys);
+        }
+        else
+        {
+          MergeAt(_NumKeys);
+        }
       }
     }
 
@@ -493,10 +504,6 @@ namespace BTreeVisualization
           _Keys[j] = _Keys[i];
           _Contents[j] = _Contents[i];
           j++;
-          if (j < index)// Let frontend know of whole node being dropped
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            _Children[j].DeleteNode(ID);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
           i++;
           _Children[j] = _Children[i];
         }
@@ -523,16 +530,13 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <returns>nth child down is empty.</returns>
     /// <exception cref="NullChildReferenceException"></exception>
-    public override int RestoreRight()
+    public override void RestoreRight()
     {
       _BufferBlock.SendAsync((NodeStatus.Restoration, ID,
         -1, [], [], 0, -1, [], []));
-      int result = (_Children[0] ?? throw new NullChildReferenceException(
+      (_Children[0] ?? throw new NullChildReferenceException(
         $"Child at index:0 within node:{ID}")).RestoreRight();
       MergeAt(0);
-      if (result > 0 || _NumKeys == 0)
-        return ++result;
-      return result;
     }
 
     /// <summary>
@@ -542,16 +546,13 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <returns>nth child down is empty.</returns>
     /// <exception cref="NullChildReferenceException"></exception>
-    public override int RestoreLeft()
+    public override void RestoreLeft()
     {
       _BufferBlock.SendAsync((NodeStatus.Restoration, ID,
         -1, [], [], 0, -1, [], []));
-      int result = (_Children[_NumKeys] ?? throw new NullChildReferenceException(
+      (_Children[_NumKeys] ?? throw new NullChildReferenceException(
         $"Child at index:{_NumKeys} within node:{ID}")).RestoreLeft();
       MergeAt(_NumKeys);
-      if (result > 0 || _NumKeys == 0)
-        return ++result;
-      return result;
     }
 
     /// <summary>
@@ -693,30 +694,35 @@ namespace BTreeVisualization
           // Finds if the nodes were empty before
           // Meaning possible underflow children
           bool rightZeroNode = _Children[index + 1].NumKeys == 0;
+          int leftIndex = Children[index].NumKeys + 1;
           bool leftZeroNode = _Children[index].NumKeys == 0;
           // Get rid of dividing entry
           _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
-          for (; index < _NumKeys - 1;)
+          int i = index;
+          for (; i < _NumKeys - 1;)
           {
-            _Keys[index] = _Keys[index + 1];
-            _Contents[index] = _Contents[index + 1];
-            index++;
-            _Children[index] = _Children[index + 1];
+            _Keys[i] = _Keys[i + 1];
+            _Contents[i] = _Contents[i + 1];
+            i++;
+            _Children[i] = _Children[i + 1];
           }
-          _Keys[index] = default;
-          _Contents[index] = default;
-          _Children[index + 1] = default;
+          _Keys[i] = default;
+          _Contents[i] = default;
+          _Children[i + 1] = default;
           _NumKeys--;
           (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
           _BufferBlock.SendAsync((NodeStatus.MergeParent, ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
-          if (_Children[index] as NonLeafNode<T> != null)
+          if (_Children[0] as NonLeafNode<T> != null)
           {
             // Finds if the nodes were empty before
             // Meaning possible underflow children
             if (leftZeroNode)
               ((NonLeafNode<T>)Children[index]).MergeAt(0);
             if (rightZeroNode)
-              ((NonLeafNode<T>)Children[index]).MergeAt(Children[index].NumKeys);
+              if (leftIndex <= Children[index].NumKeys)
+                ((NonLeafNode<T>)Children[index]).MergeAt(leftIndex);
+              else
+                ((NonLeafNode<T>)Children[index]).MergeAt(Children[index].NumKeys);
           }
         }
       }
