@@ -141,6 +141,7 @@ namespace BTreeVisualization
     /// <returns>Data object stored under key.</returns>
     public T? Search(int key)
     {
+      /* Old method of singular searching
       _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [key], [], 0, -1, [], []));
       (int key, T content)? result = _Root.SearchKey(key);
       if (result == null)
@@ -151,6 +152,10 @@ namespace BTreeVisualization
       {
         return result.Value.content;
       }
+      //*/
+      // Patch through to new method
+      List<(int key, T content)> result = Search(key, key+1);
+      return result.Count > 0? result[0].content : default;
     }
 
     /// <summary>
