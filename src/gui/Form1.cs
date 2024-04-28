@@ -752,7 +752,7 @@ namespace B_TreeVisualizationGUI
     {
       InitializeBackend();
       messageQueue = new ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>();
-      StartConsumerTask();
+      _ = StartConsumerTask();
       _ = Animator();
 
       // Create horizontal scroll bar
@@ -832,17 +832,19 @@ namespace B_TreeVisualizationGUI
 
     private async void btnInfo_Click(object sender, EventArgs e)
     {
-            var formPopup = new Form();
-            formPopup.Width = 1500;
-            formPopup.Height = 1200;
-            var WebBrowser1 = new WebBrowser();
-            WebBrowser1.Navigate("https://zackarybeckhtmlstorage.z19.web.core.windows.net/");
-            WebBrowser1.Width = 1450;
-            WebBrowser1.Height = 1140;
-            WebBrowser1.Dock = DockStyle.Fill;
-            formPopup.Controls.Add( WebBrowser1 );
-            formPopup.ShowDialog();
-        }
+      Form formPopup = new()
+      {
+        Width = 1500,
+        Height = 1200
+      };
+      WebBrowser WebBrowser1 = new();
+      WebBrowser1.Navigate("https://zackarybeckhtmlstorage.z19.web.core.windows.net/");
+      WebBrowser1.Width = 1450;
+      WebBrowser1.Height = 1140;
+      WebBrowser1.Dock = DockStyle.Fill;
+      formPopup.Controls.Add(WebBrowser1);
+      formPopup.ShowDialog();
+    }
 
     private async void btnInsertMany_Click(object sender, EventArgs e)
     {
