@@ -21,8 +21,8 @@ namespace B_TreeVisualizationGUI
     Dictionary<long, GUINode> nodeDictionary = new Dictionary<long, GUINode>();
     private System.Windows.Forms.Timer scrollTimer;
     private bool isFirstNodeEncountered = true;
-    private int rootHeight = 0; // Temporary to see if this works
-    private GUINode oldRoot; // Temporary to see if this works
+    private int rootHeight = 0;
+    private GUINode? oldRoot;
     private GUINode lastSearched;
     private ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)> messageQueue;
     private bool isProcessing = false;
@@ -61,11 +61,15 @@ namespace B_TreeVisualizationGUI
     {
       InitializeComponent();
       SetStyle(ControlStyles.DoubleBuffer | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
-      scrollTimer = new System.Windows.Forms.Timer();
-      scrollTimer.Interval = 200;
+      scrollTimer = new System.Windows.Forms.Timer
+      {
+        Interval = 200
+      };
       scrollTimer.Tick += ScrollTimer_Tick;
 
-      this.Resize += new EventHandler(Form1_Resize); // Subscribe to the resize event
+#pragma warning disable CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
+      Resize += new EventHandler(Form1_Resize); // Subscribe to the resize event
+#pragma warning restore CS8622 // Nullability of reference types in type of parameter doesn't match the target delegate (possibly because of nullability attributes).
       PositionPanels(); // Initial positioning of the panels
     }
 
@@ -91,7 +95,7 @@ namespace B_TreeVisualizationGUI
       return;
     }
 
-    private async Task StartConsumerTask()
+    private void StartConsumerTask()
     {
       while (messageQueue.TryDequeue(out var messageToProcess))
       {
@@ -749,7 +753,7 @@ namespace B_TreeVisualizationGUI
     {
       InitializeBackend();
       messageQueue = new ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)>();
-      _ = StartConsumerTask();
+      StartConsumerTask();
       _ = Animator();
 
       // Create horizontal scroll bar
@@ -997,7 +1001,7 @@ namespace B_TreeVisualizationGUI
         }
 
         messageQueue.Enqueue(feedbackCopy);
-        await StartConsumerTask();
+        StartConsumerTask();
         if (!animate)
           btnNext.Enabled = true;
       }
@@ -1030,7 +1034,7 @@ namespace B_TreeVisualizationGUI
     {
       isProcessing = true;
       messageQueue = new ConcurrentQueue<(NodeStatus, long, int, int[], Person?[], long, int, int[], Person?[])>();
-      Task.Run(() =>
+      await Task.Run(() =>
       {
         Thread.Sleep(100);
         isProcessing = false;
@@ -1050,9 +1054,9 @@ namespace B_TreeVisualizationGUI
       nodeDictionary = new Dictionary<long, GUINode>();
       await inputBuffer.SendAsync((TreeCommand.Tree, degree, 0, default(Person?)));
       panel1.Invalidate();
-      rootHeight = 0; // Temporary to see if this works
-      oldRoot = null; // Temporary to see if this works
+      rootHeight = 0;
       isFirstNodeEncountered = false;
+      oldRoot = default;
 
       // Clear input textbox
       txtInputData.ForeColor = Color.Black;
