@@ -661,7 +661,7 @@ namespace B_TreeVisualizationGUI
         case NodeStatus.NodeDeleted:
           {
             if (chkDebugMode.Checked == true) ShowNodesMessageBox();
-            lblCurrentProcess.Text = "Deleting node.";
+            lblCurrentProcess.Text = $"Deleting node {feedback.id}";
             if (nodeDictionary.TryGetValue(feedback.altID, out GUINode? node))
             {
               for (int i = 0; i < node.Children.Count; i++)
