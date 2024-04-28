@@ -181,6 +181,11 @@ namespace BTreeVisualization
       return ((-1, default(T)), null);
     }
     
+    /// <summary>
+    /// Sends NodeDeleted status to the frontend for this
+    /// node.
+    /// </summary>
+    /// <param name="id">ID of the parent node.</param>
     public override void DeleteNode(long id)
     {
       _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
@@ -216,6 +221,17 @@ namespace BTreeVisualization
       }
     }
 
+    /// <summary>
+    /// Deletes the entries that match the range from
+    /// key to endKey but not including endKey.
+    /// Also applies to rightSibiling.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Start of range, inclusive</param>
+    /// <param name="endKey">end of range, exclusive</param>
+    /// <param name="rightSibiling">A node that is on the
+    /// edge of the range.</param>
+    /// <param name="parentID"></param>
     public override void DeleteKeysSplit(int key, int endKey,
       BTreeNode<T> rightSibiling, long parentID)
     {
@@ -231,6 +247,13 @@ namespace BTreeVisualization
       rightSibiling.DeleteKeysRight(lastIndex,parentID);
     }
 
+    /// <summary>
+    /// Deletes the entries that match the range from
+    /// key to endKey but not including endKey.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Start of range, inclusive</param>
+    /// <param name="endKey">end of range, exclusive</param>
     public override void DeleteKeysMain(int key, int endKey, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [],
@@ -256,6 +279,12 @@ namespace BTreeVisualization
       }
     }
 
+    /// <summary>
+    /// Deletes all entries from index and up.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="index">Index to start
+    /// deleting from.</param>
     public override void DeleteKeysLeft(int index, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
@@ -274,6 +303,15 @@ namespace BTreeVisualization
       }
     }
 
+    /// <summary>
+    /// Deletes all entries up to index but
+    /// not including index. Then shifts
+    /// remaining entries to the beginning of
+    /// their arrays.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="index">Index to start
+    /// copying from.</param>
     public override void DeleteKeysRight(int index, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
@@ -299,12 +337,18 @@ namespace BTreeVisualization
       }
     }
 
+    /// <summary>
+    /// Does nothing but indicate the recursion can stop.
+    /// </summary>
     public override void RestoreRight()
     {
       _BufferBlock.SendAsync((NodeStatus.Restoration, ID,
         -1, [], [], 0, -1, [], []));
     }
 
+    /// <summary>
+    /// Does nothing but indicate the recursion can stop.
+    /// </summary>
     public override void RestoreLeft()
     {
       _BufferBlock.SendAsync((NodeStatus.Restoration, ID,

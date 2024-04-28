@@ -107,15 +107,17 @@ namespace BTreeVisualization
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [],
         0, -1, [], []));
+      // Basket to place all the found entries as it iterates
       List<(int, T)> result = [];
       int index = Search(this, key);
       if (index != -1)
-      {
+      {// Entries in this node or child fit the range
+        // Grab the smallest entries first
         result.AddRange((_Children[index]
           ?? throw new NullChildReferenceException(
             $"Child at index:{index} within node:{ID}")).SearchKeys(key, endKey));
         for (; index < _NumKeys && _Keys[index] >= key && _Keys[index] < endKey;)
-        {
+        {// Continue until we have all entries in range
           result.Add((Keys[index], Contents[index]
             ?? throw new NullContentReferenceException(
               $"Content at index:{index} within node:{ID}")));
@@ -127,6 +129,7 @@ namespace BTreeVisualization
               $"Child at index:{index} within node:{ID}")).SearchKeys(key, endKey));
         }
       }
+      // Check last child in case the index was -1
       if (_NumKeys > 0 && _Keys[_NumKeys - 1] < endKey)
         result.AddRange((_Children[_NumKeys]
           ?? throw new NullChildReferenceException(
@@ -163,9 +166,9 @@ namespace BTreeVisualization
         ?? throw new NullChildReferenceException(
           $"Child at index:{i} within node:{ID}")).InsertKey(key, data, ID);
       if (result.Item2 != null && result.Item1.Item2 != null)
-      {
+      {// Split occured in the child
         for (int j = _NumKeys - 1; j >= i; j--)
-        {
+        {// Making room
           _Keys[j + 1] = _Keys[j];
           _Contents[j + 1] = _Contents[j];
           _Children[j + 2] = _Children[j + 1];
@@ -177,10 +180,9 @@ namespace BTreeVisualization
         (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
         _BufferBlock.SendAsync((NodeStatus.SplitInsert, ID, bufferVar.NumKeys,
           bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
+        // Check if this node now needs to split.
         if (IsFull())
-        {
           return Split(parentID);
-        }
       }
       return ((-1, default(T)), null);
     }
@@ -335,7 +337,7 @@ namespace BTreeVisualization
         ReduceGap(firstKeyIndex, lastIndex);
         // Check for underflow
         if (firstKeyIndex < _NumKeys)
-        {
+        {// Make certain to catch both the left and right
           MergeAt(firstKeyIndex);
           if (firstKeyIndex < _NumKeys)
             MergeAt(firstKeyIndex + 1);
@@ -343,7 +345,7 @@ namespace BTreeVisualization
             MergeAt(_NumKeys);
         }
         else
-        {
+        {// The right and left merged
           MergeAt(_NumKeys);
         }
       }
@@ -372,11 +374,13 @@ namespace BTreeVisualization
         lastIndex = rightSibiling.NumKeys;
       if (firstKeyIndex == -1)
         firstKeyIndex = _NumKeys;
+      // Indexes are ready to use
       (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
         $"Child at index:{firstKeyIndex} within node:{ID}")).DeleteKeysSplit(
           key, endKey, ((NonLeafNode<T>)rightSibiling).Children[lastIndex]
           ?? throw new NullChildReferenceException(
           $"Child at index:{lastIndex} within node:{ID}"), parentID);
+      // Clean out entries in range.
       DeleteKeysLeft(firstKeyIndex, parentID);
       rightSibiling.DeleteKeysRight(lastIndex, parentID);
     }
@@ -430,6 +434,12 @@ namespace BTreeVisualization
       }
     }
 
+    /// <summary>
+    /// Recurs on its children and then
+    /// sends NodeDeleted status to the frontend
+    /// for this node.
+    /// </summary>
+    /// <param name="id">ID of the parent node.</param>
     public override void DeleteNode(long id)
     {
       for (int i = 0; i <= _NumKeys; i++)
@@ -443,8 +453,8 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Deletes all keys and children from index
-    /// to end of arrays.
+    /// Deletes all entries and children from index
+    /// and up.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="index">Index to start
@@ -478,8 +488,10 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Deletes all keys and children from index
-    /// to beginning of arrays. Not inclusive.
+    /// Deletes all entries and children up to index but
+    /// not including index. Then shifts
+    /// remaining entries to the beginning of
+    /// their arrays.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="index">Index to start
@@ -524,11 +536,10 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Goes to left most child of child until leaf.
-    /// Then checks for underflow before returning.
+    /// Recurs on left most child to the bottom.
+    /// Then runs MergeAt.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
-    /// <returns>nth child down is empty.</returns>
     /// <exception cref="NullChildReferenceException"></exception>
     public override void RestoreRight()
     {
@@ -540,11 +551,10 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Goes to right most child of child until leaf.
-    /// Then checks for underflow before returning.
+    /// Recurs on right most child to the bottom.
+    /// Then runs MergeAt.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
-    /// <returns>nth child down is empty.</returns>
     /// <exception cref="NullChildReferenceException"></exception>
     public override void RestoreLeft()
     {
@@ -603,17 +613,12 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Checks the child at index for underflow. If so it then checks for _Degree
-    /// number of children in the right child of the key. _Degree or greater means
-    /// merging the two will result in an overflow or a split. If less than _Degree
-    /// then the merge will not be a full node needing to be split immediately.
-    /// This is meant to reduce the number of times elements are moved back and forth.
-    /// Underflow is _NumKeys less than or equal to _Degree - 2.
-    /// Full is _NumKeys == 2 * _Degree - 1.
-    /// Don't forget the dividing key adds 1
-    /// Sum of the two nodes in minimal bad scenario:
-    /// (_Degree - 2) + _Degree + 1 == 2 * _Degree - 1
-    /// Results in Full at least.
+    /// Checks the child at index for underflow.
+    /// If so it checks how much underflow then compares
+    /// to the sibiling next to it for enough to fix the
+    /// underflow. If it has enough it will either grab
+    /// just enough to fix it or merges with it depending
+    /// on how full it would make it.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="index">Index of affected child node.</param>
@@ -622,7 +627,7 @@ namespace BTreeVisualization
 #pragma warning disable CS8604 // Possible null reference argument.
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-      if (_Children[index] == null)
+      if (_Children[index] == null) // First null check
         throw new NullChildReferenceException(
         $"Child at index:{index} within node:{ID}");
       while (_Children[index] != null && _Children[index].IsUnderflow() && _NumKeys > 0)
@@ -633,11 +638,11 @@ namespace BTreeVisualization
         {// Move index to prevent out of bounds
           // Makes certain we can always work with left to right
           index--;
-          if (_Children[index] == null)
+          if (_Children[index] == null)// New first null check
             throw new NullChildReferenceException(
             $"Child at index:{index} within node:{ID}");
         }
-        if (_Children[index + 1] == null)
+        if (_Children[index + 1] == null)// Second null check
           throw new NullChildReferenceException(
           $"Child at index:{index + 1} within node:{ID}");
         if (_Children[index + 1].NumKeys - keysNeeded >= _Degree - 1)
@@ -658,8 +663,8 @@ namespace BTreeVisualization
               _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index].ID, -1, [], [],
                 ((NonLeafNode<T>)Children[index]).Children[Children[index].NumKeys - i].ID, -1, [], []));
             }
-            // Finds that the node was empty before
-            // Meaning possible underflow children
+            // Found that the node was empty before the fix
+            // Meaning possible children in underflow condition
             if (keysNeeded == _Degree - 1)
               ((NonLeafNode<T>)Children[index]).MergeAt(0);
           }
@@ -683,8 +688,8 @@ namespace BTreeVisualization
               _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index + 1].ID, -1, [], [],
                 ((NonLeafNode<T>)Children[index + 1]).Children[i].ID, -1, [], []));
             }
-            // Finds that the node was empty before
-            // Meaning possible underflow children
+            // Found that the node was empty before the fix
+            // Meaning possible children in underflow condition
             if (keysNeeded == _Degree - 1)
               ((NonLeafNode<T>)Children[index + 1]).MergeAt(Children[index + 1].NumKeys);
           }
@@ -698,7 +703,7 @@ namespace BTreeVisualization
           bool leftZeroNode = _Children[index].NumKeys == 0;
           // Get rid of dividing entry
           _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
-          int i = index;
+          int i = index;// Make certain not to break the enclosing while loop
           for (; i < _NumKeys - 1;)
           {
             _Keys[i] = _Keys[i + 1];
@@ -714,8 +719,8 @@ namespace BTreeVisualization
           _BufferBlock.SendAsync((NodeStatus.MergeParent, ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
           if (_Children[0] as NonLeafNode<T> != null)
           {
-            // Finds if the nodes were empty before
-            // Meaning possible underflow children
+            // If it found that either node was empty before the fix
+            // Meaning possible children in underflow condition
             if (leftZeroNode)
               ((NonLeafNode<T>)Children[index]).MergeAt(0);
             if (rightZeroNode)
