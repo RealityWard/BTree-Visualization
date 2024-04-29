@@ -654,8 +654,10 @@ namespace B_TreeVisualizationGUI
           }
         case NodeStatus.FoundRangeComplete:
           {
-            lblCurrentProcess.Text = "Listing all entries found.\nThe aggregate of all found range statuses." +
-              $"\n{string.Join(", ", feedback.keys)}";
+            lblCurrentProcess.Text = "Listing all entries found.";
+            MessageBox.Show("The aggregate of all found range statuses." +
+              $"\n{string.Join(", ", feedback.keys)}",
+              "Aggregate of all found keys", MessageBoxButtons.OK);
             break;
           }
         case NodeStatus.NodeDeleted:
@@ -966,7 +968,7 @@ namespace B_TreeVisualizationGUI
         Debug.WriteLine($"Attempting to search or delete for keys in the range: {startKey} to {endKey}");
         if (command == "search")
         {
-          inputBuffer.SendAsync((TreeCommand.Search, startKey, endKey, null));
+          inputBuffer.SendAsync((TreeCommand.SearchRange, startKey, endKey, null));
         }
         else if (command == "delete")
         {
@@ -1208,6 +1210,9 @@ namespace B_TreeVisualizationGUI
                   break;
                 case TreeCommand.Search:
                   _Tree.Search(key);
+                  break;
+                case TreeCommand.SearchRange:
+                  _Tree.Search(key, endKey);
                   break;
                 case TreeCommand.Close:
                   break;
