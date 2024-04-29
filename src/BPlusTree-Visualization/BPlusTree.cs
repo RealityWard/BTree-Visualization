@@ -48,7 +48,7 @@ namespace BPlusTreeVisualization
     /// <param name="data">Coresponding data belonging to key.</param>
     public void Insert(int key, T data)
     {
-      bufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [], [], 0, -1, [], []));
+      bufferBlock.SendAsync((NodeStatus.Insert, 0, 1, [key], [data], 0, -1, [], []));
       ((int, T?), BPlusTreeNode<T>?) result = _Root.InsertKey(key, data, 0);
       if (result.Item2 != null || result.Item1.Item2 != null)
       {
@@ -94,7 +94,7 @@ namespace BPlusTreeVisualization
     /// <returns>Data object stored under key.</returns>
     public T? Search(int key)
     {
-      bufferBlock.SendAsync((NodeStatus.Search, 0, -1, [], [], 0, -1, [], []));
+      bufferBlock.SendAsync((NodeStatus.Search, 0, -1, [key], [], 0, -1, [], []));
       (int, BPlusTreeNode<T>?) result = _Root.SearchKey(key);
       if (result.Item1 == -1 || result.Item2 == null)
       {
