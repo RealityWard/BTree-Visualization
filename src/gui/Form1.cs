@@ -848,12 +848,21 @@ namespace B_TreeVisualizationGUI
         Height = 1200
       };
       WebBrowser WebBrowser1 = new();
-      WebBrowser1.Navigate("https://zackarybeckhtmlstorage.z19.web.core.windows.net/");
+      Uri uri = new(Path.GetFullPath(@"\\index.html"));
+      WebBrowser1.AllowNavigation = true;
+      WebBrowser1.DocumentCompleted += new WebBrowserDocumentCompletedEventHandler(wb_DocumentCompleted);
+      WebBrowser1.Navigate(uri);
       WebBrowser1.Width = 1450;
       WebBrowser1.Height = 1140;
       WebBrowser1.Dock = DockStyle.Fill;
       formPopup.Controls.Add(WebBrowser1);
       formPopup.ShowDialog();
+    }
+
+    private void wb_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+    {
+      WebBrowser wb = sender as WebBrowser;
+      // wb.Document is not null at this point
     }
 
     private async void btnInsertMany_Click(object sender, EventArgs e)
@@ -1004,17 +1013,17 @@ namespace B_TreeVisualizationGUI
         _ = Task.Run(async () =>
         {
           Invoke((MethodInvoker)delegate
-                  {
-                    DisableButtonEvents();
-                  });
+          {
+            DisableButtonEvents();
+          });
           while (outputBuffer.Count > 0)
           {
             await Task.Delay(1000);
           }
           Invoke((MethodInvoker)delegate
-                  {
-                    EnableButtonEvents();
-                  });
+          {
+            EnableButtonEvents();
+          });
         });
         if (!animate)
           btnNext.Enabled = false;

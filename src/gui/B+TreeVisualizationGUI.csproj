@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BTree-Visualization\BTree-Visualization.csproj" />
     <ProjectReference Include="..\BPlusTree-Visualization\BPlusTree-Visualization.csproj" />
+    <Content Include=".\index.html" />
   </ItemGroup>
 
   <PropertyGroup>
