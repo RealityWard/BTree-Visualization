@@ -304,6 +304,11 @@ namespace BTreeVisualization
         _BufferBlock.SendAsync((NodeStatus.DeletedRange,
           ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
       }
+      else
+      {// No keys belong to range.
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange,
+          ID, -1, [], [], 0, -1, [], []));
+      }
     }
 
     /// <summary>
@@ -337,6 +342,11 @@ namespace BTreeVisualization
         _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID,
           bufferVar.NumKeys, bufferVar.Keys,
           bufferVar.Contents, 0, -1, [], []));
+      }
+      else
+      {// No keys belong to range.
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange,
+          ID, -1, [], [], 0, -1, [], []));
       }
     }
 
