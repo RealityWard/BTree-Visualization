@@ -22,16 +22,14 @@ namespace BTreeVisualization
     /// </summary>
     public readonly int _Degree;
     /// <summary>
-    /// Tracks whether a key of zero is in use in the tree.
+    /// Used to output updates to the nodes on the frontend.
     /// </summary>
-    private bool zeroKeyUsed;
     private BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> _BufferBlock;
 
     public BTree(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock)
     {
       _Degree = degree;
       _Root = new LeafNode<T>(degree, bufferBlock);
-      zeroKeyUsed = false;
       _BufferBlock = bufferBlock;
       _BufferBlock.SendAsync((NodeStatus.Inserted, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, 0, -1, [], []));
     }
@@ -62,25 +60,13 @@ namespace BTreeVisualization
     /// <param name="data">Coresponding data belonging to key.</param>
     public void Insert(int key, T data)
     {
-      if ((key == 0 && !zeroKeyUsed) || key != 0)
+      _BufferBlock.SendAsync((NodeStatus.Insert, 0, 1, [key], [data], 0, -1, [], []));
+      ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data, 0);
+      if (result.Item2 != null && result.Item1.Item2 != null)
       {
-        /** Due to initializing all int[] entries as zero instead of null
-          We must use a boolean to detect whether or not to 
-          allow a zero key insertion*/
-        if (key == 0)
-          zeroKeyUsed = true;
-        _BufferBlock.SendAsync((NodeStatus.Insert, 0, -1, [key], [data], 0, -1, [], []));
-        ((int, T?), BTreeNode<T>?) result = _Root.InsertKey(key, data, 0);
-        if (result.Item2 != null && result.Item1.Item2 != null)
-        {
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-          Split(result);
+        Split(result);
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-        }
-      }
-      else
-      {
-        _BufferBlock.SendAsync((NodeStatus.Inserted, 0, -1, [], [], 0, -1, [], []));
       }
     }
 
@@ -96,27 +82,31 @@ namespace BTreeVisualization
     /// <param name="key">Integer to search for and delete if found.</param>
     public void Delete(int key)
     {
-      _BufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [key], [], 0, -1, [], []));
-      if (key == 0 && zeroKeyUsed)
-        zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
-      _Root.DeleteKey(key);
-      if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
-      {
-        long temp = _Root.ID;
-        _Root = ((NonLeafNode<T>)_Root).Children[0]
-          ?? throw new NullChildReferenceException(
-            $"Child of child on root node");
-        _BufferBlock.SendAsync((NodeStatus.MergeRoot, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
-      }
+      DeleteRange(key, key + 1);
+      // _BufferBlock.SendAsync((NodeStatus.Delete, 0, -1, [key], [], 0, -1, [], []));
+      // if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
+      // {
+      //   long temp = _Root.ID;
+      //   _Root = ((NonLeafNode<T>)_Root).Children[0]
+      //     ?? throw new NullChildReferenceException(
+      //       $"Child of child on root node");
+      //   _BufferBlock.SendAsync((NodeStatus.MergeRoot, _Root.ID, _Root.NumKeys, _Root.Keys, _Root.Contents, temp, -1, [], []));
+      // }
     }
 
+    /// <summary>
+    /// Deletes all entries matching the range
+    /// key <= x < endKey
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key"></param>
+    /// <param name="endKey"></param>
+    /// <exception cref="NullChildReferenceException"></exception>
     public void DeleteRange(int key, int endKey)
     {
-      _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, -1, [key, endKey], [], 0, -1, [], []));
-      if (key == 0 && zeroKeyUsed)
-        zeroKeyUsed = false; // After deletion there will no longer be a zero key in use, thus must re-enable insertion of zero
-      _Root.DeleteKeysMain(key, endKey);
-      if (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
+      _BufferBlock.SendAsync((NodeStatus.DeleteRange, 0, 2, [key, endKey], [], 0, -1, [], []));
+      _Root.DeleteKeysMain(key, endKey, 0);
+      while (_Root.NumKeys == 0 && _Root as NonLeafNode<T> != null)
       {
         long temp = _Root.ID;
         _Root = ((NonLeafNode<T>)_Root).Children[0]
@@ -135,6 +125,7 @@ namespace BTreeVisualization
     /// <returns>Data object stored under key.</returns>
     public T? Search(int key)
     {
+      /* Old method of singular searching
       _BufferBlock.SendAsync((NodeStatus.Search, 0, -1, [key], [], 0, -1, [], []));
       (int key, T content)? result = _Root.SearchKey(key);
       if (result == null)
@@ -145,6 +136,10 @@ namespace BTreeVisualization
       {
         return result.Value.content;
       }
+      //*/
+      // Patch through to new method
+      List<(int key, T content)> result = Search(key, key + 1);
+      return result.Count > 0 ? result[0].content : default;
     }
 
     /// <summary>
@@ -156,24 +151,24 @@ namespace BTreeVisualization
     /// <returns>A list of key-value pairs from the matching range in order of found.</returns>
     public List<(int key, T content)> Search(int key, int endKey)
     {
-      _BufferBlock.SendAsync((NodeStatus.SearchRange, 0, -1, [key, endKey], [], 0, -1, [], []));
+      _BufferBlock.SendAsync((NodeStatus.SearchRange, 0, 2, [key, endKey], [], 0, -1, [], []));
       if (key == endKey)
         endKey++;
       List<(int key, T value)> result = _Root.SearchKeys(key, endKey);
       if (result.Count > 0)
       {
-        // int[] keys = new int[result.Count];
-        // T[] contents = new T[result.Count];
-        // for (int i = 0; i < result.Count; i++)
-        // {
-        //   keys[i] = result[i].key;
-        //   contents[i] = result[i].value;
-        // }
-        // _BufferBlock.SendAsync((NodeStatus.FoundRange, _Root.ID, result.Count, keys, contents, 0, -1, [], []));
+        int[] keys = new int[result.Count];
+        T[] contents = new T[result.Count];
+        for (int i = 0; i < result.Count; i++)
+        {
+          keys[i] = result[i].key;
+          contents[i] = result[i].value;
+        }
+        _BufferBlock.SendAsync((NodeStatus.FoundRangeComplete, 0, result.Count, keys, contents, 0, -1, [], []));
       }
       else
       {
-        _BufferBlock.SendAsync((NodeStatus.FoundRange, _Root.ID, -1, [], [], 0, -1, [], []));
+        _BufferBlock.SendAsync((NodeStatus.FoundRangeComplete, 0, -1, [], [], 0, -1, [], []));
       }
       return result;
     }
@@ -227,11 +222,19 @@ namespace BTreeVisualization
     /// Calculates the Minimum Height of the B-Tree
     /// </summary>
     /// <returns> minimum height of the B-tree as an integer
-    /// 
     public int GetMinHeight()
     {
       return GetMinHeight(_Root, 0);
     }
+
+    /// <summary>
+    /// Author: Andreas Kramer
+    /// Calculates the Minimum Height of the B-Tree
+    /// Update to static version by Tristan
+    /// </summary>
+    /// <param name="node"></param>
+    /// <param name="currentLevel"></param>
+    /// <returns>minimum height of the B-tree as an</returns>
     static private int GetMinHeight(BTreeNode<T> node, int currentLevel)
     {
       if (node == null || node is LeafNode<T>)
@@ -262,12 +265,20 @@ namespace BTreeVisualization
     /// Calculates the Maximum Height of the B-Tree and returns it as an integer
     /// </summary>
     /// <returns></returns>
-    /// 
     public int GetMaxHeight()
     {
       return GetMaxHeight(_Root, 0);
     }
-    private int GetMaxHeight(BTreeNode<T> node, int currentLevel)
+
+    /// <summary>
+    /// Author: Andreas Kramer
+    /// Calculates the Maximum Height of the B-Tree and returns it as an integer
+    /// 
+    /// </summary>
+    /// <param name="node"></param>
+    /// <param name="currentLevel"></param>
+    /// <returns></returns>
+    private static int GetMaxHeight(BTreeNode<T> node, int currentLevel)
     {
       if (node == null || node is LeafNode<T>)
       {

@@ -38,7 +38,7 @@ namespace B_TreeVisualizationGUI
 
 
       // Calculate node width based on keys
-      NodeWidth = 40 * NumKeys;
+      NodeWidth = 40 * (NumKeys == 0 ? 1 : NumKeys);
       NodeHeight = 40;
     }
 
@@ -106,7 +106,7 @@ namespace B_TreeVisualizationGUI
     // when the node is initialized.
     public void UpdateNodeWidth()
     {
-      NodeWidth = 40 * NumKeys; // Adjust this formula as needed
+      NodeWidth = 40 * (NumKeys == 0 ? 1 : NumKeys); // Adjust this formula as needed
     }
 
     public int CompareTo(GUINode? other)

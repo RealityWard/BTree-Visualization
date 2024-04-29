@@ -8,15 +8,6 @@ using ThreadCommunication;
 
 namespace BTreeVisualizationNode
 {
-  public enum NodeCondition
-  {
-    Mergeable,
-    KeyAndOneNode,
-    KeyAndNone,
-    None,
-    NothingChanged
-  }
-
   /// <summary>
   /// Base class for all the node objects used in the BTree and B+Tree.
   /// </summary>
@@ -113,7 +104,6 @@ namespace BTreeVisualizationNode
   /// be externally viewed.</param>
   public abstract class BTreeNode<T>(int degree, BufferBlock<(NodeStatus status, long id, int numKeys, int[] keys, T?[] contents, long altID, int altNumKeys, int[] altKeys, T?[] altContents)> bufferBlock) : Node<T, BTreeNode<T>>(degree, bufferBlock)
   {
-    public abstract bool CheckMyself(int key);
     /// <summary>
     /// Holds key entries for this node.
     /// </summary>
@@ -159,12 +149,52 @@ namespace BTreeVisualizationNode
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
     public abstract void DeleteKey(int key);
-    public abstract void DeleteKeysMain(int key, int endKey);
-    public abstract void DeleteKeysSplit(int key, int endKey, BTreeNode<T> rightSibiling);
-    public abstract void DeleteKeysLeft(int index);
-    public abstract void DeleteKeysRight(int index);
-    public abstract int RestoreRight();
-    public abstract int RestoreLeft();
+    /// <summary>
+    /// Delete an entries within the range of key to endKey
+    /// from this node. Recurs into the child in the range
+    /// or forks to the children on the edges of the range.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Start of range, inclusive</param>
+    /// <param name="endKey">End of range, exclusive</param>
+    public abstract void DeleteKeysMain(int key, int endKey, long parentID);
+    /// <summary>
+    /// Runs at the point at which the range effects more than one node.
+    /// This represents the fork of DeleteKeysMain.
+    /// Deletes entries matching the range from this node
+    /// and the sibiling specified.
+    /// Recurs into the children on the edge of the range.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Start of range, inclusive</param>
+    /// <param name="endKey">End of range, exclusive</param>
+    public abstract void DeleteKeysSplit(int key, int endKey, BTreeNode<T> rightSibiling, long parentID);
+    /// <summary>
+    /// Runs on nodes on the left fork of DeleteKeysMain.
+    /// Deletes everything from index and up.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="index">Index to start
+    /// deleting from.</param>
+    public abstract void DeleteKeysLeft(int index, long parentID);
+    /// <summary>
+    /// Runs on nodes on the right fork of DeleteKeysMain.
+    /// Deletes everything up to index but not index.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="index">Index to start
+    /// deleting from.</param>
+    public abstract void DeleteKeysRight(int index, long parentID);
+    /// <summary>
+    /// Runs on nodes on the right fork of DeleteKeysMain.
+    /// Runs MergeAt from the bottom affected nodes and up on this fork.
+    /// </summary>
+    public abstract void RestoreRight();
+    /// <summary>
+    /// Runs on nodes on the left fork of DeleteKeysMain.
+    /// Runs MergeAt from the bottom affected nodes and up on this fork.
+    /// </summary>
+    public abstract void RestoreLeft();
     /// <summary>
     /// Removes the beginning entry of this node.
     /// </summary>
@@ -247,9 +277,16 @@ namespace BTreeVisualizationNode
     /// <param name="endKey">Upper bound exclusive.</param>
     /// <returns>A list of key-content pairs from the matching range.</returns>
     public abstract List<(int key, T content)> SearchKeys(int key, int endKey);
+    /// <summary>
+    /// Sends NodeDeleted status to the frontend for this
+    /// node and included children.
+    /// </summary>
+    /// <param name="id">ID of the parent node.</param>
+    public abstract void DeleteNode(long id);
 
     /// <summary>
     /// Iterates over the _Keys array to find key. If found returns the index else returns -1.
+    /// Log(n) search static method for use on all nodes with keys.
     /// </summary>
     /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
@@ -276,6 +313,10 @@ namespace BTreeVisualizationNode
       return node.Keys[midIndex] >= key ? midIndex : -1;
     }
 
+    /// <summary>
+    /// Creates a deep copy of the keys and contents arrays.
+    /// </summary>
+    /// <returns>The deep copies.</returns>
     public (int, int[], T?[]) CreateBufferVar()
     {
       int numKeys = NumKeys;

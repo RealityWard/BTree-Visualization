@@ -1,5 +1,6 @@
 ﻿
 
+
 namespace B_TreeVisualizationGUI
 {
     partial class Form1
@@ -166,6 +167,27 @@ namespace B_TreeVisualizationGUI
             btnSearch.UseVisualStyleBackColor = false;
             btnSearch.Click += btnSearch_Click;
             // 
+            // btnNext
+            // 
+            btnNext.Anchor = AnchorStyles.Bottom;
+            btnNext.BackColor = Color.MediumSlateBlue;
+            btnNext.BackgroundColor = Color.MediumSlateBlue;
+            btnNext.BorderColor = Color.PaleVioletRed;
+            btnNext.BorderRadius = 2;
+            btnNext.BorderSize = 0;
+            btnNext.FlatAppearance.BorderSize = 0;
+            btnNext.FlatStyle = FlatStyle.Flat;
+            btnNext.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
+            btnNext.ForeColor = Color.White;
+            btnNext.Location = new Point(40, 95);
+            btnNext.Name = "btnNext";
+            btnNext.Size = new Size(150, 28);
+            btnNext.TabIndex = 13;
+            btnNext.Text = "Step";
+            btnNext.TextColor = Color.White;
+            btnNext.UseVisualStyleBackColor = false;
+            btnNext.Click += btnNext_Click;
+            // 
             // trbSpeed
             // 
             trbSpeed.Anchor = AnchorStyles.Bottom;
@@ -269,9 +291,9 @@ namespace B_TreeVisualizationGUI
             btnInsert.TextColor = Color.White;
             btnInsert.UseVisualStyleBackColor = false;
             btnInsert.Click += btnInsert_Click;
-            // 
+            //
             // btnInfo
-            // 
+            //
             btnInfo.Anchor = AnchorStyles.Bottom;
             btnInfo.BackColor = Color.MediumSlateBlue;
             btnInfo.BackgroundColor = Color.MediumSlateBlue;
@@ -282,11 +304,11 @@ namespace B_TreeVisualizationGUI
             btnInfo.FlatStyle = FlatStyle.Flat;
             btnInfo.Font = new Font("Consolas", 14.25F, FontStyle.Bold);
             btnInfo.ForeColor = Color.White;
-            btnInfo.Location = new Point(745, 90);
+            btnInfo.Location = new Point(750, 95);
             btnInfo.Name = "btnInfo";
-            btnInfo.Size = new Size(150, 40);
+            btnInfo.Size = new Size(150, 28);
             btnInfo.TabIndex = 0;
-            btnInfo.Text = "Info";
+            btnInfo.Text = "info";
             btnInfo.TextColor = Color.White;
             btnInfo.UseVisualStyleBackColor = false;
             btnInfo.Click += btnInfo_Click;
@@ -319,8 +341,7 @@ namespace B_TreeVisualizationGUI
             panel2.Controls.Add(btnDelete);
             panel2.Controls.Add(txtInputData);
             panel2.Controls.Add(btnInfo);
-            panel2.Dock = DockStyle.Bottom;
-            panel2.Location = new Point(0, 499);
+            panel2.Location = new Point(0, 502);
             panel2.MinimumSize = new Size(905, 130);
             panel2.Name = "panel2";
             panel2.Size = new Size(905, 139);
@@ -379,8 +400,8 @@ namespace B_TreeVisualizationGUI
             ResumeLayout(false);
         }
 
-        #endregion
-        private Panel panel1;
+    #endregion
+    private Panel panel1;
         private TextBox txtInputData;
         private ComboBox cmbxMaxDegree;
         private CheckBox chkDebugMode;

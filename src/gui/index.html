@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="b-tree-description">B-Tree Description</h1>
+    <h2 id="properties-of-nodes">Properties of Nodes</h2>
+    <p>
+        This B-Tree structure defined within this program has the following
+        properties:
+    </p>
+    <ul>
+        <li><p>Each node has only one parent except root which has none.</p></li>
+        <li>
+            <p>
+                The tree has degree <i>T</i>, where <i>T</i> is an integer greater
+                than or equal to 2. The upper and lower bounds for the number of keys
+                and children are defined with <i>T</i>.
+            </p>
+        </li>
+        <li>
+            <p>
+                Every node except root has a number of entries, <i>e</i>, such that
+                <i>T - 1 &lt;= e &lt;= 2T - 1</i>. Root has
+                <i>1 &lt;= e &lt;= 2T - 1</i>.
+            </p>
+        </li>
+        <li>
+            <p>
+                Every non-leaf node except root has a number of children, <i>c</i>,
+                such that <i>T &lt;= c &lt;= 2T</i>. Root has
+                <i>1 &lt;= c &lt;= 2T</i>.
+            </p>
+        </li>
+        <li>
+            <p>
+                Entries are defined as key-value pairs and are sorted by keys from
+                least to greatest.
+            </p>
+        </li>
+        <li>
+            <p>
+                Children are sorted in relation to the parents keys, <i>k</i>, so that
+                the keys of the child at index <i>i</i>, are
+                <i>k<sub>i</sub> &lt; c<sub>i</sub> &lt; k<sub>i+1</sub></i>.
+            </p>
+        </li>
+    </ul>
+    <h2 id="insertion">Insertion</h2>
+    <p>
+        Insertion happens in the leaf nodes but starts at the root and runs
+        recursively. Time complexity: <i>O(log(n))</i>
+    </p>
+    <ol>
+        <li>
+            <p>
+                A node takes a given key and searches amongst its entries, <i>k</i>,
+                finding an index, <i>i</i>, that satisfies
+                <i>k<sub>i</sub> &lt; new key &lt; k<sub>i+1</sub></i>.
+            </p>
+        </li>
+        <li>
+            <p>
+                If the node is a non-leaf it sends the insert down to its child at
+                index <i>i</i>.
+            </p>
+        </li>
+        <li>
+            <p>
+                If the node is a leaf it inserts the new entry between
+                <i>k<sub>i</sub></i> and <i>k<sub>i+1</sub></i>.
+            </p>
+        </li>
+        <li>
+            <p>Afterwards we check if the node has <i>2T - 1</i> entries.</p>
+        </li>
+        <li>
+            <p>
+                If so then we split the node into nodes <i>A</i> and <i>B</i> such
+                that
+                <i>
+                    k<sub>0</sub> &lt;= A<sub>k</sub> &lt; k<sub>T</sub> &lt; B<sub>k</sub>
+                    &lt;= k<sub>2T-1</sub>
+                </i>. The remaining entry <i>k<sub>T</sub></i> is returned to the parent.
+            </p>
+        </li>
+        <li>
+            <p>
+                The parent node then inserts the returned entry
+                <i>k<sub>T</sub></i> at index <i>i + 1</i> and stores
+                <i>A<sub>k</sub></i> at <i>i</i> and <i>B<sub>k</sub></i> at
+                <i>i + 1</i>.
+            </p>
+        </li>
+        <li><p>Repeat steps 4-6 until the root node has been checked.</p></li>
+        <li>
+            <p>
+                If root needs to split we create a new non-leaf node and set it as
+                the parent of the root node. Then proceed with steps 5 and 6. The new
+                non-leaf node is now the root.
+            </p>
+        </li>
+    </ol>
+    <h2 id="search">Search</h2>
+    <p>
+        Searching for an entry by key is relatively straight forward. Proceeding
+        the same as an insert except we stop when we find a match. <i>key = k</i>.
+        Time complexity: <i>O(log(n))</i>
+    </p>
+    <h2 id="deletion">Deletion</h2>
+    <p>
+        Deleting a key-value pair can happen anywhere in the tree. This means its
+        more involved. Time complexity: <i>O(log(n))</i>
+    </p>
+    <ol>
+        <li><p>Proceed with a normal search.</p></li>
+        <li>
+            <p>
+                If the key is found in a leaf node; delete the key and shift the rest
+                of the entries appropriately.
+            </p>
+        </li>
+        <li>
+            <p>
+                Afterwards the parent must check if the node has at least <i>T - 1</i>
+                entries.
+            </p>
+        </li>
+        <li>
+            <p>
+                If the child node <i>k<sub>i</sub></i> has less than
+                <i>T - 1</i> entries:
+            </p>
+            <ol>
+                <li>
+                    The parent gives the key-value pair <i>P<sub>i</sub></i> that
+                    divides the child and its sibling, whether it be left or right, to
+                    the child.
+                </li>
+                <li>
+                    If the sibling node <i>k<sub>i+1</sub></i> has <i>T</i> entries or
+                    more, the sibling gives its lowest leftmost child to the parent
+                    node.
+                </li>
+                <li>
+                    Else, if the sibling node <i>k<sub>i-1</sub></i> has
+                    <i>T</i> entries or more, the sibling gives its highest rightmost
+                    child to the parent node.
+                </li>
+                <li>
+                    Else, the child node gives all of its keys to its left sibling.
+                </li>
+                <li>
+                    If there is no left sibling, the child node gives all its keys to
+                    its right sibling.
+                </li>
+                <p></p>
+            </ol>
+        </li>
+        <li>
+            Continue propagating the changes up the tree this way, merging and
+            borrowing keys when necessary.
+        </li>
+    </ol>
+    <h1 id="bplus-tree-description">BPlus-Tree Description</h1>
+    <h2 id="properties-of-nodes">Properties of Nodes</h2>
+    <p>
+        The BPlus-Tree structure defined within this program has the following
+        properties:
+    </p>
+    <ul>
+        <li>
+            <p>Each node has only one parent except the root, which has none.</p>
+          <li>
+            The tree has order <i>m</i>, which is an integer greater than or
+            equal to 2. The upper and lower bounds for the number of keys and
+            children are defined with <i>m</i>.
+          </li>
+        </li>
+        <li>
+            <p>
+                Every node except root has a number of entries, <i>e</i>, equal to
+                <i>ceil(m/2) &lt;= e &lt;= m - 1</i>. Root has
+                <i>1 &lt;= e &lt;= m - 1</i>.
+            </p>
+        </li>
+        <li>
+            <p>
+                Every non-leaf node except root has a number of children, <i>c</i>,
+                such that <i>ceil(m/2) + 1 &lt;= c &lt;= m</i>. Root has
+                <i>2 &lt;= c &lt;= m</i>.
+            </p>
+        </li>
+        <li>
+            <p>
+                A node is underflow if either the number of keys or the number of
+                children are less than <i>ceil(m/2)</i>, or 2 in the root&#39;s case.
+            </p>
+        </li>
+        <li>
+            <p>
+                A node is overflow if either the number of keys or the number of
+                children are more than <i>m</i>.
+            </p>
+        </li>
+        <li>
+            <p>
+                There is data stored only in the leaf nodes. The internal nodes are
+                comprised of signpost key values showing where in the leaf node list a
+                specific key-value pair is.
+            </p>
+        </li>
+        <li>
+            <p>
+                All leaf nodes have pointers to and from each other, making a
+                doubly-linked-list.
+            </p>
+        </li>
+        <li><p>The keys in a node are sorted least to greatest.</p></li>
+        <li>
+            <p>
+                Children are sorted in relation to the parents keys, <i>k</i>, so that
+                the keys of the child at index <i>i</i>, are
+                <i>k<sub>i</sub> &lt; c<sub>i</sub> &lt; k<sub>i+1</sub></i>.
+            </p>
+        </li>
+    </ul>
+    <h2 id="bplus-tree-insertion">BPlus-Tree Insertion</h2>
+    <ol>
+        <li>
+            <p>
+                Search the root&#39;s keys for the correct branch of the tree to
+                insert the key <i>k<sub>n</sub></i> into.
+            </p>
+        </li>
+        <li>
+            <p>
+                Once a key <i>k</i> is found that is greater than the key to be
+                inserted, go to <i>k</i>&#39;s child. Continue until a leaf node has
+                been reached.
+            </p>
+        </li>
+        <li>
+            <p>
+                Search the leaf node&#39;s keys until a key <i>k</i> that is greater
+                than <i>k<sub>n</sub></i>. Insert <i>k<sub>n</sub></i> before <i>k</i>, moving <i>k</i> and
+                the keys after it one index down the keys array.
+            </p>
+        </li>
+        <li>
+            <p>
+                If, after insertion, the <i>ceil(m/2) &lt;= e &lt;= m - 1</i> property
+                is violated, the node must split in half.
+            </p>
+        </li>
+        <li>
+            <p>
+                After splitting, the algorithm determines if the parent must split due
+                to having too many children. If so, the new node gets all the keys in
+                the right half. The children in the right also go to the new node.
+            </p>
+        </li>
+        <li><p>The above step is repeated until the root is reached.</p></li>
+    </ol>
+    <h2 id="bplus-tree-search">BPlus-Tree Search</h2>
+    <ol>
+        <li>
+            <p>
+                Search the root&#39;s keys for the correct branch of the tree in which
+                to look for the given key <i>k<sub>s</sub></i>. Look for a key in the node&#39;s list
+                that is greater than <i>k<sub>s</sub></i>. Go to the child of that key.
+            </p>
+        </li>
+        <li>
+            <p>
+                Traverse down the tree, looking on each level for the same criteria in
+                step (1).
+            </p>
+        </li>
+        <li>
+            <p>
+                Search the keys of the leaf node. If the key is found, return the key
+                and the data associated with it. Otherwise, return false.
+            </p>
+        </li>
+    </ol>
+    <h2 id="bplus-tree-deletion">BPlus-Tree Deletion</h2>
+    <ol>
+        <li><p>Start with a normal search for the given key, <i>k<sub>d</sub></i>.</p></li>
+        <li><p>If the given key is not found, return false.</p></li>
+        <li><p>Otherwise, delete <i>k<sub>d</sub></i>.</p></li>
+        <li>
+            <p>
+                If the deletion has caused the node <i>n<sub>i</sub></i> to be underflow, <i>n<sub>i</sub></i> looks
+                to its siblings.
+            </p>
+            <ol>
+                <li>
+                    If the <i>n<sub>i-1</sub></i> is not null (null means <i>n<sub>i</sub></i> is on the leftmost
+                    edge of the tree) and has extra keys, it gives one to the current
+                    node.
+                </li>
+                <li>
+                    Else, if the right sibling <i>n<sub>i+1</sub></i> is not null and has extra keys,
+                    it gives one to the <i>n<sub>i</sub></i> node.
+                </li>
+                <p></p>
+            </ol>
+        </li>
+        <li>
+            <p>
+                If neither siblings can spare keys, <i>n<sub>i</sub></i> tries first to merge with <i>n<sub>i+1</sub></i>.
+            </p>
+        </li>
+        <li>
+            <p>If the <i>n<sub>i+1</sub></i> is null, <i>n<sub>i</sub></i> merges with <i>n<sub>i-1</sub></i>.</p>
+        </li>
+        <li>
+            <p>
+                The algorithm goes to the nodes&#39; parent and determines if it is
+                now underflow. If it is, merge using the directions described in steps
+                (4-6).
+            </p>
+        </li>
+    </ol>
+</body>
+</html>

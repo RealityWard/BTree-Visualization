@@ -3,8 +3,6 @@ Author: Emily Elzinga and Tristan Anderson
 Date: 2/07/2024
 Desc: Describes functionality for non-leaf nodes on the BTree. Recursive function iteration due to children nodes.
 */
-using System.Diagnostics;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks.Dataflow;
 using ThreadCommunication;
 using BTreeVisualizationNode;
@@ -60,26 +58,6 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Iterates over the _Keys[] to find an entry == key.
-    /// </summary>
-    /// <remarks>Copied and modified from
-    /// LeafNode.Search()</remarks>
-    /// <param name="key">Integer to find in _Keys[] of this node.</param>
-    /// <returns>If found returns the index else returns -1.</returns>
-    private int Search(int key)
-    {
-      //searches for correct key, finds it returns the node, else returns -1
-      for (int i = 0; i < _NumKeys; i++)
-      {
-        if (_Keys[i] >= key)
-        {
-          return i;
-        }
-      }
-      return -1;
-    }
-
-    /// <summary>
     /// Iterates over the _Keys array to find key.
     /// If found returns the index and this else returns -1 and this.
     /// </summary>
@@ -129,15 +107,17 @@ namespace BTreeVisualization
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [],
         0, -1, [], []));
+      // Basket to place all the found entries as it iterates
       List<(int, T)> result = [];
       int index = Search(this, key);
       if (index != -1)
-      {
+      {// Entries in this node or child fit the range
+        // Grab the smallest entries first
         result.AddRange((_Children[index]
           ?? throw new NullChildReferenceException(
             $"Child at index:{index} within node:{ID}")).SearchKeys(key, endKey));
         for (; index < _NumKeys && _Keys[index] >= key && _Keys[index] < endKey;)
-        {
+        {// Continue until we have all entries in range
           result.Add((Keys[index], Contents[index]
             ?? throw new NullContentReferenceException(
               $"Content at index:{index} within node:{ID}")));
@@ -149,6 +129,7 @@ namespace BTreeVisualization
               $"Child at index:{index} within node:{ID}")).SearchKeys(key, endKey));
         }
       }
+      // Check last child in case the index was -1
       if (_NumKeys > 0 && _Keys[_NumKeys - 1] < endKey)
         result.AddRange((_Children[_NumKeys]
           ?? throw new NullChildReferenceException(
@@ -159,7 +140,7 @@ namespace BTreeVisualization
 
     /// <summary>
     /// Calls InsertKey on _Children[i] where i == _Keys[i] < key < _Keys[i+1].
-    /// Then checks if a split occured. If so it inserts the new 
+    /// Then checks if a split occured. If so it inserts the new
     /// ((dividing Key, Content), new Node) to itself.
     /// Afterwards calls split if full.
     /// </summary>
@@ -178,41 +159,30 @@ namespace BTreeVisualization
       _BufferBlock.SendAsync((NodeStatus.ISearching, ID, -1, [key], [data],
         0, -1, [], []));
       ((int, T?), BTreeNode<T>?) result;
-      int i = 0;
-      while (i < _NumKeys && key > _Keys[i])
-      {
-        i++;
-      }
-      if (i == _NumKeys || key != _Keys[i] || key == 0)
-      {
-        result = (_Children[i]
-          ?? throw new NullChildReferenceException(
-            $"Child at index:{i} within node:{ID}")).InsertKey(key, data, ID);
-        if (result.Item2 != null && result.Item1.Item2 != null)
-        {
-          for (int j = _NumKeys - 1; j >= i; j--)
-          {
-            _Keys[j + 1] = _Keys[j];
-            _Contents[j + 1] = _Contents[j];
-            _Children[j + 2] = _Children[j + 1];
-          }
-          _Keys[i] = result.Item1.Item1;
-          _Contents[i] = result.Item1.Item2;
-          _Children[i + 1] = result.Item2;
-          _NumKeys++;
-          (int, int[], T?[]) bufferVar = CreateBufferVar();
-          _BufferBlock.SendAsync((NodeStatus.SplitInsert, ID, bufferVar.Item1,
-            bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
-          if (IsFull())
-          {
-            return Split(parentID);
-          }
+      int i = Search(this, key);
+      if (i == -1)
+        i = _NumKeys;
+      result = (_Children[i]
+        ?? throw new NullChildReferenceException(
+          $"Child at index:{i} within node:{ID}")).InsertKey(key, data, ID);
+      if (result.Item2 != null && result.Item1.Item2 != null)
+      {// Split occured in the child
+        for (int j = _NumKeys - 1; j >= i; j--)
+        {// Making room
+          _Keys[j + 1] = _Keys[j];
+          _Contents[j + 1] = _Contents[j];
+          _Children[j + 2] = _Children[j + 1];
         }
-      }
-      else
-      {
-        _BufferBlock.SendAsync((NodeStatus.SplitInsert, 0, -1, [], [],
-          0, -1, [], []));
+        _Keys[i] = result.Item1.Item1;
+        _Contents[i] = result.Item1.Item2;
+        _Children[i + 1] = result.Item2;
+        _NumKeys++;
+        (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
+        _BufferBlock.SendAsync((NodeStatus.SplitInsert, ID, bufferVar.NumKeys,
+          bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
+        // Check if this node now needs to split.
+        if (IsFull())
+          return Split(parentID);
       }
       return ((-1, default(T)), null);
     }
@@ -225,6 +195,8 @@ namespace BTreeVisualization
     /// LeafNode.Split()</remarks>
     /// <returns>The new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).</returns>
+    /// <exception cref="NullContentReferenceException"></exception>
+    /// <exception cref="NullChildReferenceException"></exception>
     public override ((int, T), BTreeNode<T>) Split(long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.Split, ID, -1, [], [], 0, -1, [], []));
@@ -233,7 +205,7 @@ namespace BTreeVisualization
       BTreeNode<T>[] newChildren = new BTreeNode<T>[_Degree];
       int i = 0;
       for (; i < _Degree - 1; i++)
-      {
+      {// Fill arrays with entries for new node.
         newKeys[i] = _Keys[i + _Degree];
         newContent[i] = _Contents[i + _Degree]
           ?? throw new NullContentReferenceException(
@@ -257,12 +229,13 @@ namespace BTreeVisualization
           $"Content at index:{_NumKeys} within node:{ID}"));
       _Keys[_NumKeys] = default;
       _Contents[_NumKeys] = default;
-      (int, int[], T?[]) bufferVar = CreateBufferVar();
-      (int, int[], T?[]) newNodeBufferVar = newNode.CreateBufferVar();
-      _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, bufferVar.Item1,
-        bufferVar.Item2, bufferVar.Item3, parentID, -1, [], []));
+      // Begin GUI Update
+      (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
+      (int NumKeys, int[] Keys, T?[] Contents) newNodeBufferVar = newNode.CreateBufferVar();
+      _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, bufferVar.NumKeys,
+        bufferVar.Keys, bufferVar.Contents, parentID, -1, [], []));
       _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID,
-        newNodeBufferVar.Item1, newNodeBufferVar.Item2, newNodeBufferVar.Item3,
+        newNodeBufferVar.NumKeys, newNodeBufferVar.Keys, newNodeBufferVar.Contents,
         parentID, -1, [], []));
       for (int j = 0; j <= newNode.NumKeys; j++)
       {
@@ -270,6 +243,7 @@ namespace BTreeVisualization
           (newNode.Children[j] ?? throw new NullChildReferenceException(
             $"Child at index:{j} within node:{newNode.ID}")).ID, -1, [], []));
       }
+      // End GUI Update
       return (dividerEntry, newNode);
     }
 
@@ -289,7 +263,7 @@ namespace BTreeVisualization
       int result = Search(this, key);
       if (result == -1)
       {
-        // Search only goes through keys and thus if it did not 
+        // Search only goes through keys and thus if it did not
         // find it at the last index it returns -1.
         (_Children[_NumKeys] ?? throw new NullChildReferenceException(
           $"Child at index:{_NumKeys} within node:{ID}")).DeleteKey(key);
@@ -301,8 +275,8 @@ namespace BTreeVisualization
           ?? throw new NullChildReferenceException(
             $"Child at index:{result} within node:{ID}")).ForfeitKey();
         MergeAt(result);
-        (int, int[], T?[]) bufferVar = CreateBufferVar();
-        _BufferBlock.SendAsync((NodeStatus.Deleted, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
+        (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
+        _BufferBlock.SendAsync((NodeStatus.Deleted, ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
       }
       else
       {
@@ -312,44 +286,17 @@ namespace BTreeVisualization
       }
     }
 
-    public override bool CheckMyself(int key)
-    {
-      if (key == 67608)
-        Console.Write("here");
-      bool result = _Children[_NumKeys] != null;
-      for (int i = 0; i < _NumKeys; i++)
-      {
-        result = result && _Children[i] != null && _Contents[i] != null;
-        if (_Keys[i] == 503049)
-          Console.Write("here");
-      }
-      if (!result)
-        Console.Write("here");
-      return result;
-      // return true;
-    }
-
-    public override void DeleteKeysSplit(int key, int endKey,
-      BTreeNode<T> rightSibiling)
-    {
-      // if -1 it is last child index
-      int firstKeyIndex = Search(this, key);
-      // if -1 it is last child index
-      int lastIndex = Search(rightSibiling, endKey);
-      if (lastIndex == -1)
-        lastIndex = rightSibiling.NumKeys;
-      if (firstKeyIndex == -1)
-        firstKeyIndex = _NumKeys;
-      (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
-        $"Child at index:{firstKeyIndex} within node:{ID}")).DeleteKeysSplit(
-          key, endKey, ((NonLeafNode<T>)rightSibiling).Children[lastIndex]
-          ?? throw new NullChildReferenceException(
-          $"Child at index:{lastIndex} within node:{ID}"));
-      DeleteKeysLeft(firstKeyIndex);
-      rightSibiling.DeleteKeysRight(lastIndex);
-    }
-
-    public override void DeleteKeysMain(int key, int endKey)
+    /// <summary>
+    /// Searches down the tree until it either finds
+    /// a leaf node or a node that has keys within
+    /// the range which then hands off the search to
+    /// DeleteKeysSplit.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Start of range, inclusive</param>
+    /// <param name="endKey">end of range, exclusive</param>
+    /// <exception cref="NullChildReferenceException"></exception>
+    public override void DeleteKeysMain(int key, int endKey, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID, -1, [], [],
         0, -1, [], []));
@@ -362,14 +309,16 @@ namespace BTreeVisualization
       {// Range is to the far right and doesn't include any keys of this node.
         (_Children[_NumKeys] ?? throw new NullChildReferenceException(
           $"Child at index:{_NumKeys} within node:{ID}"))
-          .DeleteKeysMain(key, endKey);
+          .DeleteKeysMain(key, endKey, parentID);
+        // Check for underflow
         MergeAt(_NumKeys);
       }
       else if (firstKeyIndex == lastIndex)
       {// Range doesn't include any keys from this node.
         (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
           $"Child at index:{firstKeyIndex} within node:{ID}"))
-          .DeleteKeysMain(key, endKey);
+          .DeleteKeysMain(key, endKey, parentID);
+        // Check for underflow
         MergeAt(firstKeyIndex);
       }
       else
@@ -378,42 +327,92 @@ namespace BTreeVisualization
           $"Child at index:{firstKeyIndex} within node:{ID}"))
           .DeleteKeysSplit(key, endKey, _Children[lastIndex]
             ?? throw new NullChildReferenceException(
-            $"Child at index:{lastIndex} within node:{ID}"));
-        int prevProcessAgain;
-        int currProcessAgain = -1;
-        do
-        {
-          prevProcessAgain = currProcessAgain;
-          currProcessAgain = (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
-            $"Child at index:{firstKeyIndex} within node:{ID}")).RestoreLeft();
-        } while (currProcessAgain > 1 && prevProcessAgain != currProcessAgain);
-        if (prevProcessAgain == currProcessAgain)
-          Console.WriteLine();
-        currProcessAgain = -1;
-        do
-        {
-          prevProcessAgain = currProcessAgain;
-          currProcessAgain = (_Children[lastIndex] ?? throw new NullChildReferenceException(
-            $"Child at index:{lastIndex} within node:{ID}")).RestoreRight();
-        } while (currProcessAgain > 1 && prevProcessAgain != currProcessAgain);
-        if (prevProcessAgain == currProcessAgain)
-          Console.WriteLine();
+            $"Child at index:{lastIndex} within node:{ID}"), parentID);
+        // Fixing left tree empty nodes
+        (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
+          $"Child at index:{firstKeyIndex} within node:{ID}")).RestoreLeft();
+        // Fixing right tree empty nodes
+        (_Children[lastIndex] ?? throw new NullChildReferenceException(
+          $"Child at index:{lastIndex} within node:{ID}")).RestoreRight();
         ReduceGap(firstKeyIndex, lastIndex);
-        MergeAt(firstKeyIndex);
+        // Check for underflow
+        if (firstKeyIndex < _NumKeys)
+        {// Make certain to catch both the left and right
+          MergeAt(firstKeyIndex);
+          if (firstKeyIndex < _NumKeys)
+            MergeAt(firstKeyIndex + 1);
+          else
+            MergeAt(_NumKeys);
+        }
+        else
+        {// The right and left merged
+          MergeAt(_NumKeys);
+        }
       }
-      CheckMyself(0);
     }
 
+    /// <summary>
+    /// Continues the delete range search fork into
+    /// children in range to keep going deeper down the
+    /// tree until it hits bottom. Then begins deleting all keys
+    /// in range from both sides of the fork.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="key">Key to search for in left fork.</param>
+    /// <param name="endKey">Key to search for in right fork.
+    /// Still exclusive.</param>
+    /// <param name="rightSibiling">Right fork.</param>
+    /// <exception cref="NullChildReferenceException"></exception>
+    public override void DeleteKeysSplit(int key, int endKey,
+      BTreeNode<T> rightSibiling, long parentID)
+    {
+      // if -1 it is last child index
+      int firstKeyIndex = Search(this, key);
+      // if -1 it is last child index
+      int lastIndex = Search(rightSibiling, endKey);
+      if (lastIndex == -1)
+        lastIndex = rightSibiling.NumKeys;
+      if (firstKeyIndex == -1)
+        firstKeyIndex = _NumKeys;
+      // Indexes are ready to use
+      (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
+        $"Child at index:{firstKeyIndex} within node:{ID}")).DeleteKeysSplit(
+          key, endKey, ((NonLeafNode<T>)rightSibiling).Children[lastIndex]
+          ?? throw new NullChildReferenceException(
+          $"Child at index:{lastIndex} within node:{ID}"), parentID);
+      // Clean out entries in range.
+      DeleteKeysLeft(firstKeyIndex, parentID);
+      rightSibiling.DeleteKeysRight(lastIndex, parentID);
+    }
+
+    /// <summary>
+    /// Replaces the keys and children included in the
+    /// delete range in this nodes. This fixes the gap
+    /// between left and right fork children. All keys
+    /// from firstKeyIndex to lastIndex - 1 are effectively
+    /// deleted.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="firstKeyIndex">Index of the left child
+    /// effected by the delete range.</param>
+    /// <param name="lastIndex">Index of the right child
+    /// effected by the delete range.</param>
+    /// <exception cref="NullChildReferenceException"></exception>
     private void ReduceGap(int firstKeyIndex, int lastIndex)
     {
+      // Get a divider entry
       (_Keys[firstKeyIndex], _Contents[firstKeyIndex]) =
         (_Children[firstKeyIndex] ?? throw new NullChildReferenceException(
         $"Child at index:{_NumKeys} within node:{ID}")).ForfeitKey();
+      // If no divider entry available from left fork then delete.
       if (_Contents[firstKeyIndex] != null)
         firstKeyIndex++;
       if (firstKeyIndex != lastIndex)
-      {
+      {// Range included more than one key or left fork is empty.
         int i = firstKeyIndex;
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+        for (int k = firstKeyIndex; k < lastIndex; k++)
+          _Children[k].DeleteNode(ID);
         Children[firstKeyIndex] = _Children[lastIndex];
         for (int j = lastIndex; j < _NumKeys;)
         {
@@ -430,62 +429,96 @@ namespace BTreeVisualization
           i++;
           Children[i] = default;
         }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
         _NumKeys -= lastIndex - firstKeyIndex;
+        (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange,
+          ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
       }
     }
 
-    public override void DeleteKeysLeft(int index)
+    /// <summary>
+    /// Recurs on its children and then
+    /// sends NodeDeleted status to the frontend
+    /// for this node.
+    /// </summary>
+    /// <param name="id">ID of the parent node.</param>
+    public override void DeleteNode(long id)
+    {
+      for (int i = 0; i <= _NumKeys; i++)
+      {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+        _Children[i].DeleteNode(ID);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+      }
+      _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
+        ID, -1, [], [], id, -1, [], []));
+    }
+
+    /// <summary>
+    /// Deletes all entries and children from index
+    /// and up.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="index">Index to start
+    /// deleting from.</param>
+    public override void DeleteKeysLeft(int index, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
         -1, [], [], 0, -1, [], []));
       if (index != _NumKeys)
-      {
+      {// Some keys belong to range.
         for (int i = index; i < _NumKeys;)
         {
           _Keys[i] = default;
           _Contents[i] = default;
           i++;
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-          _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-            _Children[i].ID, -1, [], [], 0, -1, [], []));
+          _Children[i].DeleteNode(ID);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
           _Children[i] = default;
         }
         _NumKeys = index;
-        (int, int[], T?[]) bufferVar = CreateBufferVar();
+        (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
         _BufferBlock.SendAsync((NodeStatus.DeletedRange,
-          ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, 0, -1, [], []));
+          ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
       }
       else
-      {
+      {// No keys belong to range.
         _BufferBlock.SendAsync((NodeStatus.DeletedRange,
           ID, -1, [], [], 0, -1, [], []));
       }
-      CheckMyself(0);
     }
 
-    public override void DeleteKeysRight(int index)
+    /// <summary>
+    /// Deletes all entries and children up to index but
+    /// not including index. Then shifts
+    /// remaining entries to the beginning of
+    /// their arrays.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="index">Index to start
+    /// copying from.</param>
+    public override void DeleteKeysRight(int index, long parentID)
     {
       _BufferBlock.SendAsync((NodeStatus.DSearching, ID,
         -1, [], [], 0, -1, [], []));
       if (index > 0)
-      {
+      {// Some keys belong to range.
         int j = 0;
+        for (int k = 0; k < index; k++)
+        {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-        _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-          _Children[j].ID, -1, [], [], 0, -1, [], []));
+          _Children[k].DeleteNode(ID);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
+        }
+        // Shift array entries to the left.
         _Children[j] = _Children[index];
         for (int i = index; i < _NumKeys;)
         {
           _Keys[j] = _Keys[i];
           _Contents[j] = _Contents[i];
           j++;
-          if (j < index)
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            _BufferBlock.SendAsync((NodeStatus.NodeDeleted,
-              _Children[j].ID, -1, [], [], 0, -1, [], []));
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
           i++;
           _Children[j] = _Children[i];
         }
@@ -493,35 +526,50 @@ namespace BTreeVisualization
         {
           _Keys[j] = default;
           _Contents[j] = default;
-          _Children[++j] = default;
+          j++;
+          _Children[j] = default;
         }
         _NumKeys -= index;
-        (int, int[], T?[]) bufferVar = CreateBufferVar();
+        (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
         _BufferBlock.SendAsync((NodeStatus.DeletedRange, ID,
-          bufferVar.Item1, bufferVar.Item2,
-          bufferVar.Item3, 0, -1, [], []));
+          bufferVar.NumKeys, bufferVar.Keys,
+          bufferVar.Contents, 0, -1, [], []));
       }
-      CheckMyself(0);
+      else
+      {// No keys belong to range.
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange,
+          ID, -1, [], [], 0, -1, [], []));
+      }
     }
 
-    public override int RestoreRight()
+    /// <summary>
+    /// Recurs on left most child to the bottom.
+    /// Then runs MergeAt.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <exception cref="NullChildReferenceException"></exception>
+    public override void RestoreRight()
     {
-      int result = (_Children[0] ?? throw new NullChildReferenceException(
+      _BufferBlock.SendAsync((NodeStatus.Restoration, ID,
+        -1, [], [], 0, -1, [], []));
+      (_Children[0] ?? throw new NullChildReferenceException(
         $"Child at index:0 within node:{ID}")).RestoreRight();
       MergeAt(0);
-      if (result > 0 || _NumKeys == 0)
-        return ++result;
-      return result;
     }
 
-    public override int RestoreLeft()
+    /// <summary>
+    /// Recurs on right most child to the bottom.
+    /// Then runs MergeAt.
+    /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <exception cref="NullChildReferenceException"></exception>
+    public override void RestoreLeft()
     {
-      int result = (_Children[_NumKeys] ?? throw new NullChildReferenceException(
+      _BufferBlock.SendAsync((NodeStatus.Restoration, ID,
+        -1, [], [], 0, -1, [], []));
+      (_Children[_NumKeys] ?? throw new NullChildReferenceException(
         $"Child at index:{_NumKeys} within node:{ID}")).RestoreLeft();
       MergeAt(_NumKeys);
-      if (result > 0 || _NumKeys == 0)
-        return ++result;
-      return result;
     }
 
     /// <summary>
@@ -567,127 +615,142 @@ namespace BTreeVisualization
       _Children[_NumKeys + rightSibiling.NumKeys] = ((NonLeafNode<T>)rightSibiling).Children[rightSibiling.NumKeys];
       _NumKeys += rightSibiling.NumKeys;
       rightSibiling.LosesToLeft(rightSibiling.NumKeys);
-      (int, int[], T?[]) bufferVar = CreateBufferVar();
-      _BufferBlock.SendAsync((NodeStatus.Merge, ID, bufferVar.Item1, bufferVar.Item2, bufferVar.Item3, rightSibiling.ID, -1, [], []));
+      (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
+      _BufferBlock.SendAsync((NodeStatus.Merge, ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, rightSibiling.ID, -1, [], []));
     }
 
-#pragma warning disable CS8604 // Possible null reference argument.
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
     /// <summary>
-    /// Checks the child at index for underflow. If so it then checks for _Degree
-    /// number of children in the right child of the key. _Degree or greater means
-    /// merging the two will result in an overflow or a split. If less than _Degree
-    /// then the merge will not be a full node needing to be split immediately.
-    /// This is meant to reduce the number of times elements are moved back and forth.
-    /// Underflow is _NumKeys <= _Degree - 2.
-    /// Full is _NumKeys == 2 * _Degree - 1.
-    /// Don't forget the dividing key adds 1
-    /// Sum of the two nodes in minimal bad scenario:
-    /// (_Degree - 2) + _Degree + 1 == 2 * _Degree - 1
-    /// Results in Full at least.
+    /// Checks the child at index for underflow.
+    /// If so it checks how much underflow then compares
+    /// to the sibiling next to it for enough to fix the
+    /// underflow. If it has enough it will either grab
+    /// just enough to fix it or merges with it depending
+    /// on how full it would make it.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
+    /// <remarks>Author: Tristan Anderson</remarks>
     /// <param name="index">Index of affected child node.</param>
     public void MergeAt(int index)
     {
-      if (_Children[index] == null)
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+      if (_Children[index] == null) // First null check
         throw new NullChildReferenceException(
         $"Child at index:{index} within node:{ID}");
       while (_Children[index] != null && _Children[index].IsUnderflow() && _NumKeys > 0)
-      {
+      {// There is work to be done and it can do work in this node
+        // # of nodes to add to underflow child
         int keysNeeded = _Degree - 1 - _Children[index].NumKeys;
         if (index == _NumKeys && index != 0)
-        {
+        {// Move index to prevent out of bounds
+          // Makes certain we can always work with left to right
           index--;
-          if (_Children[index] == null)
+          if (_Children[index] == null)// New first null check
             throw new NullChildReferenceException(
             $"Child at index:{index} within node:{ID}");
         }
-        if (_Children[index + 1] == null)
+        if (_Children[index + 1] == null)// Second null check
           throw new NullChildReferenceException(
           $"Child at index:{index + 1} within node:{ID}");
         if (_Children[index + 1].NumKeys - keysNeeded >= _Degree - 1)
-        {
-          int diff = _Children[index + 1].NumKeys - _Degree + 1;
-          _Children[index].GainsFromRight(diff, _Keys[index], _Contents[index], _Children[index + 1]);
-          _Keys[index] = _Children[index + 1].Keys[diff - 1];
-          _Contents[index] = _Children[index + 1].Contents[diff - 1];
-          _Children[index + 1].LosesToLeft(diff);
-          _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, Children[index].NumKeys,
-            Children[index].Keys, Children[index].Contents, Children[index + 1].ID,
-            Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents));
+        {// Right node can give enough nodes without causing another underflow
+          _Children[index].GainsFromRight(keysNeeded, _Keys[index], _Contents[index], _Children[index + 1]);
+          _Keys[index] = _Children[index + 1].Keys[keysNeeded - 1];
+          _Contents[index] = _Children[index + 1].Contents[keysNeeded - 1];
+          _Children[index + 1].LosesToLeft(keysNeeded);
+          (int NumKeys, int[] Keys, T?[] Contents) leftBufferVar = Children[index].CreateBufferVar();
+          (int NumKeys, int[] Keys, T?[] Contents) rightBufferVar = Children[index + 1].CreateBufferVar();
+          _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index].ID, leftBufferVar.NumKeys,
+            leftBufferVar.Keys, leftBufferVar.Contents, Children[index + 1].ID,
+            rightBufferVar.NumKeys, rightBufferVar.Keys, rightBufferVar.Contents));
           if (_Children[index] as NonLeafNode<T> != null)
           {
-            for (int i = 0; i < diff; i++)
+            for (int i = 0; i < keysNeeded; i++)
             {
               _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index].ID, -1, [], [],
                 ((NonLeafNode<T>)Children[index]).Children[Children[index].NumKeys - i].ID, -1, [], []));
             }
+            // Found that the node was empty before the fix
+            // Meaning possible children in underflow condition
             if (keysNeeded == _Degree - 1)
               ((NonLeafNode<T>)Children[index]).MergeAt(0);
           }
         }
         else if (_Children[index].NumKeys - keysNeeded >= _Degree - 1)
-        {
-          int diff = _Children[index].NumKeys - _Degree + 1;
-          _Children[index + 1].GainsFromLeft(diff, _Keys[index], _Contents[index], _Children[index]);
-          _Keys[index] = _Children[index].Keys[_Children[index].NumKeys - diff];
-          _Contents[index] = _Children[index].Contents[_Children[index].NumKeys - diff];
-          _Children[index].LosesToRight(diff);
+        {// Left node can give enough nodes without causing another underflow
+          _Children[index + 1].GainsFromLeft(keysNeeded, _Keys[index], _Contents[index], _Children[index]);
+          _Keys[index] = _Children[index].Keys[_Children[index].NumKeys - keysNeeded];
+          _Contents[index] = _Children[index].Contents[_Children[index].NumKeys - keysNeeded];
+          _Children[index].LosesToRight(keysNeeded);
+          (int NumKeys, int[] Keys, T?[] Contents) leftBufferVar = Children[index].CreateBufferVar();
+          (int NumKeys, int[] Keys, T?[] Contents) rightBufferVar = Children[index + 1].CreateBufferVar();
           _BufferBlock.SendAsync((NodeStatus.UnderFlow, Children[index + 1].ID,
-            Children[index + 1].NumKeys, Children[index + 1].Keys, Children[index + 1].Contents,
-            Children[index].ID, Children[index].NumKeys,
-            Children[index].Keys, Children[index].Contents));
+            rightBufferVar.NumKeys, rightBufferVar.Keys, rightBufferVar.Contents,
+            Children[index].ID, leftBufferVar.NumKeys,
+            leftBufferVar.Keys, leftBufferVar.Contents));
           if (_Children[index] as NonLeafNode<T> != null)
           {
-            for (int i = 0; i < diff; i++)
+            for (int i = 0; i < keysNeeded; i++)
             {
               _BufferBlock.SendAsync((NodeStatus.Shift, _Children[index + 1].ID, -1, [], [],
                 ((NonLeafNode<T>)Children[index + 1]).Children[i].ID, -1, [], []));
             }
+            // Found that the node was empty before the fix
+            // Meaning possible children in underflow condition
             if (keysNeeded == _Degree - 1)
               ((NonLeafNode<T>)Children[index + 1]).MergeAt(Children[index + 1].NumKeys);
           }
         }
         else
         {
+          // Finds if the nodes were empty before
+          // Meaning possible underflow children
           bool rightZeroNode = _Children[index + 1].NumKeys == 0;
+          int leftIndex = Children[index].NumKeys + 1;
           bool leftZeroNode = _Children[index].NumKeys == 0;
+          // Get rid of dividing entry
           _Children[index].Merge(_Keys[index], _Contents[index], _Children[index + 1]);
-          for (; index < _NumKeys - 1;)
+          int i = index;// Make certain not to break the enclosing while loop
+          for (; i < _NumKeys - 1;)
           {
-            _Keys[index] = _Keys[index + 1];
-            _Contents[index] = _Contents[index + 1];
-            index++;
-            _Children[index] = _Children[index + 1];
+            _Keys[i] = _Keys[i + 1];
+            _Contents[i] = _Contents[i + 1];
+            i++;
+            _Children[i] = _Children[i + 1];
           }
-          _Keys[index] = default;
-          _Contents[index] = default;
-          _Children[index + 1] = default;
+          _Keys[i] = default;
+          _Contents[i] = default;
+          _Children[i + 1] = default;
           _NumKeys--;
-          _BufferBlock.SendAsync((NodeStatus.MergeParent, ID, NumKeys, Keys, Contents, 0, -1, [], []));
-          if (_Children[index] as NonLeafNode<T> != null)
+          (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
+          _BufferBlock.SendAsync((NodeStatus.MergeParent, ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
+          if (_Children[0] as NonLeafNode<T> != null)
           {
+            // If it found that either node was empty before the fix
+            // Meaning possible children in underflow condition
             if (leftZeroNode)
               ((NonLeafNode<T>)Children[index]).MergeAt(0);
             if (rightZeroNode)
-              ((NonLeafNode<T>)Children[index]).MergeAt(Children[index].NumKeys);
+              if (leftIndex <= Children[index].NumKeys)
+                ((NonLeafNode<T>)Children[index]).MergeAt(leftIndex);
+              else
+                ((NonLeafNode<T>)Children[index]).MergeAt(Children[index].NumKeys);
           }
         }
       }
-    }
 #pragma warning restore CS8604 // Possible null reference argument.
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+    }
 
     /// <summary>
-    /// Inserts at the beginning of this node arrays the 
-    /// given key and data and grabs the last child of the sibiling.
+    /// Inserts a number of entries equal to diff 
+    /// at the beginning of this node's arrays, starting with the
+    /// divider entry then the rest from the end of the sibiling.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-22</remarks>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="diff"># of entries to be added to this node. This includes
+    /// the divider entry.</param>
     /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to left. (Sibiling's Keys should be
@@ -698,7 +761,7 @@ namespace BTreeVisualization
       {
         _Children[_NumKeys + diff] = _Children[_NumKeys];
         for (int i = _NumKeys - 1; i >= 0; i--)
-        {
+        {// Making room
           _Keys[i + diff] = _Keys[i];
           _Contents[i + diff] = _Contents[i];
           _Children[i + diff] = _Children[i];
@@ -719,10 +782,13 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Tacks on the given key and data and grabs the first child of the sibiling.
+    /// Inserts a number of entries equal to diff 
+    /// at the beginning of this node's arrays, starting with the
+    /// divider entry then the rest from the start of the sibiling.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="diff"># of entries to be added to this node. This includes
+    /// the divider entry.</param>
     /// <param name="dividerKey">Key from parent between this node and sibiling.</param>
     /// <param name="dividerData">Coresponding Content to dividerKey.</param>
     /// <param name="sibiling">Sibiling to right. (Sibiling's Keys
@@ -748,13 +814,11 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Author: Tristan Anderson
-    /// Date: 2024-02-18
-    /// Shifts the values in the arrays by one to the left overwriting 
-    /// the first entries and decrements the _NumKeys var.
+    /// Shifts the values in the arrays by diff to the left overwriting
+    /// the first entries and decrements the _NumKeys var by diff.
     /// </summary>
-    /// <remarks>Author: Tristan Anderson,
-    /// Date: 2024-02-18</remarks>
+    /// <remarks>Author: Tristan Anderson</remarks>
+    /// <param name="diff"># of entries to be removed from this node.</param>
     public override void LosesToLeft(int diff)
     {
       if (diff > 0)
@@ -780,7 +844,7 @@ namespace BTreeVisualization
     }
 
     /// <summary>
-    /// Decrements the _NumKeys var.
+    /// Decrements the _NumKeys var by diff.
     /// </summary>
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-22</remarks>
@@ -801,7 +865,7 @@ namespace BTreeVisualization
     /// <remarks>Author: Tristan Anderson,
     /// Date: 2024-02-13</remarks>
     /// <param name="x">Hierachical Node ID</param>
-    /// <returns>String with the entirety of this node's keys 
+    /// <returns>String with the entirety of this node's keys
     /// and contents arrays formmatted in JSON syntax.</returns>
     public override string Traverse(string x)
     {
@@ -833,6 +897,7 @@ namespace BTreeVisualization
     /// <summary>
     /// Gets the total number keys in all children of this node and itself.
     /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
     /// <returns>Count of keys.</returns>
     /// <exception cref="NullChildReferenceException"></exception>
     static public long KeyCount(NonLeafNode<T> node)
@@ -858,6 +923,7 @@ namespace BTreeVisualization
     /// <summary>
     /// Gets the total number of nodes from this node down plus itself.
     /// </summary>
+    /// <remarks>Author: Tristan Anderson</remarks>
     /// <returns>Count of nodes.</returns>
     /// <exception cref="NullChildReferenceException"></exception>
     static public int NodeCount(NonLeafNode<T> node)

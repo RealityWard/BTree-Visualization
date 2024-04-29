@@ -59,9 +59,9 @@ namespace ThreadCommunication
     /// </summary>
     DeleteRange,
     /// <summary>
-    /// Initial response to DeleteKeys calling DeleteKeys on two children. Only ID sent.
+    /// Sent on the path the restore methods take after delete a range. Only ID sent.
     /// </summary>
-    DeleteRangeSplit,
+    Restoration,
     /// <summary>
     /// Sent everytime DeleteKey is called on a node. Only ID sent.
     /// </summary>
@@ -118,11 +118,6 @@ namespace ThreadCommunication
     /// </summary>
     UnderFlow,
     /// <summary>
-    /// Sent after UnderFlow in children.
-    /// ID,NumKeys,Keys,Contents
-    /// </summary>
-    UnderFlowParent,
-    /// <summary>
     /// During both split and merge children will need to update who they point to.
     /// Alt refers to child node.
     /// ID,-1,[],[],AltID
@@ -162,12 +157,18 @@ namespace ThreadCommunication
     /// </summary>
     FoundRange,
     /// <summary>
+    /// Like FoundRange except only sent at the end of a search range
+    /// from the tree object which combines all the foundrange entries into one.
+    /// 0,Keys.Length,Keys,Contents
+    /// </summary>
+    FoundRangeComplete,
+    /// <summary>
     /// Sent once the key values of the nonLeafNode are updated
     /// when the leafnodes in the bplustree get deleted, or a merge happens
     /// the key values for the non-leafnodes have to change
     /// sends the ID, Keys
     /// </summary>
-    //UpdateKeyValues,
+    UpdateKeyValues,
     /// <summary>
     /// Sent if the node had nothing left
     /// during a delete over a range of keys.

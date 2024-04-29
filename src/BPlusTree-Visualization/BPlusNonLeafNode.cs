@@ -159,7 +159,6 @@ namespace BPlusTreeVisualization
             $"Child at index:{i + dividerIndex} within node:{ID}");
         _Children[i + dividerIndex] = default;
         _Keys[i + dividerIndex] = default;
-        _BufferBlock.SendAsync((NodeStatus.Shift, ID , -1, [], [], newChildren[i-1].ID, -1, [], []));
       }
       newChildren[i -1] = _Children[i + dividerIndex]
         ?? throw new NullChildReferenceException(
@@ -177,8 +176,15 @@ namespace BPlusTreeVisualization
         temp.Item2, [], parentID, -1, [], []));
 
       (int, int[]) temp2 = newNode.CreateBufferVar();
-      _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, temp2.Item1,
+      _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID, temp2.Item1,
         temp2.Item2, [], parentID, -1, [], []));
+
+      for (int j = 0; j <= newNode.NumKeys; j++)
+      {
+        _BufferBlock.SendAsync((NodeStatus.Shift, newNode.ID, -1, [], [],
+          (newNode.Children[j] ?? throw new NullChildReferenceException(
+            $"Child at index:{j} within node:{newNode.ID}")).ID, -1, [], []));
+      }
       return (dividerEntry, newNode);
     }
 
@@ -246,7 +252,7 @@ namespace BPlusTreeVisualization
           UpdateKeyValues();
           
           (int, int[]) temp5 = CreateBufferVar(); 
-          //_BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp5.Item1,temp5.Item2,[],-1,-1,[],[]));
+          _BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp5.Item1,temp5.Item2,[],-1,-1,[],[]));
           bool isRootUnderflow = IsRootUnderflow();
           if(isRootUnderflow){
             //merge root status update
@@ -264,7 +270,7 @@ namespace BPlusTreeVisualization
           
           //new status update: updated key values
           (int, int[]) temp = CreateBufferVar();
-          //_BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp.Item1,temp.Item2,[],-1,-1,[],[]));
+          _BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp.Item1,temp.Item2,[],-1,-1,[],[]));
           bool isUnderflow = IsUnderflow();
 
           if(!isUnderflow){
@@ -310,7 +316,7 @@ namespace BPlusTreeVisualization
           }
           UpdateKeyValues();
           (int, int[]) temp4 = CreateBufferVar();
-          //_BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp4.Item1,temp4.Item2,[],-1,-1,[],[]));
+          _BufferBlock.SendAsync((NodeStatus.UpdateKeyValues,ID,temp4.Item1,temp4.Item2,[],-1,-1,[],[]));
   
           parentNode.PropagateChanges(pathStack);
 
@@ -321,10 +327,10 @@ namespace BPlusTreeVisualization
     /// Traverses through the (sub)tree and updates the nonleaf key values
     /// </summary>
     public void UpdateKeyValues(){
-      for(int i = 0; i < NumKeys;i++){
+      for(int i = 0; i < _Keys.Count();i++){
         _Keys[i] = default;
       }
-      for(int i = 1; i < NumKeys + 1; i++){
+      for(int i = 1; i < _NumKeys + 1; i++){
         if(_Children[i] != null){
           UpdateKeyValuesHelper(i);
         }
