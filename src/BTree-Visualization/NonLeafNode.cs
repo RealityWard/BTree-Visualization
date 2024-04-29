@@ -431,6 +431,9 @@ namespace BTreeVisualization
         }
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
         _NumKeys -= lastIndex - firstKeyIndex;
+        (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange,
+          ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
       }
     }
 
