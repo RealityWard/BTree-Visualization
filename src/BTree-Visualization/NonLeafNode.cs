@@ -532,7 +532,11 @@ namespace BTreeVisualization
           bufferVar.NumKeys, bufferVar.Keys,
           bufferVar.Contents, 0, -1, [], []));
       }
-      // No keys belong to range.
+      else
+      {// No keys belong to range.
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange,
+          ID, -1, [], [], 0, -1, [], []));
+      }
     }
 
     /// <summary>
