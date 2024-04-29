@@ -20,21 +20,16 @@ namespace B_TreeVisualizationGUI
     private GUITree _tree;
     Dictionary<long, GUINode> nodeDictionary = new Dictionary<long, GUINode>();
     private System.Windows.Forms.Timer scrollTimer;
-    private bool isFirstNodeEncountered = true;
     private int rootHeight = 0;
     private GUINode? oldRoot;
     private GUINode lastSearched;
     private ConcurrentQueue<(NodeStatus status, long id, int numKeys, int[] keys, Person?[] contents, long altID, int altNumKeys, int[] altKeys, Person?[] altContents)> messageQueue;
-    private bool isProcessing = false;
     private int animationSpeed;
     private bool animate = true;
-    private Task Animation;
     private Task _Producer;
-    private bool isConsumerTaskRunning = false;
     private long lastHighlightedID;
     private long lastHighlightedAltID;
     private long altShiftHighlightID;
-    private bool seenShift = false;
     private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
     // Statuses we don't want to delay the animations
@@ -1032,12 +1027,10 @@ namespace B_TreeVisualizationGUI
 
     private async void ResetTreeAndForm()
     {
-      isProcessing = true;
       messageQueue = new ConcurrentQueue<(NodeStatus, long, int, int[], Person?[], long, int, int[], Person?[])>();
       await Task.Run(() =>
       {
         Thread.Sleep(100);
-        isProcessing = false;
       });
 
       EnableButtonEvents();
@@ -1055,7 +1048,6 @@ namespace B_TreeVisualizationGUI
       await inputBuffer.SendAsync((TreeCommand.Tree, degree, 0, default(Person?)));
       panel1.Invalidate();
       rootHeight = 0;
-      isFirstNodeEncountered = false;
       oldRoot = default;
 
       // Clear input textbox
@@ -1180,7 +1172,6 @@ namespace B_TreeVisualizationGUI
                 case TreeCommand.Tree:
                   _Tree = new BTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
                   Debug.WriteLine("Handling Tree command");
-                  isFirstNodeEncountered = false;
                   break;
                 default:
                   Debug.WriteLine("TreeCommand:{0} not recognized", action);
@@ -1226,7 +1217,6 @@ namespace B_TreeVisualizationGUI
                 case TreeCommand.Tree:
                   _Tree = new BPlusTree<Person>(key, outputBuffer); // This may not be correct, but it works for now
                   Debug.WriteLine("Handling Tree command");
-                  isFirstNodeEncountered = false;
                   break;
                 default:
                   Debug.WriteLine("TreeCommand:{0} not recognized", action);
