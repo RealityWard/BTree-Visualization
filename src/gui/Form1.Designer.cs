@@ -326,6 +326,7 @@ namespace B_TreeVisualizationGUI
             // 
             // panel2
             // 
+            panel2.Dock = DockStyle.Bottom;
             panel2.Controls.Add(btnSearchDeleteRange);
             panel2.Controls.Add(chkBTreeTrue);
             panel2.Controls.Add(lblCurrentProcess);

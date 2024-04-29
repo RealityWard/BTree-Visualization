@@ -975,7 +975,7 @@ namespace B_TreeVisualizationGUI
                 }
                 else if (command == "delete")
                 {
-                    inputBuffer.SendAsync((TreeCommand.Delete, startKey, endKey, null));
+                    inputBuffer.SendAsync((TreeCommand.DeleteRange, startKey, endKey, null));
                 }
             }
             else
@@ -1209,6 +1209,9 @@ namespace B_TreeVisualizationGUI
                                     break;
                                 case TreeCommand.Delete:
                                     _Tree.Delete(key);
+                                    break;
+                                case TreeCommand.DeleteRange:
+                                    _Tree.DeleteRange(key, endKey);
                                     break;
                                 case TreeCommand.Search:
                                     _Tree.Search(key);
