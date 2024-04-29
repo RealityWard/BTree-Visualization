@@ -276,6 +276,9 @@ namespace BTreeVisualization
           _Contents[i] = default;
         }
         _NumKeys = firstKeyIndex;
+        (int NumKeys, int[] Keys, T?[] Contents) bufferVar = CreateBufferVar();
+        _BufferBlock.SendAsync((NodeStatus.DeletedRange,
+          ID, bufferVar.NumKeys, bufferVar.Keys, bufferVar.Contents, 0, -1, [], []));
       }
     }
 
