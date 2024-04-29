@@ -628,16 +628,29 @@ namespace B_TreeVisualizationGUI
                     }
                 case NodeStatus.Found:
                     {
-                        lblCurrentProcess.Text = "Key found.";
-                        if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node))
-                        {
+                        Debug.WriteLine("Received Found status."); // For debug purposes DELETE LATER
+                        if(feedback.numKeys != -1){
+                          lblCurrentProcess.Text = ("Key found."); // Inform user of what process is currently happening
+              
+                          if (nodeDictionary.TryGetValue(feedback.id, out GUINode? node))
+                          {
                             node.Searched = true;
                             lastSearched = node;
-                            Debug.WriteLine($"Node ID={feedback.id} has been highlighted.");
-                        }
-                        SetHighlightedNode(feedback.id); // Highlights node for animations
-                        UpdateVisuals(); // Update the panel to show changes
-                        break;
+                            /*
+                            int displayKey = feedback.keys[0];
+                            Person? displayPerson = feedback.contents[0];
+                            if (displayPerson != null){
+                              string name = displayPerson.ToString();
+                              lblCurrentProcess.Text += $"\nKey: {displayKey}" + $" Contents: {name}";
+                            }
+                            */
+                            Debug.WriteLine($"Node ID={feedback.id} has been highlighted."); // For debug purposes DELETE LATER
+                          }
+                          UpdateVisuals(); // Update the panel to show changes
+                          }else{
+                          lblCurrentProcess.Text = ("Key not found.");
+                        } 
+                      break;
                     }
                 case NodeStatus.FoundRange:
                     {

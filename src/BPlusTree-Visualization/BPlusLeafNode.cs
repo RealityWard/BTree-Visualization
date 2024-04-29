@@ -82,7 +82,8 @@ namespace BPlusTreeVisualization
       {
         if (_Keys[i] == key)
         {
-          _BufferBlock.SendAsync((NodeStatus.Found, ID, i, [key], [Contents[i]], 0, -1, [], []));
+          T? contents = Contents[i];
+          _BufferBlock.SendAsync((NodeStatus.Found, ID, i, [key], [contents], 0, -1, [], []));
           return i;
         }
       }
