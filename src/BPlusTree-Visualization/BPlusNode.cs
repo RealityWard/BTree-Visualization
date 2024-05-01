@@ -26,6 +26,7 @@ namespace BPlusTreeVisualization
     /// Holds key entries for this node.
     /// </summary>
     protected int[] _Keys = new int[degree];
+
     /// <summary>
     /// Getter of _Keys
     /// </summary>
@@ -33,17 +34,19 @@ namespace BPlusTreeVisualization
     {
       get { return _Keys; }
     }
+
     /// <summary>
     /// Removes the beginning entry of this node.
     /// </summary>
     /// Date: 2024-03-18</remarks>
     public abstract void LosesToLeft();
+
     /// <summary>
     /// Removes the last entry of this node.
     /// </summary>
     /// Date: 2024-03-18</remarks>
-    
     public abstract void LosesToRight();
+
     /// <summary>
     /// Checks if this node is at max capacity.
     /// </summary>
@@ -53,18 +56,20 @@ namespace BPlusTreeVisualization
     {
       return _NumKeys > _Degree - 1;
     }
+
     /// <summary>
     /// Checks if this node is below minimum capacity.
     /// </summary>
     /// <returns>True if it is below.</returns>
-    
     public abstract bool IsUnderflow();
+
     /// <summary>
     /// Find a key in this node or in its children.
     /// </summary>
     /// <param name="key">Integer to find in _Keys[].</param>
     /// <returns>If found returns the index and this node else returns -1 and this node.</returns>
     public abstract (int, BPlusTreeNode<T>) SearchKey(int key);
+
     /// <summary>
     /// Insert new entry to this node or one of its children.
     /// Then recognize if a child split and adjust accordingly.
@@ -76,14 +81,13 @@ namespace BPlusTreeVisualization
     /// the new node created from the split and the dividing key with
     /// corresponding content as ((dividing Key, Content), new Node).
     /// Otherwise it returns ((-1, null), null).</returns>
-    /// 
     public abstract ((int, T?), BPlusTreeNode<T>?) InsertKey(int key, T data, long parentID);
+
     /// <summary>
     /// Delete an entry matching key from this node or child node.
     /// </summary>
     /// <remarks>Author: Tristan Anderson, Date: 2024-02-18</remarks>
     /// <param name="key">Integer to search for and delete if found.</param>
-    
     public abstract void DeleteKey(int key, Stack<Tuple<BPlusNonLeafNode<T>,int>> pathStack);
     }
   }

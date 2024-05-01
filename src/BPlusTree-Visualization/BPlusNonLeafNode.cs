@@ -75,18 +75,22 @@ namespace BPlusTreeVisualization
     /// recursively traverses down the tree and checks its children, eventually ends up in leafnodes and returns found index and its node
     /// </summary>
     /// <param name="key">Integer to find in _Keys[] of this node.</param>
-    /// <returns>If found returns index, and its node, if not returns -1 and this.</returns>
+    /// <returns>If found returns index, and its node, if not returns -1 and this node.</returns>
  
     public override (int, BPlusTreeNode<T>) SearchKey(int key)
     {
       _BufferBlock.SendAsync((NodeStatus.SSearching, ID, -1, [], [], 0, -1, [], []));
+    
       int index = Search(key);
   
       if(_Children[index] != null) {
 
+        //if child is a leaf, search for key in that node
         if(_Children[index] is BPlusLeafNode<T> leaf){
           (int, BPlusTreeNode<T>) result = leaf.SearchKey(key);
           return result;
+        
+        //else, continue propogating down the tree
         }else if(_Children[index] is BPlusNonLeafNode<T> NonLeaf){
           return NonLeaf.SearchKey(key);
         }
@@ -115,14 +119,18 @@ namespace BPlusTreeVisualization
       _BufferBlock.SendAsync((NodeStatus.ISearching,ID,-1,[],[],0,-1,[],[]));
       ((int,T?),BPlusTreeNode<T>?) result;
       int i = 0;
+      //serch for correct subtree to insert into
       while(i < _NumKeys && key > _Keys[i]){
         i++;
       }
         result = (Children[i]?? throw new NullChildReferenceException(
           $"Child at index:{i} within node:{ID}")).InsertKey(key,data,ID);
+        //if there was a split in the child node. Item 2 is the new child node, 
+        //Item 1 contains the keys and the contents that will go into the new node
         if(result.Item2 != null){
           for (int j = _NumKeys - 1; j >= i; j--)
           {
+            //
             _Keys[j + 1] = _Keys[j];
             _Children[j + 2] = _Children[j + 1];
           }
@@ -131,7 +139,7 @@ namespace BPlusTreeVisualization
           _NumKeys++;
           (int, int[]) temp = CreateBufferVar();
           _BufferBlock.SendAsync((NodeStatus.SplitInsert, ID, temp.Item1, temp.Item2, [], 0, -1, [], []));
-          if (IsFull())
+          if (IsFull()) //if there are either too many keys or too many children
           {
             return Split(parentID);
           }
@@ -149,7 +157,11 @@ namespace BPlusTreeVisualization
       _BufferBlock.SendAsync((NodeStatus.Split, ID, -1, [], [], 0, -1, [], []));
       int[] newKeys = new int[_Degree];
       BPlusTreeNode<T>[] newChildren = new BPlusTreeNode<T>[_Degree + 1];
+      //split the current node in half. 
       int dividerIndex = _NumKeys / 2;
+      
+      //copy the greater half of the keys and children into an array 
+      //to be added to the new node
       (int,T?) dividerEntry = (_Keys[dividerIndex],default(T));
       int i = 1;
       for (; i < _NumKeys - dividerIndex; i++){
@@ -172,9 +184,11 @@ namespace BPlusTreeVisualization
             };
       _NumKeys = dividerIndex;
       (int, int[]) temp = CreateBufferVar();
+      //send the split status to the gui
       _BufferBlock.SendAsync((NodeStatus.SplitResult, ID, temp.Item1,
         temp.Item2, [], parentID, -1, [], []));
 
+      //send the new new node to the gui
       (int, int[]) temp2 = newNode.CreateBufferVar();
       _BufferBlock.SendAsync((NodeStatus.SplitResult, newNode.ID, temp2.Item1,
         temp2.Item2, [], parentID, -1, [], []));
@@ -276,23 +290,25 @@ namespace BPlusTreeVisualization
           if(!isUnderflow){
             //do nothing, keep propagating upwards
           }
+          //if we aren't on the leftmost side of the tree
           else if(isUnderflow && leftSibling != null && leftSibling.CanForfeit()){
             //if it is underflow, check sibling(s) for forfeiting a child
             //check if this is the correct status update
             _BufferBlock.SendAsync((NodeStatus.Shift,ID,-1,[],[],(leftSibling.Children[leftSibling._NumKeys] 
             ?? throw new NullChildReferenceException($"Child at index 0 in node:{leftSibling.ID}")).ID,
             -1,[],[]));
-
+            //steal a child from the left sibling
             GainsFromLeft(leftSibling);
             leftSibling.LosesToRight();
             
           }
+          //if we aren't on the rightmost side of the tree, check if we can steal a key from the right sibling
           else if(isUnderflow && rightSibling != null && rightSibling.CanForfeit()){
             //check if this is the correct status update (underflow?)
             _BufferBlock.SendAsync((NodeStatus.Shift,ID,-1,[],[],(rightSibling.Children[0] 
             ?? throw new NullChildReferenceException($"Child at index 0 in node:{rightSibling.ID}")).ID,
             -1,[],[]));
-
+            //steal a key from the right sibling
             GainsFromRight(rightSibling);
             rightSibling.LosesToLeft();
           }
@@ -311,6 +327,7 @@ namespace BPlusTreeVisualization
               leftSibling.DeleteNode(parentNode,selfIndex - 1); //we can use -1 because we know there is a leftsibling
               
               (int, int[]) temp2 = CreateBufferVar();
+              //send merge status to the gui
               _BufferBlock.SendAsync((NodeStatus.Merge,ID, temp2.Item1, temp2.Item2, [], leftSiblingID,-1, [],[]));
             }
           }
@@ -324,9 +341,11 @@ namespace BPlusTreeVisualization
 
     }
     /// <summary>
-    /// Traverses through the (sub)tree and updates the nonleaf key values
+    /// Traverses through the (sub)tree and updates the nonleaf key values.
+    /// Key values for nonleaf are set to the leftmost key of the leftmost node of the subtree
     /// </summary>
     public void UpdateKeyValues(){
+      //clear all key values
       for(int i = 0; i < _Keys.Count();i++){
         _Keys[i] = default;
       }

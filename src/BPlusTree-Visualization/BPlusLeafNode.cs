@@ -138,6 +138,7 @@ namespace BPlusTreeVisualization
     /// Splits this leaf node into two leaf nodes and gives the bigger half to the new node
     /// Contents and keys are split up, both NumKeys values are adjusted as well as new linking of the doubly linked list
     /// </summary>
+    /// <param name="parentID">ID of the parent node</param>
     /// <returns>Returns the dividerEntry (dividerKey and content) and the new node.</returns>
     /// <exception cref="NullContentReferenceException"></exception>
     public ((int, T), BPlusTreeNode<T>) Split(long parentID)
@@ -202,6 +203,7 @@ namespace BPlusTreeVisualization
         _Keys[_NumKeys] = default;
         _Contents[_NumKeys] = default;
         (int, int[], T?[]) temp = CreateBufferVar();
+        //send status to say key deleted
         _BufferBlock.SendAsync((NodeStatus.Deleted, ID, temp.Item1, temp.Item2, temp.Item3, 0, -1, [], []));
 
         PropagateChanges(pathStack);
@@ -215,7 +217,7 @@ namespace BPlusTreeVisualization
 
     /// <summary>
     /// This method handles the cases where the leafnode is underflow (has too few keys)
-    /// If the leafnode is the rootnode itself and is underflow (for a root), it calls deletenode
+    /// If the leafnode is the rootnode itself and is underflow (for a root), it calls deleteNode
     /// If it is a non-root leafnode, it checks for underflow and handles cases such as redistributing key values
     /// (if it has at least one sibling with a key to spare), otherwise it calls merge
     /// </summary>
@@ -232,14 +234,21 @@ namespace BPlusTreeVisualization
       }
       else
       {
+        
         Tuple<BPlusNonLeafNode<T>, int> parent = pathStack.Pop();
         BPlusNonLeafNode<T> parentNode = parent.Item1;
+
+        //index of the current node in the parent's children array
         int index = parent.Item2;
 
         (BPlusLeafNode<T>?, int) leftSibling = GetLeftSibling(index, parentNode);
         (BPlusLeafNode<T>?, int) rightSibling = GetRightSibling(index, parentNode);
         BPlusLeafNode<T>? leftSiblingNode = leftSibling.Item1;
         BPlusLeafNode<T>? rightSiblingNode = rightSibling.Item1;
+
+        //indices of the sibling nodes in the parent's children array
+        int leftSiblingIndex = leftSibling.Item2;
+        int rightSiblingIndex = rightSibling.Item2;
 
         bool isUnderflow = IsUnderflow();
         if (parentNode != null)
@@ -250,6 +259,7 @@ namespace BPlusTreeVisualization
           }
           else if (isUnderflow && leftSiblingNode != null && leftSiblingNode.CanRedistribute())
           {
+            //steal a key from the left sibling node
             GainsFromLeft(leftSiblingNode);
             leftSiblingNode.LosesToRight();
 
@@ -261,6 +271,7 @@ namespace BPlusTreeVisualization
           }
           else if (isUnderflow && rightSiblingNode != null && rightSiblingNode.CanRedistribute())
           { 
+            //steal a key from the right sibling node
             GainsFromRight(rightSiblingNode);
             rightSiblingNode.LosesToLeft();
 
@@ -273,9 +284,10 @@ namespace BPlusTreeVisualization
           }
           else
           {
+            //if we aren't on the right edge of the tree, and we can't redistribute keys, we merge with the right sibling
             if (rightSiblingNode != null && rightSibling.Item1 != null)
             {
-              (BPlusLeafNode<T>, int) rightSiblingNotNull = (rightSibling.Item1, rightSibling.Item2);
+              (BPlusLeafNode<T>, int) rightSiblingNotNull = (rightSibling.Item1, rightSiblingIndex);
               long siblingID = rightSiblingNode.ID;
               mergeWithRight(rightSiblingNotNull, parentNode);
 
@@ -284,10 +296,13 @@ namespace BPlusTreeVisualization
               _BufferBlock.SendAsync((NodeStatus.Merge,ID, temp.Item1, temp.Item2, temp.Item3, siblingID,-1, [],[]));
               //Console.WriteLine("Merging with right");
             }
+
+            //if we aren't on the left edge of the tree, and we can't redistribute keys or merge  
+            //with the right sibling, we merge with the left sibling
             else if (leftSiblingNode != null && leftSibling.Item1 != null)
             {
               
-              (BPlusLeafNode<T>, int) leftSiblingNotNull = (leftSibling.Item1, leftSibling.Item2);
+              (BPlusLeafNode<T>, int) leftSiblingNotNull = (leftSibling.Item1, leftSiblingIndex);
               long siblingID = leftSiblingNode.ID;
               mergeWithLeft(leftSiblingNotNull, parentNode);
 
@@ -297,7 +312,7 @@ namespace BPlusTreeVisualization
               //Console.WriteLine("Merging with left");
             }
           }
-          //communicate the changes one level upwards
+          //communicate the changes one level upwards.
           parent.Item1.PropagateChanges(pathStack);
         }
       }
@@ -409,6 +424,7 @@ namespace BPlusTreeVisualization
       int siblingIndex = sibling.Item2;
       for (int i = 0; i < siblingNode.NumKeys; i++)
       {
+        //add all keys and corresponding content from sibling Node into this node
         _Keys[_NumKeys + i] = siblingNode.Keys[i];
         _Contents[_NumKeys + i] = siblingNode.Contents[i]; //insert all values from sibling Node into this
 
@@ -511,6 +527,11 @@ namespace BPlusTreeVisualization
       return _NumKeys >= minKeys;
     }
 
+    /// <summary>
+    /// Prints out the contents of the node
+    /// </summary>
+    /// <returns></returns>
+    /// <exception cref="NullContentReferenceException"></exception>
     public string toString()
     {
       string output = "";
@@ -522,6 +543,10 @@ namespace BPlusTreeVisualization
       return output;
     }
 
+    /// <summary>
+    /// Create buffer var for communication with the gui
+    /// </summary>
+    /// <returns>The variables for this node</returns>
     public (int, int[], T?[]) CreateBufferVar()
     {
       int numKeys = NumKeys;
