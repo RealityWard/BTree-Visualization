@@ -1,5 +1,5 @@
 # Summary
-This is my capstone project made with a team. I coordinated who worked on what for this project using Agile methodology while simultaneously coding the backend logic for a BTree data structure. The original goal was to create an animated visual of the basic operations of a BTree data structure using C\#. Ideally the application creates a real B Tree object and anounces key actions to the frontend to enable visual updating each step for the 'animation'.
+This capstone project, developed collaboratively using Agile methodologies, delivers an interactive visualization of B-Tree operations. I led project coordination and implemented the core backend logic in C#, enabling dynamic, step-by-step visual representation of B-Tree manipulations.
 ## Roles
 - Tristan Anderson: Project Manager, Developer
 - Andreas Kramer: Code Architect, Developer
