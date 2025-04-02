@@ -9,6 +9,6 @@ This is my capstone project made with a team. I coordinated who worked on what f
 - Zackary Beck: Developer
 
 # Links for Reference
-- [The Team\'s Contributions](https://github.com/RealityWard/BTree-Visualization/pulse)
+- [The Team\'s Contributions](https://github.com/RealityWard/BTree-Visualization/graphs/contributors)
 - [Most Relevant Code](https://github.com/RealityWard/BTree-Visualization/tree/main/src/BTree-Visualization)
 - [Original Readme](https://github.com/RealityWard/BTree-Visualization/tree/main?tab=readme-ov-file#b-tree-and-btree-visualization)
